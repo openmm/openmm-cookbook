@@ -14,7 +14,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = "openmm-cookbook"
@@ -41,15 +40,70 @@ intersphinx_mapping = {
 
 # nbsphinx config
 
+# Set up colab-compatible notebooks
+import json
+from pathlib import Path
+from uuid import uuid4
+from subprocess import run
+
+build_colab = Path("../build/html/colab")
+
+
+def unwrap(seq):
+    i = iter(seq)
+
+    try:
+        out = next(i)
+    except StopIteration:
+        raise ValueError("No values in seq")
+
+    try:
+        next(i)
+    except StopIteration:
+        return out
+    raise ValueError("More than one value in seq")
+
+
+construct_sh = Path("../colab/construct.sh").absolute()
+run(construct_sh, check=True, cwd=build_colab)
+constructor = unwrap(build_colab.glob("openmm-condacolab*.sh"))
+# TODO: Make condacolab constructor part of usual release?
+constructor_url = f"https://yoshanuikabundi.github.io/openmm-cookbook/dev/colab/{constructor.relative_to(build_colab)}"
+
+for fn in Path("notebooks").glob("*.ipynb"):
+    notebook_json = fn.read_text()
+    notebook = json.loads(notebook_json)
+    cell = {
+        "cell_type": "code",
+        "execution_count": 0,
+        "id": str(uuid4()),
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "# Execute this cell to install OpenMM in the Colab environment\n",
+            "!pip install -q condacolab\n",
+            "import condacolab\n",
+            f"condacolab.install_from_url({constructor_url})",
+        ],
+    }
+    notebook["cells"].insert(0, cell)
+    fn_out = build_colab / fn
+    fn_out.parent.mkdir(parents=True, exist_ok=True)
+    with fn_out.open("w") as file:
+        json.dump(notebook, file)
+
+# Add links to top of each notebook
 nbsphinx_prolog = """
 {%- set docname = env.doc2path(env.docname, base=False) -%}
-{%- set github = "yoshanuikabundi/openmm-cookbook/blob/main/" ~ docname -%}
+{%- set github = "yoshanuikabundi/openmm-cookbook" -%}
+{%- set on_github = "https://github.com/" ~ github ~ "/blob/main/" ~ docname -%}
+{%- set on_colab = "https://colab.research.google.com/github/" ~ github ~ "/blob/gh-pages/dev/colab/" ~ docname -%}
 .. raw:: html
 
     <div class="nbsphinx-prolog">
         <a href="{{ docname }}">Download notebook</a>
-        <a href="https://github.com/{{ github }}">View in GitHub</a>
-        <a href="https://colab.research.google.com/github/{{ github }}">Open in Google Colab</a>
+        <a href="{{ on_github }}">View in GitHub</a>
+        <a href="{{ on_colab }}">Open in Google Colab</a>
     </div>
 
 """
