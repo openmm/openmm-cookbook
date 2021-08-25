@@ -1,0 +1,9 @@
+name: gh-pages
+channels:
+  - conda-forge
+dependencies:
+  - python >= 3.7
+  - pip
+  - openmm
+  - sphinx>=4.0.0,<5
+  - nbsphinx
