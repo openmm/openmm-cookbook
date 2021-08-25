@@ -1,0 +1,125 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "6b971986",
+   "metadata": {},
+   "source": [
+    "## Restraining Dihedrals\n",
+    "\n",
+    "Sometimes you want to run a simulation in which certain dihedral angles have their motion restricted, unable to move out of a narrow range.  You might do this to prevent large changes to the backbone of a protein, or to sample a particular sidechain rotamer.  This can be implemented using a PeriodicTorsionForce to add restraint potentials to the dihedrals of interest.\n",
+    "\n",
+    "As an example, let's copy the beginning of the `simulatePdb.py` script from the examples directory.  It loads a PDB file consisting of villin in water and builds a System from it."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "760b92bf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm.app import *\n",
+    "from openmm import *\n",
+    "from openmm.unit import *\n",
+    "\n",
+    "pdb = PDBFile('villin.pdb')\n",
+    "forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')\n",
+    "system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,\n",
+    "                                 nonbondedCutoff=1*nanometer, constraints=HBonds)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "86b541b9",
+   "metadata": {},
+   "source": [
+    "Now we will create a PeriodicTorsionForce to use as the restraint force.  We can add as many torsions as we want to it, each one restraining a different dihedral.  The energy of each torsion is given by $E=k(1+cos(n\\theta-\\theta_0))$, where $k$ (the force constant), $n$ (the periodicity), and $\\theta_0$ (the phase) can be specified separately for each torsion.  For this example, we restrain the first residue's $\\chi_1$ angle, which is defined by atoms 0, 4, 6, and 9.  We set the periodicity to 1 since we only want a single minimum in the potential."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "be4f6af2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "restraint = PeriodicTorsionForce()\n",
+    "system.addForce(restraint)\n",
+    "restraint.addTorsion(0, 4, 6, 9, 1, 0*radians, 100*kilojoules_per_mole)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c5110d76",
+   "metadata": {},
+   "source": [
+    "Now that we have our System ready, we can create a Simulation and run some dynamics.  The restraint force will limit the motion of the first sidechain."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "d3c2bd84",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, 0.004*picoseconds)\n",
+    "simulation = Simulation(pdb.topology, system, integrator)\n",
+    "simulation.context.setPositions(pdb.positions)\n",
+    "simulation.step(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a92ebba6",
+   "metadata": {},
+   "source": [
+    "Sometimes it is useful to change the target angle of the restraint part way through a simulation.  This can happen, for example, in steered molecular dynamics where you want to make a dihedral follow a defined trajectory with time.  To do this, simply update the values of the per-particle parameters then call `updateParametersInContext()` to copy the new values over to the existing Context.  The following changes the target angle of the restraint to 0.1 radians."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "2ade275b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "restraint.setTorsionParameters(0, 0, 4, 6, 9, 1, 0.1*radians, 100*kilojoules_per_mole)\n",
+    "restraint.updateParametersInContext(simulation.context)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
