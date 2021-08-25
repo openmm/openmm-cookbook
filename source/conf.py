@@ -46,9 +46,11 @@ nbsphinx_prolog = """
 {%- set github = "yoshanuikabundi/openmm-cookbook/blob/main/" ~ docname -%}
 .. raw:: html
 
-    <a href="{{ docname }}">Download notebook</a>
-    <a href="https://github.com/{{ github }}">View in GitHub</a>
-    <a href="https://colab.research.google.com/github/{{ github }}">Open in Google Colab</a>
+    <div class="nbsphinx-prolog">
+        <a href="{{ docname }}">Download notebook</a>
+        <a href="https://github.com/{{ github }}">View in GitHub</a>
+        <a href="https://colab.research.google.com/github/{{ github }}">Open in Google Colab</a>
+    </div>
 
 """
 
@@ -122,3 +124,7 @@ html_sidebars = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+html_css_files = [
+    "notebooks.css",
+]
