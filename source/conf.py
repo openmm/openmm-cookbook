@@ -47,6 +47,7 @@ from uuid import uuid4
 from subprocess import run
 
 build_colab = Path("../build/html/colab")
+build_colab.mkdir(parents=True, exist_ok=True)
 
 
 def unwrap(seq):
