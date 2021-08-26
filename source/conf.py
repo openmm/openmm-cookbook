@@ -49,27 +49,8 @@ from subprocess import run
 build_colab = Path("../build/html/colab")
 build_colab.mkdir(parents=True, exist_ok=True)
 
-
-def unwrap(seq):
-    i = iter(seq)
-
-    try:
-        out = next(i)
-    except StopIteration:
-        raise ValueError("No values in seq")
-
-    try:
-        next(i)
-    except StopIteration:
-        return out
-    raise ValueError("More than one value in seq")
-
-
-construct_sh = Path("../colab/construct.sh").absolute()
-run(construct_sh, check=True, cwd=build_colab)
-constructor = unwrap(build_colab.glob("openmm-condacolab*.sh"))
 # TODO: Make condacolab constructor part of usual release?
-constructor_url = f"https://yoshanuikabundi.github.io/openmm-cookbook/dev/colab/{constructor.relative_to(build_colab)}"
+constructor_url = f"https://somewhere.to.serve/a.1gb.constructor.file"
 
 for fn in Path("notebooks").glob("*.ipynb"):
     notebook_json = fn.read_text()

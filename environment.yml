@@ -7,4 +7,3 @@ dependencies:
   - openmm
   - sphinx>=4.0.0,<5
   - nbsphinx
-  - constructor

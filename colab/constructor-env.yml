@@ -1,0 +1,5 @@
+name: constructor
+channels:
+  - conda-forge
+dependencies:
+  - constructor
