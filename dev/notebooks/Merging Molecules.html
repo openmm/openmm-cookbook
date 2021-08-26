@@ -298,10 +298,10 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>from openmm.app import *
+<span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
 
-pdb1 = PDBFile(&#39;villin.pdb&#39;)
-pdb2 = PDBFile(&#39;ala_ala_ala.pdb&#39;)
+<span class="n">pdb1</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
+<span class="n">pdb2</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -311,10 +311,10 @@ pdb2 = PDBFile(&#39;ala_ala_ala.pdb&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>modeller = Modeller(pdb1.topology, pdb1.positions)
-modeller.add(pdb2.topology, pdb2.positions)
-mergedTopology = modeller.topology
-mergedPositions = modeller.positions
+<span></span><span class="n">modeller</span> <span class="o">=</span> <span class="n">Modeller</span><span class="p">(</span><span class="n">pdb1</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">pdb1</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">modeller</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pdb2</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">pdb2</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">mergedTopology</span> <span class="o">=</span> <span class="n">modeller</span><span class="o">.</span><span class="n">topology</span>
+<span class="n">mergedPositions</span> <span class="o">=</span> <span class="n">modeller</span><span class="o">.</span><span class="n">positions</span>
 </pre></div>
 </div>
 </div>

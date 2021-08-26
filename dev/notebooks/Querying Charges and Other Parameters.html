@@ -297,12 +297,12 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>from openmm.app import *
-from openmm import *
+<span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
 
-pdb = PDBFile(&#39;ala_ala_ala.pdb&#39;)
-forcefield = ForceField(&#39;amber14-all.xml&#39;, &#39;amber14/tip3pfb.xml&#39;)
-system = forcefield.createSystem(pdb.topology)
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -312,7 +312,7 @@ system = forcefield.createSystem(pdb.topology)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>nonbonded = [f for f in system.getForces() if isinstance(f, NonbondedForce)][0]
+<span></span><span class="n">nonbonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">NonbondedForce</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -322,10 +322,10 @@ system = forcefield.createSystem(pdb.topology)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>charges = []
-for i in range(system.getNumParticles()):
-    charge, sigma, epsilon = nonbonded.getParticleParameters(i)
-    charges.append(charge)
+<span></span><span class="n">charges</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()):</span>
+    <span class="n">charge</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="n">nonbonded</span><span class="o">.</span><span class="n">getParticleParameters</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">charges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">charge</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -336,11 +336,11 @@ for i in range(system.getNumParticles()):
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>bonded = [f for f in system.getForces() if isinstance(f, HarmonicBondForce)][0]
-for i in range(bonded.getNumBonds()):
-    particle1, particle2, length, k = bonded.getBondParameters(i)
-    if particle1 == 0 or particle2 == 0:
-        print(f&#39;Particles ({particle1}, {particle2}), length = {length}, k = {k}&#39;)
+<span></span><span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">HarmonicBondForce</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bonded</span><span class="o">.</span><span class="n">getNumBonds</span><span class="p">()):</span>
+    <span class="n">particle1</span><span class="p">,</span> <span class="n">particle2</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">bonded</span><span class="o">.</span><span class="n">getBondParameters</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">particle1</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">particle2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Particles (</span><span class="si">{</span><span class="n">particle1</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">particle2</span><span class="si">}</span><span class="s1">), length = </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1">, k = </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

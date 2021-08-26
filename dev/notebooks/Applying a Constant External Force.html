@@ -303,13 +303,13 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>from openmm.app import *
-from openmm import *
-from openmm.unit import *
+<span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 
-pdb = PDBFile(&#39;ala_ala_ala.pdb&#39;)
-forcefield = ForceField(&#39;amber14-all.xml&#39;)
-system = forcefield.createSystem(pdb.topology, constraints=HBonds)
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -319,11 +319,11 @@ system = forcefield.createSystem(pdb.topology, constraints=HBonds)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>external = CustomExternalForce(&#39;-fx*x-fy*y-fz*z&#39;)
-system.addForce(external)
-external.addPerParticleParameter(&#39;fx&#39;)
-external.addPerParticleParameter(&#39;fy&#39;)
-external.addPerParticleParameter(&#39;fz&#39;)
+<span></span><span class="n">external</span> <span class="o">=</span> <span class="n">CustomExternalForce</span><span class="p">(</span><span class="s1">&#39;-fx*x-fy*y-fz*z&#39;</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">external</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fx&#39;</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fy&#39;</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -342,8 +342,8 @@ external.addPerParticleParameter(&#39;fz&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>external.addParticle(0, (-10, 0, 0)*kilojoules_per_mole/nanometer)
-external.addParticle(32, (10, 0, 0)*kilojoules_per_mole/nanometer)
+<span></span><span class="n">external</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -362,10 +362,10 @@ external.addParticle(32, (10, 0, 0)*kilojoules_per_mole/nanometer)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, 0.004*picoseconds)
-simulation = Simulation(pdb.topology, system, integrator)
-simulation.context.setPositions(pdb.positions)
-simulation.step(10)
+<span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -375,8 +375,8 @@ simulation.step(10)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>external.setParticleParameters(0, 0, (-20, 0, 0)*kilojoules_per_mole/nanometer)
-external.updateParametersInContext(simulation.context)
+<span></span><span class="n">external</span><span class="o">.</span><span class="n">setParticleParameters</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">updateParametersInContext</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

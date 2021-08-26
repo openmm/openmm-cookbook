@@ -304,14 +304,14 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>from openmm.app import *
-from openmm import *
-from openmm.unit import *
+<span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 
-pdb = PDBFile(&#39;input.pdb&#39;)
-forcefield = ForceField(&#39;amber14-all.xml&#39;, &#39;amber14/tip3pfb.xml&#39;)
-system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
-                                 nonbondedCutoff=1*nanometer, constraints=HBonds)
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;input.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
+                                 <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -321,8 +321,8 @@ system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>for i in range(582):
-    system.setParticleMass(i, 0*amu)
+<span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">582</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">setParticleMass</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -332,9 +332,9 @@ system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>for atom in pdb.topology.atoms():
-    if atom.residue.name != &#39;HOH&#39;:
-        system.setParticleMass(atom.index, 0*amu)
+<span></span><span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">atoms</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">residue</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;HOH&#39;</span><span class="p">:</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">setParticleMass</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -344,10 +344,10 @@ system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, 0.004*picoseconds)
-simulation = Simulation(pdb.topology, system, integrator)
-simulation.context.setPositions(pdb.positions)
-simulation.step(10)
+<span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -357,15 +357,15 @@ simulation.step(10)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>state = simulation.context.getState(getPositions=True)
-positions = state.getPositions()
-print(&#39;These positions should be the same (at least up to the limits of single precision):&#39;)
-print(pdb.positions[0])
-print(positions[0])
-print()
-print(&#39;These positions should be different:&#39;)
-print(pdb.positions[600])
-print(positions[600])
+<span></span><span class="n">state</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getPositions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">positions</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">getPositions</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;These positions should be the same (at least up to the limits of single precision):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;These positions should be different:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="mi">600</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="mi">600</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>

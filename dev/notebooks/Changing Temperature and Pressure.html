@@ -297,17 +297,17 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>from openmm.app import *
-from openmm import *
-from openmm.unit import *
+<span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 
-pdb = PDBFile(&#39;villin.pdb&#39;)
-forcefield = ForceField(&#39;amber14-all.xml&#39;, &#39;amber14/tip3pfb.xml&#39;)
-system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
-                                 nonbondedCutoff=1*nanometer, constraints=HBonds)
-integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, 0.004*picoseconds)
-simulation = Simulation(pdb.topology, system, integrator)
-simulation.context.setPositions(pdb.positions)
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
+                                 <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -317,9 +317,9 @@ simulation.context.setPositions(pdb.positions)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>for i in range(10):
-    integrator.setTemperature((300-30*i)*kelvin)
-    integrator.step(10)
+<span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">((</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -330,8 +330,8 @@ simulation.context.setPositions(pdb.positions)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>system.addForce(MonteCarloBarostat(1*bar, 300*kelvin))
-simulation.context.reinitialize(preserveState=True)
+<span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">bar</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">))</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">reinitialize</span><span class="p">(</span><span class="n">preserveState</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -341,11 +341,11 @@ simulation.context.reinitialize(preserveState=True)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>for i in range(10):
-    temperature = (300-30*i)*kelvin
-    simulation.context.setParameter(MonteCarloBarostat.Temperature(), temperature)
-    integrator.setTemperature(temperature)
-    integrator.step(10)
+<span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">temperature</span> <span class="o">=</span> <span class="p">(</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Temperature</span><span class="p">(),</span> <span class="n">temperature</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -355,7 +355,7 @@ simulation.context.reinitialize(preserveState=True)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>simulation.context.setParameter(MonteCarloBarostat.Pressure(), 0.5*bar)
+<span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Pressure</span><span class="p">(),</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">bar</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
