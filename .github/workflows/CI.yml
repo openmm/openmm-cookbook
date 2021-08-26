@@ -3,12 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - "master"
+      - "main"
   pull_request:
     branches:
-      - "master"
+      - "main"
   schedule:
-    # Nightly tests run on master by default:
+    # Nightly tests run on main by default:
     #   Scheduled workflows run on the latest commit on the default or base branch.
     #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
     - cron: "0 0 * * *"
@@ -54,8 +54,6 @@ jobs:
 
       - name: Run example notebooks
         shell: bash -l {0}
-        run: |
-          # --nbval-lax: Only check output when cell is marked
-          # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
-          pytest -v --nbval-lax notebooks
-          
+        # --nbval-lax: Only check output when cell is marked
+        # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
+        run: pytest -v --nbval-lax notebooks
