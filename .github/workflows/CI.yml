@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  schedule:
+    # Nightly tests run on master by default:
+    #   Scheduled workflows run on the latest commit on the default or base branch.
+    #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
+    - cron: "0 0 * * *"
+
+jobs:
+  test:
+    if: (github.event_name == 'schedule' && github.repository == 'yoshanuikabundi/openmm-cookbook') || (github.event_name != 'schedule')
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        python:
+          - 3.7
+
+    env:
+      CI_OS: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 2
+
+      - uses: conda-incubator/setup-miniconda@v2.1.1
+        name: Install dependencies
+        with:
+          python-version: ${{ matrix.python }}
+          environment-file: environment.yml
+          auto-activate-base: false
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
+
+      - name: Describe environment
+        run: |
+          pwd
+          ls
+          conda list
+
+      - name: Run example notebooks
+        shell: bash -l {0}
+        run: |
+          # --nbval-lax: Only check output when cell is marked
+          # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
+          pytest -v --nbval-lax notebooks
+          

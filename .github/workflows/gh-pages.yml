@@ -32,7 +32,6 @@ jobs:
         name: Install dependencies
         with:
           environment-file: environment.yml
-          activate-environment: docs
           auto-activate-base: false
           miniforge-version: latest
           miniforge-variant: Mambaforge
