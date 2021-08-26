@@ -64,7 +64,10 @@ for fn in Path("notebooks").glob("*.ipynb"):
             "# Execute this cell to install OpenMM in the Colab environment\n",
             "!pip install -q condacolab\n",
             "import condacolab\n",
-            f"condacolab.install_from_url({constructor_url})",
+            f"condacolab.install_from_url('{constructor_url}')\n",
+            "# We also need to get a few files that the cookbook depends on\n",
+            "!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/notebooks/ala_ala_ala.pdb'\n",
+            "!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/notebooks/villin.pdb'",
         ],
     }
     notebook["cells"].insert(0, cell)
@@ -77,12 +80,13 @@ for fn in Path("notebooks").glob("*.ipynb"):
 nbsphinx_prolog = """
 {%- set docname = env.doc2path(env.docname, base=False) -%}
 {%- set github = "yoshanuikabundi/openmm-cookbook" -%}
+{%- set on_local = docname.split('/') | last -%}
 {%- set on_github = "https://github.com/" ~ github ~ "/blob/main/" ~ docname -%}
 {%- set on_colab = "https://colab.research.google.com/github/" ~ github ~ "/blob/gh-pages/dev/colab/" ~ docname -%}
 .. raw:: html
 
     <div class="nbsphinx-prolog">
-        <a href="{{ docname }}">Download notebook</a>
+        <a href="{{ on_local }}">Download notebook</a>
         <a href="{{ on_github }}">View in GitHub</a>
         <a href="{{ on_colab }}">Open in Google Colab</a>
     </div>
