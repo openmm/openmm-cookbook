@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  publish:
+  construct:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,12 +41,10 @@ jobs:
         run: |
           constructor --platform linux-64 colab
 
-      - name: Draft Release
+      - name: Add installer to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: OpenMM Conda Colab Constructor ${{ github.ref }}
-          draft: true
+          tag_name: condacolab-constructor
           files: |
             ./openmm-condacolab-*.sh
         env:

@@ -49,8 +49,7 @@ from subprocess import run
 build_colab = Path("../build/html/colab")
 build_colab.mkdir(parents=True, exist_ok=True)
 
-# TODO: Make condacolab constructor part of usual release?
-constructor_url = f"https://somewhere.to.serve/a.1gb.constructor.file"
+constructor_url = f"https://github.com/yoshanuikabundi/openmm-cookbook/releases/download/condacolab-constructor/openmm-condacolab-0.1-Linux-x86_64.sh"
 
 for fn in Path("notebooks").glob("*.ipynb"):
     notebook_json = fn.read_text()
