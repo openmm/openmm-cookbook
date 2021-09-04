@@ -44,7 +44,6 @@ intersphinx_mapping = {
 import json
 from pathlib import Path
 from uuid import uuid4
-from subprocess import run
 
 build_colab = Path("../build/html/colab")
 build_colab.mkdir(parents=True, exist_ok=True)
@@ -54,10 +53,7 @@ notebooks_path = Path("notebooks")
 default_conda_forge_deps = [
     "openmm",
 ]
-default_required_files = [
-    "notebooks/ala_ala_ala.pdb",
-    "villin.pdb",
-]
+default_required_files = ["notebooks/ala_ala_ala.pdb", ""]
 
 for fn in notebooks_path.glob("*.ipynb"):
     notebook_json = fn.read_text()
@@ -67,12 +63,12 @@ for fn in notebooks_path.glob("*.ipynb"):
     )
     file_deps = notebook["metadata"].get("required_files", default_required_files)
     wgets = [
-        f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'\n"
+        f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'"
         for dep in file_deps
     ]
     if wgets:
         wgets = [
-            "# We also need to get a few files that the cookbook depends on\n"
+            "# We also need to get a few files that the cookbook depends on"
         ] + wgets
     cell = {
         "cell_type": "code",
@@ -81,14 +77,15 @@ for fn in notebooks_path.glob("*.ipynb"):
         "metadata": {},
         "outputs": [],
         "source": [
-            "# Execute this cell to install OpenMM in the Colab environment\n",
-            "!pip install -q condacolab\n",
-            "import condacolab\n",
-            "condacolab.install_mambaforge()\n",
-            f"!mamba install {' '.join(conda_deps)}\n",
+            "# Execute this cell to install OpenMM in the Colab environment",
+            "!pip install -q condacolab",
+            "import condacolab",
+            "condacolab.install_mambaforge()",
+            f"!mamba install {' '.join(conda_deps)}",
             *wgets,
         ],
     }
+    cell["source"] = "\n".join(cell["source"]).splitlines(keepends=True)
     notebook["cells"].insert(0, cell)
     fn_out = build_colab / fn
     fn_out.parent.mkdir(parents=True, exist_ok=True)
