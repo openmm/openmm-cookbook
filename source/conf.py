@@ -49,11 +49,31 @@ from subprocess import run
 build_colab = Path("../build/html/colab")
 build_colab.mkdir(parents=True, exist_ok=True)
 
-constructor_url = f"https://github.com/yoshanuikabundi/openmm-cookbook/releases/download/condacolab-constructor/openmm-condacolab-0.1-Linux-x86_64.sh"
+notebooks_path = Path("notebooks")
 
-for fn in Path("notebooks").glob("*.ipynb"):
+default_conda_forge_deps = [
+    "openmm",
+]
+default_required_files = [
+    "notebooks/ala_ala_ala.pdb",
+    "villin.pdb",
+]
+
+for fn in notebooks_path.glob("*.ipynb"):
     notebook_json = fn.read_text()
     notebook = json.loads(notebook_json)
+    conda_deps = notebook["metadata"].get(
+        "conda_forge_dependencies", default_conda_forge_deps
+    )
+    file_deps = notebook["metadata"].get("required_files", default_required_files)
+    wgets = [
+        f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'\n"
+        for dep in file_deps
+    ]
+    if wgets:
+        wgets = [
+            "# We also need to get a few files that the cookbook depends on\n"
+        ] + wgets
     cell = {
         "cell_type": "code",
         "execution_count": 0,
@@ -64,10 +84,9 @@ for fn in Path("notebooks").glob("*.ipynb"):
             "# Execute this cell to install OpenMM in the Colab environment\n",
             "!pip install -q condacolab\n",
             "import condacolab\n",
-            f"condacolab.install_from_url('{constructor_url}')\n",
-            "# We also need to get a few files that the cookbook depends on\n",
-            "!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/notebooks/ala_ala_ala.pdb'\n",
-            "!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/notebooks/villin.pdb'",
+            "condacolab.install_mambaforge()\n",
+            f"!mamba install {' '.join(conda_deps)}\n",
+            *wgets,
         ],
     }
     notebook["cells"].insert(0, cell)
