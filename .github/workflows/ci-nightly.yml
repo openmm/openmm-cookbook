@@ -1,0 +1,122 @@
+name: CI - nightly branch
+
+on:
+  schedule:
+    # Nightly tests run on main by default:
+    #   Scheduled workflows run on the latest commit on the default or base branch.
+    #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
+    - cron: "0 0 * * *"
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    env:
+      CCACHE_BASEDIR: "${{ github.workspace }}/openmm"
+      CCACHE_DIR: "${{ github.workspace }}/openmm/.ccache"
+      CCACHE_COMPRESS: true
+      CCACHE_COMPRESSLEVEL: 6
+      CCACHE_MAXSIZE: 400M
+      CMAKE_FLAGS: |
+        -DOPENMM_BUILD_OPENCL_LIB=OFF \
+        -DOPENMM_BUILD_OPENCL_TESTS=OFF \
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        python:
+          - 3.7
+
+    steps:
+      - name: Checkout openmm-cookbook (nightly branch if it exists, default otherwise)
+        run: |
+          COOKBOOK_REPO="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          COOKBOOK_DIR="${GITHUB_WORKSPACE}/openmm-cookbook"
+
+          if git ls-remote --exit-code --heads "${COOKBOOK_REPO}" nightly; then
+            git clone --branch nightly --depth 1 "${COOKBOOK_REPO}" "${COOKBOOK_DIR}"
+          else
+            git clone --depth 1 "${COOKBOOK_REPO}" "${COOKBOOK_DIR}"
+          fi
+
+      - name: Checkout openmm
+        uses: actions/checkout@v2
+        with:
+          repository: openmm/openmm
+          path: openmm
+
+      - uses: conda-incubator/setup-miniconda@v2
+        name: "Prepare openmm dev dependencies"
+        with:
+          python-version: ${{ matrix.python }}
+          activate-environment: build
+          environment-file: openmm/devtools/ci/gh-actions/conda-envs/build-${{ matrix.os }}.yml
+          auto-activate-base: false
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
+
+      - name: Install nbval for tests
+        shell: bash -l {0}
+        run: mamba install nbval
+
+      - name: "Prepare ccache"
+        id: prepare-ccache
+        shell: bash -l {0}
+        run: |
+          echo "::set-output name=key::$(echo "${{ matrix.name }}" | tr -d ' .')"
+          echo "::set-output name=timestamp::$(date +%Y%m%d-%H%M%S)"
+
+          ccache -p
+          ccache -z
+
+      - name: "Restore ccache"
+        uses: actions/cache@v1.1.0
+        with:
+          path: .ccache
+          key: ccache-${{ secrets.CACHE_VERSION }}-${{ steps.prepare-ccache.outputs.key }}-${{ steps.prepare-ccache.outputs.timestamp }}
+          restore-keys: |
+            ccache-${{ secrets.CACHE_VERSION }}-${{ steps.prepare-ccache.outputs.key }}-
+
+      - name: "Set SDK on MacOS (if needed)"
+        if: startsWith(matrix.os, 'macos')
+        run: source openmm/devtools/ci/gh-actions/scripts/install_macos_sdk.sh
+
+      - name: "Configure build with CMake"
+        shell: bash -l {0}
+        run: |
+          mkdir openmm/build
+          cd openmm/build
+
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
+            -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            ${{ matrix.CMAKE_FLAGS }}
+
+      - name: "Build OpenMM"
+        shell: bash -l {0}
+        run: |
+          cd openmm/build
+          make -j2 install
+
+      - name: "Build Python wrappers"
+        shell: bash -l {0}
+        run: |
+          cd openmm/build
+          make -j2 PythonInstall
+
+      - name: "Check ccache performance"
+        shell: bash -l {0}
+        run: ccache -s
+
+      - name: Run example notebooks
+        shell: bash -l {0}
+        # --nbval-lax: Only check output when cell is marked
+        # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
+        run: |
+          cd openmm-cookbook
+          pytest -v --nbval-lax notebooks

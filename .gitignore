@@ -1,5 +1,3 @@
 build
 .ipynb_checkpoints
-
-colab/tmp
-colab/openmm-condacolab-*.sh
+openmm

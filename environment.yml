@@ -1,11 +1,14 @@
-name: gh-pages
+name: openmm-cookbook
 channels:
   - conda-forge
 dependencies:
   - python >= 3.7
   - pip
-  - openmm
   - sphinx>=4.0.0,<5
   - nbsphinx
   - pytest
   - nbval
+  # This should always point to the latest release of OpenMM.
+  # If the above dependencies constrain the version of OpenMM
+  # to something older than that, they should be updated.
+  - openmm
