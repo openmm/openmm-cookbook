@@ -53,7 +53,7 @@ notebooks_path = Path("notebooks")
 default_conda_forge_deps = [
     "openmm",
 ]
-default_required_files = ["notebooks/ala_ala_ala.pdb", ""]
+default_required_files = ["notebooks/ala_ala_ala.pdb", "notebooks/villin.pdb"]
 
 for fn in notebooks_path.glob("*.ipynb"):
     notebook_json = fn.read_text()
@@ -62,14 +62,17 @@ for fn in notebooks_path.glob("*.ipynb"):
         "conda_forge_dependencies", default_conda_forge_deps
     )
     file_deps = notebook["metadata"].get("required_files", default_required_files)
-    wgets = [
-        f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'"
-        for dep in file_deps
-    ]
-    if wgets:
+    if file_deps:
         wgets = [
-            "# We also need to get a few files that the cookbook depends on"
-        ] + wgets
+            "# We also need to get a few files that the cookbook depends on",
+            *(
+                f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'"
+                for dep in file_deps
+            ),
+        ]
+    else:
+        wgets = []
+
     cell = {
         "cell_type": "code",
         "execution_count": 0,
