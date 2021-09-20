@@ -31,6 +31,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "nbsphinx",
     "cookbook",
+    "myst_parser",
+]
+
+myst_enable_extensions = [
+    "colon_fence",
 ]
 
 # Links to the OpenMM docs

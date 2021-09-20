@@ -8,6 +8,7 @@ dependencies:
   - nbsphinx
   - pytest
   - nbval
+  - myst-parser
   # This should always point to the latest release of OpenMM.
   # If the above dependencies constrain the version of OpenMM
   # to something older than that, they should be updated.
