@@ -48,9 +48,9 @@ intersphinx_mapping = {
 }
 
 cookbook_default_conda_forge_deps = ["openmm"]
-cookbook_default_required_files = ["notebooks/ala_ala_ala.pdb", "notebooks/villin.pdb"]
+cookbook_default_required_files = ["ala_ala_ala.pdb", "villin.pdb"]
 cookbook_required_files_base_uri = (
-    "https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/"
+    "https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/files"
 )
 
 ### nbsphinx config ###
