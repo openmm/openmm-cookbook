@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
-from typing import List, Optional, Any
+from typing import List, Optional, Any, TypeVar
 from uuid import uuid4
 from copy import deepcopy
 
 from sphinx.application import Sphinx as Application
 from sphinx.config import Config
+from sphinx.environment import BuildEnvironment
 
 
 def insert_cell(
@@ -53,8 +54,8 @@ def insert_cell(
 def get_metadata(
     notebook: dict,
     key: str,
-    default: Optional[Any] = None,
-) -> Optional[Any]:
+    default,
+):
     """Get a notebook's metadata value for a key, or the given default if the key is absent"""
     return notebook.get("metadata", {}).get(key, default)
 
@@ -115,26 +116,29 @@ def create_colab_notebook(notebook: dict, outpath: Path, config: Config):
         json.dump(notebook, file)
 
 
-def process_notebooks(app: Application, config: Config):
-    build_dir = Path(app.outdir)
+def process_notebook(app: Application, docname: str, source: list[str]) -> list[str]:
+    build_colab = Path(app.outdir) / "colab"
 
-    notebooks_path = Path(config.cookbook_notebooks_path)
+    docpath = Path(app.env.doc2path(docname, False))
 
-    build_colab = build_dir / "colab"
+    if docpath.suffix == ".ipynb":
+        notebook = json.loads(source[0])
+        create_colab_notebook(notebook, build_colab / docpath, app.config)
 
-    for fn in notebooks_path.glob("**/*.ipynb"):
-        notebook_json = fn.read_text()
-        notebook = json.loads(notebook_json)
+    return source
 
-        create_colab_notebook(notebook, build_colab / fn, config)
+
+def remove_colab_notebook(app: Application, env: BuildEnvironment, docname: str):
+    """Remove generated colab notebooks that are no longer needed"""
+    outdir = Path(app.outdir)
+    colab_path = outdir / "colab" / docname
+    colab_path = colab_path.with_suffix(".ipynb")
+    # We check is_relative_to just in case docname is absolute
+    if colab_path.exists() and colab_path.is_relative_to(outdir / "colab"):
+        colab_path.unlink()
 
 
 def setup(app: Application):
-    app.add_config_value(
-        "cookbook_notebooks_path",
-        default=Path("notebooks"),
-        rebuild="env",
-    )
     app.add_config_value(
         "cookbook_default_conda_forge_deps",
         default=[],
@@ -151,7 +155,8 @@ def setup(app: Application):
         rebuild="env",
     )
 
-    app.connect("config-inited", process_notebooks)
+    app.connect("env-purge-doc", remove_colab_notebook)
+    app.connect("source-read", process_notebook)
 
     return {
         "parallel_read_safe": True,
