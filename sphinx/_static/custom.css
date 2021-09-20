@@ -145,6 +145,13 @@ nav#rellinks li + li:before {
 .sphinxsidebarwrapper li.toctree-l1 {
     padding: 0.15em 0;
     line-height: 1.4;
+    font-size: 80%;
+}
+
+/* Style TOC in sidebar more clearly */
+.sphinxsidebarwrapper .nav-toctree .caption {
+    font-weight: bold;
+    margin: 0;
 }
 
 .sphinxsidebarwrapper a.current,
@@ -220,4 +227,30 @@ div.sphinxsidebarwrapper .extra-nav-links {
 
 .cpp .sig-name {
     font-size: 1em;
+}
+
+/* Flexbox for tag index */
+
+.cookbook-tags>ul {
+    column-width: 10em;
+    width: 100%;
+}
+
+.cookbook-tags dt {
+    font-weight: bold;
+}
+
+.cookbook-tags>ul>li {
+    display: block;
+    break-inside: avoid;
+}
+
+
+.cookbook-tags>ul>li li {
+    margin-left: 0;
+}
+
+
+.cookbook-tags>ul>li dd {
+    margin-left: 0;
 }

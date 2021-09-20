@@ -42,8 +42,8 @@ def insert_cell(
         "cell_type": cell_type,
         "execution_count": 0,
         "id": str(uuid4()),
-        "metadata": {},
-        "outputs": [],
+        "metadata": metadata,
+        "outputs": outputs,
         "source": source,
     }
 
@@ -116,7 +116,22 @@ def create_colab_notebook(notebook: dict, outpath: Path, config: Config):
         json.dump(notebook, file)
 
 
-def process_notebook(app: Application, docname: str, source: list[str]) -> list[str]:
+def inject_tags_index(notebook: dict) -> dict:
+    """Inject an `index` directive containing the notebook's metadata tags"""
+
+    tags = get_metadata(notebook, "tags", ["untagged"])
+
+    return insert_cell(
+        notebook,
+        cell_type="raw",
+        metadata={"raw_mimetype": "text/restructuredtext"},
+        source=[
+            f".. index:: {', '.join(tags)}",
+        ],
+    )
+
+
+def process_notebook(app: Application, docname: str, source: list[str]):
     build_colab = Path(app.outdir) / "colab"
 
     docpath = Path(app.env.doc2path(docname, False))
@@ -125,7 +140,7 @@ def process_notebook(app: Application, docname: str, source: list[str]) -> list[
         notebook = json.loads(source[0])
         create_colab_notebook(notebook, build_colab / docpath, app.config)
 
-    return source
+        source[0] = json.dumps(inject_tags_index(notebook))
 
 
 def remove_colab_notebook(app: Application, env: BuildEnvironment, docname: str):

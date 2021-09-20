@@ -32,10 +32,12 @@ extensions = [
     "nbsphinx",
     "cookbook",
     "myst_parser",
+    "sphinx_gallery.load_style",
 ]
 
 myst_enable_extensions = [
     "colon_fence",
+    "substitution",
 ]
 
 # Links to the OpenMM docs
