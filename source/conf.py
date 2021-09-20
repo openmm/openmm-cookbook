@@ -10,9 +10,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------
 
@@ -29,6 +30,7 @@ author = "The OpenMM Contributors"
 extensions = [
     "sphinx.ext.intersphinx",
     "nbsphinx",
+    "cookbook",
 ]
 
 # Links to the OpenMM docs
@@ -38,62 +40,13 @@ intersphinx_mapping = {
     "devguide": ("http://docs.openmm.org/latest/developerguide/", None),
 }
 
-# nbsphinx config
+cookbook_default_conda_forge_deps = ["openmm"]
+cookbook_default_required_files = ["notebooks/ala_ala_ala.pdb", "notebooks/villin.pdb"]
+cookbook_required_files_base_uri = (
+    "https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/"
+)
 
-# Set up colab-compatible notebooks
-import json
-from pathlib import Path
-from uuid import uuid4
-
-build_colab = Path("../build/html/colab")
-build_colab.mkdir(parents=True, exist_ok=True)
-
-notebooks_path = Path("notebooks")
-
-default_conda_forge_deps = [
-    "openmm",
-]
-default_required_files = ["notebooks/ala_ala_ala.pdb", "notebooks/villin.pdb"]
-
-for fn in notebooks_path.glob("*.ipynb"):
-    notebook_json = fn.read_text()
-    notebook = json.loads(notebook_json)
-    conda_deps = notebook["metadata"].get(
-        "conda_forge_dependencies", default_conda_forge_deps
-    )
-    file_deps = notebook["metadata"].get("required_files", default_required_files)
-    if file_deps:
-        wgets = [
-            "# We also need to get a few files that the cookbook depends on",
-            *(
-                f"!wget -q 'https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/{dep}'"
-                for dep in file_deps
-            ),
-        ]
-    else:
-        wgets = []
-
-    cell = {
-        "cell_type": "code",
-        "execution_count": 0,
-        "id": str(uuid4()),
-        "metadata": {},
-        "outputs": [],
-        "source": [
-            "# Execute this cell to install OpenMM in the Colab environment",
-            "!pip install -q condacolab",
-            "import condacolab",
-            "condacolab.install_mambaforge()",
-            f"!mamba install {' '.join(conda_deps)}",
-            *wgets,
-        ],
-    }
-    cell["source"] = "\n".join(cell["source"]).splitlines(keepends=True)
-    notebook["cells"].insert(0, cell)
-    fn_out = build_colab / fn
-    fn_out.parent.mkdir(parents=True, exist_ok=True)
-    with fn_out.open("w") as file:
-        json.dump(notebook, file)
+### nbsphinx config ###
 
 # Add links to top of each notebook
 nbsphinx_prolog = """

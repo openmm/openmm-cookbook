@@ -7,16 +7,7 @@ The OpenMM Cookbook
 ===================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
    :glob:
 
    notebooks/*
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
