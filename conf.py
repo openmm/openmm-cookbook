@@ -50,7 +50,7 @@ intersphinx_mapping = {
 cookbook_default_conda_forge_deps = ["openmm"]
 cookbook_default_required_files = ["ala_ala_ala.pdb", "villin.pdb"]
 cookbook_required_files_base_uri = (
-    "https://raw.githubusercontent.com/Yoshanuikabundi/openmm-cookbook/main/files"
+    "https://raw.githubusercontent.com/openmm/openmm-cookbook/main/files"
 )
 
 ### nbsphinx config ###
@@ -58,7 +58,7 @@ cookbook_required_files_base_uri = (
 # Add links to top of each notebook
 nbsphinx_prolog = """
 {%- set docname = env.doc2path(env.docname, base=False) -%}
-{%- set github = "yoshanuikabundi/openmm-cookbook" -%}
+{%- set github = "openmm/openmm-cookbook" -%}
 {%- set on_local = docname.split('/') | last -%}
 {%- set on_github = "https://github.com/" ~ github ~ "/blob/main/" ~ docname -%}
 {%- set on_colab = "https://colab.research.google.com/github/" ~ github ~ "/blob/gh-pages/dev/colab/" ~ docname -%}
