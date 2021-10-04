@@ -1,12 +1,13 @@
 # The OpenMM Cookbook
 
-## System setup
+## Simulation protocols
 
 :::{nbgallery}
 ---
 glob: True
+caption: System protocols
 ---
-notebooks/system_setup/*
+notebooks/system_protocols/*
 :::
 
 ## Restraints, constraints, and external forces
@@ -14,6 +15,7 @@ notebooks/system_setup/*
 :::{nbgallery}
 ---
 glob: True
+caption: Restraints, constraints, and external forces
 ---
 notebooks/restraints_constraints_forces/*
 :::
@@ -23,6 +25,7 @@ notebooks/restraints_constraints_forces/*
 :::{nbgallery}
 ---
 glob: True
+caption: Analysis and system inspection
 ---
 notebooks/analysis_inspection/*
 :::
