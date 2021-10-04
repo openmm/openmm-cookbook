@@ -7,7 +7,8 @@
 glob: True
 caption: Simulation protocols
 ---
-notebooks/simulation_protocols/*
+notebooks/cookbook/Changing Temperature and Pressure
+notebooks/cookbook/Merging Molecules
 :::
 
 ## Restraints, constraints, and external forces
@@ -17,7 +18,10 @@ notebooks/simulation_protocols/*
 glob: True
 caption: Restraints, constraints, and external forces
 ---
-notebooks/restraints_constraints_forces/*
+notebooks/cookbook/Applying a Constant External Force
+notebooks/cookbook/Constraining Atom Positions
+notebooks/cookbook/Restraining Atom Positions
+notebooks/cookbook/Restraining Dihedrals
 :::
 
 ## Analysis and system inspection
@@ -27,7 +31,8 @@ notebooks/restraints_constraints_forces/*
 glob: True
 caption: Analysis and system inspection
 ---
-notebooks/analysis_inspection/*
+notebooks/cookbook/Analyzing Energy Contributions
+notebooks/cookbook/Querying Charges and Other Parameters
 :::
 
 ----

@@ -48,9 +48,8 @@ intersphinx_mapping = {
 }
 
 cookbook_default_conda_forge_deps = ["openmm"]
-cookbook_default_required_files = ["ala_ala_ala.pdb", "villin.pdb"]
 cookbook_required_files_base_uri = (
-    "https://raw.githubusercontent.com/openmm/openmm-cookbook/main/files"
+    "https://raw.githubusercontent.com/openmm/openmm-cookbook/main"
 )
 
 ### nbsphinx config ###
@@ -80,9 +79,11 @@ templates_path = ["sphinx/_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = [
     "README.md",
+    "**/README.md",
     "build",
     "sphinx",
-    ".github",
+    ".*",
+    "**/.*",
 ]
 
 # -- Options for HTML output -------------------------------------------------

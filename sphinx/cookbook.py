@@ -60,7 +60,7 @@ def get_metadata(
     return notebook.get("metadata", {}).get(key, default)
 
 
-def create_colab_notebook(notebook: dict, outpath: Path, config: Config):
+def create_colab_notebook(notebook, notebook_path: Path, outpath: Path, config: Config):
     """Create a copy of the notebook for Google Colab and save it to output
 
     The copy will have a cell inserted at the start of the notebook that gathers
@@ -68,22 +68,36 @@ def create_colab_notebook(notebook: dict, outpath: Path, config: Config):
      - Conda dependencies, installed via mambaforge
      - Files, downloaded from the config value `cookbook_required_files_base_uri`
 
-    These dependencies can be specified in two places:
+    These dependencies can be specified in the following places. The first value found
+    in the following order is used:
     1. In the `conda_forge_dependencies` or `required_files` metadata fields for an
        individual notebook
     2. In the `cookbook_default_conda_forge_deps` or `cookbook_default_required_files`
        config values for the entire cookbook
+    3. (files only) If the `cookbook_default_required_files` config value is not set,
+       all files in the notebook's directory except those with the `.ipynb` file extension
+       will be used as dependencies. Set `cookbook_default_required_files` to the empty
+       list to specify no dependencies as a default.
 
     """
+
+    if config.cookbook_default_required_files is None:
+        file_list = [
+            fn for fn in notebook_path.parent.glob("*.*") if fn.suffix != ".ipynb"
+        ]
+    else:
+        file_list = list(config.cookbook_default_required_files)
+
+    file_deps = get_metadata(
+        notebook,
+        "required_files",
+        file_list,
+    )
+
     conda_deps = get_metadata(
         notebook,
         "conda_forge_dependencies",
         list(config.cookbook_default_conda_forge_deps),
-    )
-    file_deps = get_metadata(
-        notebook,
-        "required_files",
-        list(config.cookbook_default_required_files),
     )
 
     if file_deps:
@@ -138,7 +152,7 @@ def process_notebook(app: Application, docname: str, source: list[str]):
 
     if docpath.suffix == ".ipynb":
         notebook = json.loads(source[0])
-        create_colab_notebook(notebook, build_colab / docpath, app.config)
+        create_colab_notebook(notebook, docpath, build_colab / docpath, app.config)
 
         source[0] = json.dumps(inject_tags_index(notebook))
 
@@ -161,7 +175,7 @@ def setup(app: Application):
     )
     app.add_config_value(
         "cookbook_default_required_files",
-        default=[],
+        default=None,
         rebuild="env",
     )
     app.add_config_value(
