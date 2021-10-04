@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Querying Charges and Other Parameters &#8212; openmm-cookbook  documentation</title>
+    <title>Changing Temperature and Pressure &#8212; openmm-cookbook  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -20,7 +20,8 @@
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="prev" title="Analyzing Energy Contributions" href="Analyzing%20Energy%20Contributions.html" />
+    <link rel="next" title="Merging Molecules in a Topology" href="Merging%20Molecules.html" />
+    <link rel="prev" title="The OpenMM Cookbook" href="../../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -286,12 +287,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <div class="nbsphinx-prolog">
-    <a href="Querying Charges and Other Parameters.ipynb">Download notebook</a>
-    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/analysis_inspection/Querying Charges and Other Parameters.ipynb">View in GitHub</a>
-    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/analysis_inspection/Querying Charges and Other Parameters.ipynb">Open in Google Colab</a>
-</div><span class="target" id="index-0"></span><section id="Querying-Charges-and-Other-Parameters">
-<h1>Querying Charges and Other Parameters<a class="headerlink" href="#Querying-Charges-and-Other-Parameters" title="Permalink to this headline">¶</a></h1>
-<p>Sometimes you want to inspect the charges or other parameters of the particles or bonds in a System. Force field parameters are stored in the Force objects added to a System. As an example, let’s load a PDB file and model it using the Amber14 force field.</p>
+    <a href="Changing Temperature and Pressure.ipynb">Download notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/simulation_protocols/Changing Temperature and Pressure.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/simulation_protocols/Changing Temperature and Pressure.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Changing-Temperature-and-Pressure">
+<h1>Changing Temperature and Pressure<a class="headerlink" href="#Changing-Temperature-and-Pressure" title="Permalink to this headline">¶</a></h1>
+<p>Sometimes you want the temperature and/or pressure of a simulation to vary with time. To see how to do this, let’s begin by loading a PDB file and creating a Simulation for it.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -299,61 +300,65 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
 <span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
-<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
+                                 <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>Now suppose we want to retrieve the charge of every particle. These are stored in the NonbondedForce object. We can call <code class="docutils literal notranslate"><span class="pre">getForces()</span></code> to retrieve all forces, then find the one of the correct class.</p>
+<p>When we created the LangevinMiddleIntegrator, we specified the temperature as <code class="docutils literal notranslate"><span class="pre">300*kelvin</span></code>. We are free to change that at any time. Let’s run a short simulation, steadily decreasing the temperature.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nonbonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">NonbondedForce</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+<span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">((</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>Now that we have the NonbondedForce, we can call <code class="docutils literal notranslate"><span class="pre">getParticleParameters()</span></code> to get the nonbonded parameters (charge, sigma, and epsilon) of each particle. Let’s build a list of all the charges.</p>
+<p>Things are a little more complicated when we have a barostat. The Monte Carlo acceptance criterion for the barostat depends on temperature, so we need to tell both the integrator and the barostat about the new temperature.</p>
+<p>Let’s add a barostat to the System. Note the call to <code class="docutils literal notranslate"><span class="pre">reinitialize()</span></code>. Without that, the existing Simulation will not see any changes we make to the System.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">charges</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()):</span>
-    <span class="n">charge</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="n">nonbonded</span><span class="o">.</span><span class="n">getParticleParameters</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    <span class="n">charges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">charge</span><span class="p">)</span>
+<span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">bar</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">))</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">reinitialize</span><span class="p">(</span><span class="n">preserveState</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>You can record the Lennard-Jones parameters (sigma and epsilon) in the same way, but be aware that some force fields compute Van der Waals interactions differently. If you model your system with CHARMM36, for example, you may find that epsilon is 0 for every atom. In that case, it is using a CustomNonbondedForce to implement the Lennard-Jones force.</p>
-<p>You can retrieve bonded parameters in the same way. For example, let’s print out every bond involving particle 0 (the N-terminal nitrogen). This information is stored in the HarmonicBondForce.</p>
-<div class="nbinput docutils container">
+<p>Because the barostat is part of the System, it stores all its state information in the Context. We can change that information with <code class="docutils literal notranslate"><span class="pre">setParameter()</span></code>.</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">HarmonicBondForce</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bonded</span><span class="o">.</span><span class="n">getNumBonds</span><span class="p">()):</span>
-    <span class="n">particle1</span><span class="p">,</span> <span class="n">particle2</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">bonded</span><span class="o">.</span><span class="n">getBondParameters</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">particle1</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">particle2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Particles (</span><span class="si">{</span><span class="n">particle1</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">particle2</span><span class="si">}</span><span class="s1">), length = </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1">, k = </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">temperature</span> <span class="o">=</span> <span class="p">(</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Temperature</span><span class="p">(),</span> <span class="n">temperature</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<p>Setting the pressure works exactly the same way, just with a different parameter.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
 </div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Particles (4, 0), length = 0.1471 nm, k = 307105.5999999999 kJ/(nm**2 mol)
-Particles (1, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
-Particles (2, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
-Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
-</pre></div></div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Pressure</span><span class="p">(),</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">bar</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </section>
 
@@ -365,7 +370,11 @@ Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
     <ul>
         <li>
           &larr;
-          <a href="Analyzing%20Energy%20Contributions.html" title="Previous document">Analyzing Energy Contributions</a>
+          <a href="../../index.html" title="Previous document">The OpenMM Cookbook</a>
+        </li>
+        <li>
+          <a href="Merging%20Molecules.html" title="Next document">Merging Molecules in a Topology</a>
+          &rarr;
         </li>
     </ul>
   </nav>
@@ -406,9 +415,9 @@ Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
 <script>$('#searchbox').show(0);</script><div class="navigation-scrollbox">
     <div class="nav-toctree">
     <p class="caption" role="heading"><span class="caption-text">Simulation protocols</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_protocols/Changing%20Temperature%20and%20Pressure.html">Changing Temperature and Pressure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../simulation_protocols/Merging%20Molecules.html">Merging Molecules in a Topology</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changing Temperature and Pressure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Merging%20Molecules.html">Merging Molecules in a Topology</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Restraints, constraints, and external forces</span></p>
 <ul>
@@ -418,9 +427,9 @@ Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
 <li class="toctree-l1"><a class="reference internal" href="../restraints_constraints_forces/Restraining%20Dihedrals.html">Restraining Dihedrals</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Analysis and system inspection</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Analyzing%20Energy%20Contributions.html">Analyzing Energy Contributions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Querying Charges and Other Parameters</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../analysis_inspection/Analyzing%20Energy%20Contributions.html">Analyzing Energy Contributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysis_inspection/Querying%20Charges%20and%20Other%20Parameters.html">Querying Charges and Other Parameters</a></li>
 </ul>
 
     </div>
@@ -478,7 +487,7 @@ Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="../../_sources/notebooks/analysis_inspection/Querying Charges and Other Parameters.ipynb.txt"
+      <a href="../../_sources/notebooks/simulation_protocols/Changing Temperature and Pressure.ipynb.txt"
           rel="nofollow">Page source</a>
     </div>
 

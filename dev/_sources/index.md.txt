@@ -5,9 +5,9 @@
 :::{nbgallery}
 ---
 glob: True
-caption: System protocols
+caption: Simulation protocols
 ---
-notebooks/system_protocols/*
+notebooks/simulation_protocols/*
 :::
 
 ## Restraints, constraints, and external forces
