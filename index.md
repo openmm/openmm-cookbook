@@ -7,10 +7,12 @@
 maxdepth: 2
 caption: Tutorials
 ---
-tutorials/index.md
+notebooks/tutorials/index.md
 :::
 
-## Simulation protocols
+## Recipes
+
+### Simulation protocols
 
 :::{nbgallery}
 ---
@@ -21,7 +23,7 @@ notebooks/cookbook/Changing Temperature and Pressure
 notebooks/cookbook/Merging Molecules
 :::
 
-## Restraints, constraints, and external forces
+### Restraints, constraints, and external forces
 
 :::{nbgallery}
 ---
@@ -34,7 +36,7 @@ notebooks/cookbook/Restraining Atom Positions
 notebooks/cookbook/Restraining Dihedrals
 :::
 
-## Analysis and system inspection
+### Analysis and system inspection
 
 :::{nbgallery}
 ---
