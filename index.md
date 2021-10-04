@@ -1,5 +1,15 @@
 # The OpenMM Cookbook
 
+## Tutorials
+
+:::{toctree}
+---
+maxdepth: 2
+caption: Tutorials
+---
+tutorials/index.md
+:::
+
 ## Simulation protocols
 
 :::{nbgallery}
