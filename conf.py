@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath("./sphinx"))
 
 # -- Project information -----------------------------------------------------
 
-project = "openmm-cookbook"
+project = "OpenMM Cookbook"
 copyright = "2021, The OpenMM Contributors"
 author = "The OpenMM Contributors"
 
@@ -64,7 +64,7 @@ nbsphinx_prolog = """
 .. raw:: html
 
     <div class="nbsphinx-prolog">
-        <a href="{{ on_local }}">Download notebook</a>
+        <a href="{{ on_local }}">Download Notebook</a>
         <a href="{{ on_github }}">View in GitHub</a>
         <a href="{{ on_colab }}">Open in Google Colab</a>
     </div>
@@ -129,7 +129,7 @@ html_theme_options = {
         },
         {
             "title": "GitHub",
-            "uri": "https://github.com/openmm",
+            "uri": "https://github.com/openmm/openmm",
             "relative": False,
         },
     ],
