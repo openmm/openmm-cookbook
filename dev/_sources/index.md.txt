@@ -1,22 +1,22 @@
 # The OpenMM Cookbook
 
-## Simulation protocols
+## Simulation Protocols
 
 :::{nbgallery}
 ---
 glob: True
-caption: Simulation protocols
+caption: Simulation Protocols
 ---
 notebooks/cookbook/Changing Temperature and Pressure
 notebooks/cookbook/Merging Molecules
 :::
 
-## Restraints, constraints, and external forces
+## Restraints, Constraints, and External Forces
 
 :::{nbgallery}
 ---
 glob: True
-caption: Restraints, constraints, and external forces
+caption: Restraints, Constraints, and External Forces
 ---
 notebooks/cookbook/Applying a Constant External Force
 notebooks/cookbook/Constraining Atom Positions
@@ -24,12 +24,12 @@ notebooks/cookbook/Restraining Atom Positions
 notebooks/cookbook/Restraining Dihedrals
 :::
 
-## Analysis and system inspection
+## Analysis and System Inspection
 
 :::{nbgallery}
 ---
 glob: True
-caption: Analysis and system inspection
+caption: Analysis and System Inspection
 ---
 notebooks/cookbook/Analyzing Energy Contributions
 notebooks/cookbook/Querying Charges and Other Parameters
