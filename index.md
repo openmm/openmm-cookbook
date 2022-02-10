@@ -9,6 +9,7 @@ caption: Simulation Protocols
 ---
 notebooks/cookbook/Changing Temperature and Pressure
 notebooks/cookbook/Merging Molecules
+notebooks/cookbook/Saving Systems to XML Files
 :::
 
 ## Restraints, Constraints, and External Forces
