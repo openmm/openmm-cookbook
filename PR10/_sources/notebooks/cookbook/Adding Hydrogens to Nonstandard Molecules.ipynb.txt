@@ -9,7 +9,7 @@
     "\n",
     "`Modeller.addHydrogens()` can be used to add missing hydrogens to standard molecules, like proteins and nucleic acids.  But what if you need to simulate something it doesn't know about, such as a drug molecule or a non-natural amino acid?  It can also handle this case, but you need to give it some help.\n",
     "\n",
-    "Start by creating an XML file describing the molecule or molecules.  Here is an example of a file defining hydrogens for NLN, a modified ASN residue that is missing a hydrogen and can have a glyan bonded to it.  (This example is taken from the `glycam-hydrogens.xml` file that is bundled with OpenMM.  You would not actually need to define this particular residue yourself.)\n",
+    "Start by creating an XML file describing the molecule or molecules.  Here is an example of a file defining hydrogens for NLN, a modified ASN residue that is missing a hydrogen and can have a glycan bonded to it.  (This example is taken from the `glycam-hydrogens.xml` file that is bundled with OpenMM.  You would not actually need to define this particular residue yourself.)\n",
     "\n",
     "```xml\n",
     "<Residues>\n",
