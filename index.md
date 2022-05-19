@@ -8,8 +8,9 @@ glob: True
 caption: Simulation Protocols
 ---
 notebooks/cookbook/Changing Temperature and Pressure
-notebooks/cookbook/Merging Molecules
 notebooks/cookbook/Saving Systems to XML Files
+notebooks/cookbook/Merging Molecules
+notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules
 :::
 
 ## Restraints, Constraints, and External Forces
