@@ -6,6 +6,7 @@ dependencies:
   - pip
   - sphinx>=4.0.0,<5
   - nbsphinx
+  - nbformat<5.2
   - pytest
   - nbval
   - myst-parser
