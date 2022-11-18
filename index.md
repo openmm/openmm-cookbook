@@ -37,6 +37,21 @@ notebooks/cookbook/Analyzing Energy Contributions
 notebooks/cookbook/Querying Charges and Other Parameters
 :::
 
+## Tutorials
+
+:::{nbgallery}
+---
+glob: True
+caption: Tutorials
+---
+notebooks/tutorials/Alchemical_free_energy_calculations
+notebooks/tutorials/Beta-2-adrenergic receptor_(B2AR)_membrane_protein_simulation_with_CHARMM.ipynb
+notebooks/tutorials/Histone_methyltransferase_simulation_with_multisite_Zn2+_structural_ions.ipynb
+notebooks/tutorials/Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.ipynb
+notebooks/tutorials/HSP90_with_ADP:Mg2+_simulation.ipynb
+:::
+
+
 ----
 
 [Notebooks by Tag](genindex)
