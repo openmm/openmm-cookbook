@@ -1,5 +1,16 @@
 # The OpenMM Cookbook
 
+## Getting Started
+
+:::{nbgallery}
+---
+glob: True
+caption: Getting Started
+---
+notebooks/cookbook/first_simulation.ipynb
+
+:::
+
 ## Simulation Protocols
 
 :::{nbgallery}
