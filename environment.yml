@@ -6,10 +6,11 @@ dependencies:
   - pip
   - sphinx>=4.0.0,<5
   - nbsphinx
+  - nbformat<5.2 #https://github.com/jupyter/nbformat/issues/303
   - pytest
   - nbval
   - myst-parser
-  - sphinx-gallery
+  - sphinx-gallery<0.11 #https://github.com/spatialaudio/nbsphinx/issues/655
   # This should always point to the latest release of OpenMM.
   # If the above dependencies constrain the version of OpenMM
   # to something older than that, they should be updated.

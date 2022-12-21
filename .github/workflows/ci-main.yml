@@ -56,4 +56,4 @@ jobs:
         shell: bash -l {0}
         # --nbval-lax: Only check output when cell is marked
         # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
-        run: pytest -v --nbval-lax notebooks
+        run: pytest -v --nbval-lax notebooks/cookbook

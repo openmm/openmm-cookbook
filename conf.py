@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath("./sphinx"))
 # -- Project information -----------------------------------------------------
 
 project = "OpenMM Cookbook"
-copyright = "2021, The OpenMM Contributors"
+copyright = "2022, The OpenMM Contributors"
 author = "The OpenMM Contributors"
 
 

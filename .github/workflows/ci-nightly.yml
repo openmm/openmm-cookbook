@@ -120,4 +120,4 @@ jobs:
         # https://nbval.readthedocs.io/en/latest/#Using-tags-instead-of-comments
         run: |
           cd openmm-cookbook
-          pytest -v --nbval-lax notebooks
+          pytest -v --nbval-lax notebooks/cookbook
