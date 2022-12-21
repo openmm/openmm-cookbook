@@ -1,5 +1,16 @@
 # The OpenMM Cookbook
 
+## Getting Started
+
+:::{nbgallery}
+---
+glob: True
+caption: Getting Started
+---
+notebooks/cookbook/first_simulation.ipynb
+
+:::
+
 ## Simulation Protocols
 
 :::{nbgallery}
@@ -36,6 +47,16 @@ caption: Analysis and System Inspection
 notebooks/cookbook/Analyzing Energy Contributions
 notebooks/cookbook/Querying Charges and Other Parameters
 :::
+
+## Tutorials
+
+:::{nbgallery}
+---
+glob: True
+caption: Tutorials
+---
+:::
+
 
 ----
 

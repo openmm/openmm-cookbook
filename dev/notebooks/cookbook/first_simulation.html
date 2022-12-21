@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Changing Temperature and Pressure &#8212; OpenMM Cookbook  documentation</title>
+    <title>First Simulation &#8212; OpenMM Cookbook  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -20,8 +20,8 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Saving Systems to XML Files" href="Saving%20Systems%20to%20XML%20Files.html" />
-    <link rel="prev" title="First Simulation" href="first_simulation.html" />
+    <link rel="next" title="Changing Temperature and Pressure" href="Changing%20Temperature%20and%20Pressure.html" />
+    <link rel="prev" title="The OpenMM Cookbook" href="../../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -296,73 +296,79 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <div class="nbsphinx-prolog">
-    <a href="Changing Temperature and Pressure.ipynb">Download Notebook</a>
-    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/Changing Temperature and Pressure.ipynb">View in GitHub</a>
-    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/cookbook/Changing Temperature and Pressure.ipynb">Open in Google Colab</a>
-</div><span class="target" id="index-0"></span><section id="Changing-Temperature-and-Pressure">
-<h1>Changing Temperature and Pressure<a class="headerlink" href="#Changing-Temperature-and-Pressure" title="Permalink to this headline">¶</a></h1>
-<p>Sometimes you want the temperature and/or pressure of a simulation to vary with time. To see how to do this, let’s begin by loading a PDB file and creating a Simulation for it.</p>
-<div class="nbinput nblast docutils container">
+    <a href="first_simulation.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/first_simulation.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/cookbook/first_simulation.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="First-Simulation">
+<h1>First Simulation<a class="headerlink" href="#First-Simulation" title="Permalink to this headline">¶</a></h1>
+<p>This is a good starting point for learning how to use OpenMM.</p>
+<p>It loads a PDB file <code class="docutils literal notranslate"><span class="pre">villin.pdb</span></code>, which is the <a class="reference external" href="https://en.wikipedia.org/wiki/Villin-1">villin headpiece protein</a> in a box of water. In then parameterizes it using the Amber14 forcefield and TIP3P-FB water model, energy minimizes it, and simulates it for 1000 steps with a langevin intergator.</p>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
 
+<span class="c1"># Load in the PDB strucure</span>
 <span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
+
+<span class="c1"># Specifiy the forcefield</span>
 <span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># Combine the molecular topology and the forcefield</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
-                                 <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+        <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+
+<span class="c1"># Create the integrator to use for advacing the equations of motion.</span>
+<span class="c1"># It specifies a Langevin integrator.</span>
+<span class="c1"># The paramters set are temperature, friction coefficient, and timestep.</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+
+<span class="c1"># Combines the molecular topology, system, and integrator</span>
+<span class="c1"># to begin a new simulation.</span>
 <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+<span class="c1"># Perform local energy minimization</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Minimizing energy...&quot;</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">(</span><span class="n">maxIterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="c1"># Write the trajectory to a file called &quot;output.pdb&quot;</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PDBReporter</span><span class="p">(</span><span class="s1">&#39;output.pdb&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">))</span>
+
+<span class="c1"># Report infomation to the screen as the simulation runs</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+<span class="c1">#Run the simulation for 1000 timsteps</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running simulation...&quot;</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>When we created the LangevinMiddleIntegrator, we specified the temperature as <code class="docutils literal notranslate"><span class="pre">300*kelvin</span></code>. We are free to change that at any time. Let’s run a short simulation, steadily decreasing the temperature.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">((</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span><span class="p">)</span>
-    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Things are a little more complicated when we have a barostat. The Monte Carlo acceptance criterion for the barostat depends on temperature, so we need to tell both the integrator and the barostat about the new temperature.</p>
-<p>Let’s add a barostat to the System. Note the call to <code class="docutils literal notranslate"><span class="pre">reinitialize()</span></code>. Without that, the existing Simulation will not see any changes we make to the System.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">bar</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">))</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">reinitialize</span><span class="p">(</span><span class="n">preserveState</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Because the barostat is part of the System, it stores all its state information in the Context. We can change that information with <code class="docutils literal notranslate"><span class="pre">setParameter()</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-    <span class="n">temperature</span> <span class="o">=</span> <span class="p">(</span><span class="mi">300</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">kelvin</span>
-    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Temperature</span><span class="p">(),</span> <span class="n">temperature</span><span class="p">)</span>
-    <span class="n">integrator</span><span class="o">.</span><span class="n">setTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
-    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Setting the pressure works exactly the same way, just with a different parameter.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">MonteCarloBarostat</span><span class="o">.</span><span class="n">Pressure</span><span class="p">(),</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">bar</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Minimizing energy...
+Running simulation...
+#&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;
+100,-156819.27347843637,119.53226900590879
+200,-152473.06741258316,182.40853126361296
+300,-149520.4943396272,224.00972076249786
+400,-147323.9957255018,242.48970472544195
+500,-146035.25835436443,262.6300336082356
+600,-144887.5137412745,277.1412112177225
+700,-144148.3223111994,286.91701511206605
+800,-143192.9713082741,288.6402600378778
+900,-142500.02042386515,289.6982272689525
+1000,-142457.8671692251,295.2031911237651
+</pre></div></div>
 </div>
 </section>
 
@@ -374,10 +380,10 @@ div.rendered_html tbody tr:hover {
     <ul>
         <li>
           &larr;
-          <a href="first_simulation.html" title="Previous document">First Simulation</a>
+          <a href="../../index.html" title="Previous document">The OpenMM Cookbook</a>
         </li>
         <li>
-          <a href="Saving%20Systems%20to%20XML%20Files.html" title="Next document">Saving Systems to XML Files</a>
+          <a href="Changing%20Temperature%20and%20Pressure.html" title="Next document">Changing Temperature and Pressure</a>
           &rarr;
         </li>
     </ul>
@@ -419,12 +425,12 @@ div.rendered_html tbody tr:hover {
 <script>$('#searchbox').show(0);</script><div class="navigation-scrollbox">
     <div class="nav-toctree">
     <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="first_simulation.html">First Simulation</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">First Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Simulation Protocols</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Changing Temperature and Pressure</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Changing%20Temperature%20and%20Pressure.html">Changing Temperature and Pressure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Saving%20Systems%20to%20XML%20Files.html">Saving Systems to XML Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Merging%20Molecules.html">Merging Molecules in a Topology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Adding%20Hydrogens%20to%20Nonstandard%20Molecules.html">Adding Hydrogens to Nonstandard Molecules</a></li>
@@ -497,7 +503,7 @@ div.rendered_html tbody tr:hover {
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="../../_sources/notebooks/cookbook/Changing Temperature and Pressure.ipynb.txt"
+      <a href="../../_sources/notebooks/cookbook/first_simulation.ipynb.txt"
           rel="nofollow">Page source</a>
     </div>
 
