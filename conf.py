@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.abspath("./sphinx"))
 project = "OpenMM Cookbook"
 copyright = "2022, The OpenMM Contributors"
 author = "The OpenMM Contributors"
-releasepath = os.getenv("PAGES_DEPLOY_PATH","dev")
+release = os.getenv("PAGES_DEPLOY_PATH","dev")
+print(release)
 
 
 # -- General configuration ---------------------------------------------------
@@ -57,12 +58,12 @@ cookbook_required_files_base_uri = (
 
 # Add links to top of each notebook
 nbsphinx_prolog = """
-{%- set releasepath = env.config.releasepath %}
+{%- set colabpath = env.config.release -%}
 {%- set docname = env.doc2path(env.docname, base=False) -%}
 {%- set github = "openmm/openmm-cookbook" -%}
 {%- set on_local = docname.split('/') | last -%}
 {%- set on_github = "https://github.com/" ~ github ~ "/blob/main/" ~ docname -%}
-{%- set on_colab = "https://colab.research.google.com/github/" ~ github ~ "/blob/gh-pages/" ~ releasepath ~ "/colab/" ~ docname -%}
+{%- set on_colab = "https://colab.research.google.com/github/" ~ github ~ "/blob/gh-pages/" ~ colabpath ~ "/colab/" ~ docname -%}
 .. raw:: html
 
     <div class="nbsphinx-prolog">
