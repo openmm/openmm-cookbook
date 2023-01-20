@@ -1,0 +1,68 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "22a65e7e",
+   "metadata": {},
+   "source": [
+    "## Adding Hydrogens to Nonstandard Molecules\n",
+    "\n",
+    "`Modeller.addHydrogens()` can be used to add missing hydrogens to standard molecules, like proteins and nucleic acids.  But what if you need to simulate something it doesn't know about, such as a drug molecule or a non-natural amino acid?  It can also handle this case, but you need to give it some help.\n",
+    "\n",
+    "Start by creating an XML file describing the molecule or molecules.  Here is an example of a file defining hydrogens for NLN, a modified ASN residue that is missing a hydrogen and can have a glycan bonded to it.  (This example is taken from the `glycam-hydrogens.xml` file that is bundled with OpenMM.  You would not actually need to define this particular residue yourself.)\n",
+    "\n",
+    "```xml\n",
+    "<Residues>\n",
+    "  <Residue name=\"NLN\">\n",
+    "    <H name=\"H\" parent=\"N\" terminal=\"-C\"/>\n",
+    "    <H name=\"H1\" parent=\"N\" terminal=\"N\"/>\n",
+    "    <H name=\"H2\" parent=\"N\" terminal=\"N\"/>\n",
+    "    <H name=\"H3\" parent=\"N\" terminal=\"N\"/>\n",
+    "    <H name=\"HA\" parent=\"CA\"/>\n",
+    "    <H name=\"HB2\" parent=\"CB\"/>\n",
+    "    <H name=\"HB3\" parent=\"CB\"/>\n",
+    "    <H name=\"HD21\" parent=\"ND2\"/>\n",
+    "  </Residue>\n",
+    "</Residues>\n",
+    "```\n",
+    "\n",
+    "Here are the important things to note about the file.\n",
+    "\n",
+    "- There is one `<Residue>` tag for every residue you want to define.\n",
+    "- It contains one `<H>` tag for every hydrogen that can appear in the residue.\n",
+    "- `parent` is the name of the heavy atom the hydrogen is bonded to.\n",
+    "- All atom and residue names must exactly match the names present in your Topology.\n",
+    "- The optional `terminal` attribute indicates hydrogens that might or might not be present, depending on the residue's position in the chain.  It should contain one or more of the characters \"N\", \"C\", and \"-\".  \"N\" indicates the hydrogen should be added to N-terminal residues.  \"C\" indicates it should be added to C-terminal ones.  \"-\" indicates it should be added to residues that are not at either end of the chain.\n",
+    "\n",
+    "Once you have created your file, you need to tell Modeller about it.  Do this by invoking the static method\n",
+    "\n",
+    "```python\n",
+    "Modeller.loadHydrogenDefinitions('MyHydrogens.xml')\n",
+    "```\n",
+    "\n",
+    "Once you call it, all subsequent calls to `addHydrogens()` will know about the new residues you defined and be able to add hydrogens to them."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
