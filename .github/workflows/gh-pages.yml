@@ -43,6 +43,19 @@ jobs:
           pwd
           ls
           conda list
+
+      - name: set dev path
+        run: |
+          echo "PAGES_DEPLOY_PATH=dev" >> $GITHUB_ENV
+        if: github.event_name == 'push'
+      - name: set PR path
+        run: |
+          echo "PAGES_DEPLOY_PATH=PR${{ github.event.number }}" >> $GITHUB_ENV
+        if: github.event_name == 'pull_request'
+      - name: set release path
+        run: |
+         echo "PAGES_DEPLOY_PATH=${GITHUB_REF}" >> $GITHUB_ENV
+        if: github.event_name == 'release'
       - name: Build Sphinx documentation
         run: |
           make html
@@ -74,9 +87,10 @@ jobs:
           PR: ${{ github.event.number }}
         run: |
           rm -rf deploy/${GITHUB_REF}
-          mv build/html deploy/${GITHUB_REF}
-          rm deploy/latest
-          ln -s deploy/${GITHUB_REF} deploy/latest
+          mkdir -p deploy/${GITHUB_REF}
+          mv -T build/html deploy/${GITHUB_REF}
+          rm -rf deploy/latest
+          ln -s ${GITHUB_REF} deploy/latest
       - name: Deploy to GitHub Pages
         if: success()
         uses: crazy-max/ghaction-github-pages@v2
