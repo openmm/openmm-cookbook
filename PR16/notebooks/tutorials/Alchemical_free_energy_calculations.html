@@ -302,7 +302,7 @@ div.rendered_html tbody tr:hover {
 </div><span class="target" id="index-0"></span><section id="Alchemical-free-energy-calculations">
 <h1>Alchemical free energy calculations<a class="headerlink" href="#Alchemical-free-energy-calculations" title="Permalink to this headline">¶</a></h1>
 <p><em>Computing the free energy of inserting a Lennard-Jones particle in a Lennard-Jones fluid.</em></p>
-<p>This tutorial is described in <a class="reference external" href="http://dx.doi.org/10.1371/journal.pcbi.1005659">OpenMM 7</a> publication.</p>
+<p>This tutorial is described in <a class="reference external" href="http://dx.doi.org/10.1371/journal.pcbi.1005659">OpenMM 7 publication</a>.</p>
 <section id="Basic-concept">
 <h2>Basic concept<a class="headerlink" href="#Basic-concept" title="Permalink to this headline">¶</a></h2>
 <p>OpenMM’s custom forces—which allow the programmer to express a potential algebraically, potentially with multiple parameters that can be adjusted on the fly—allow a great deal of flexibility and simplicity in encoding potentials while still achieving high performance on GPUs. One common use of this facility is to convert standard interactions (such as Lennard-Jones potentials) into alchemically-modified potentials for the purposes of computing free energy differences. The alchemical free energy
@@ -317,32 +317,41 @@ code <a class="reference external" href="http://github.com/choderalab/yank">YANK
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># openmmtools is also needed for this notebook</span>
 <span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools
-
-<span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmmtools.testsystems</span> <span class="kn">import</span> <span class="n">LennardJonesFluid</span>
 
 
-<span class="c1"># Create a Lennard-Jones fluid</span>
+<span class="c1"># Simulation settings</span>
 <span class="n">pressure</span> <span class="o">=</span> <span class="mi">80</span><span class="o">*</span><span class="n">atmospheres</span>
 <span class="n">temperature</span> <span class="o">=</span> <span class="mi">120</span><span class="o">*</span><span class="n">kelvin</span>
 <span class="n">collision_rate</span> <span class="o">=</span> <span class="mi">5</span><span class="o">/</span><span class="n">picoseconds</span>
 <span class="n">timestep</span> <span class="o">=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">femtoseconds</span>
 
 
-<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.4</span><span class="o">*</span><span class="n">angstrom</span><span class="p">;</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.238</span> <span class="o">*</span> <span class="n">kilocalories_per_mole</span>
+<span class="c1"># Create a Lennard Jones test fluid</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.4</span><span class="o">*</span><span class="n">angstrom</span>
+<span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.238</span> <span class="o">*</span> <span class="n">kilocalories_per_mole</span>
 <span class="n">fluid</span> <span class="o">=</span> <span class="n">LennardJonesFluid</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">)</span>
-<span class="p">[</span><span class="n">system</span><span class="p">,</span> <span class="n">positions</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">fluid</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="n">fluid</span><span class="o">.</span><span class="n">positions</span><span class="p">]</span>
+<span class="p">[</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">positions</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">fluid</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">fluid</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="n">fluid</span><span class="o">.</span><span class="n">positions</span><span class="p">]</span>
 
 <span class="c1"># Add a barostat</span>
 <span class="n">barostat</span> <span class="o">=</span> <span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="n">pressure</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">barostat</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
-<p>To allow one of the Lennard-Jones particles to be alchemically eliminated, we create a CustomNonbondedForce that will compute the interactions between the alchemical particle and the remaining chemical particles using a softcore potential. The alchemically-modified particle has its Lennard-Jones well depth (epsilon parameter) set to zero in the original NonbondedForce, while the CustomNonbondedForce is set to evaluate only the interactions between the alchemically-modified particle and the
-remaining particles using addInteractionGroup() to specify only interactions between these groups are to be computed. A global context parameter lambda is created to control the coupling of the alchemically-modified particle with the rest of the system during the simulation. The Lennard-Jones parameters sigma and epsilon are implemented as per-particle parameters, though this is not strictly necessary in this case since all particles are equivalent.</p>
+<p>To allow one of the Lennard-Jones particles to be alchemically eliminated, we create a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html">CustomNonbondedForce</a> that will compute the interactions between the alchemical particle and the remaining chemical particles using a softcore potential. The alchemically-modified particle has its Lennard-Jones well depth (epsilon parameter) set to zero in the original NonbondedForce, while the
+<code class="docutils literal notranslate"><span class="pre">CustomNonbondedForce</span></code> is set to evaluate only the interactions between the alchemically-modified particle and the remaining particles using <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html#openmm.openmm.CustomNonbondedForce.addInteractionGroup">addInteractionGroup()</a> to specify only interactions between these groups are to be computed. A global context parameter lambda is created to control the coupling of the alchemically-modified particle with
+the rest of the system during the simulation. The Lennard-Jones parameters sigma and epsilon are implemented as per-particle parameters, though this is not strictly necessary in this case since all particles are equivalent.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -352,50 +361,68 @@ remaining particles using addInteractionGroup() to specify only interactions bet
 <span class="n">nbforce</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[</span><span class="s1">&#39;NonbondedForce&#39;</span><span class="p">]</span>
 
 <span class="c1"># Add a CustomNonbondedForce to handle only alchemically-modified interactions</span>
+
+<span class="c1"># Make two sets of particles, one that contains just the particle we will alchemically annihilate</span>
+<span class="c1"># and the other which contains all the other particles.</span>
 <span class="n">alchemical_particles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">chemical_particles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()))</span> <span class="o">-</span> <span class="n">alchemical_particles</span>
+
+
+<span class="c1"># Define the energy function for the CustomNonbondedForce</span>
+<span class="c1"># when lambda is 1.0 it is a normal LJ potential, when lambda is 0.0 the interaction vanishes</span>
 <span class="n">energy_function</span> <span class="o">=</span> <span class="s1">&#39;lambda*4*epsilon*x*(x-1.0); x = (sigma/reff_sterics)^6;&#39;</span>
 <span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">&#39;reff_sterics = sigma*(0.5*(1.0-lambda) + (r/sigma)^6)^(1/6);&#39;</span>
 <span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">&#39;sigma = 0.5*(sigma1+sigma2); epsilon = sqrt(epsilon1*epsilon2);&#39;</span>
 <span class="n">custom_force</span> <span class="o">=</span> <span class="n">CustomNonbondedForce</span><span class="p">(</span><span class="n">energy_function</span><span class="p">)</span>
+
+<span class="c1"># Add lambda as a parameter we can change during the simulation</span>
 <span class="n">custom_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="c1"># set the values of sigma and epsilon by copying them from the existing NonBondedForce</span>
 <span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
 <span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;epsilon&#39;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()):</span>
     <span class="p">[</span><span class="n">charge</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">]</span> <span class="o">=</span> <span class="n">nbforce</span><span class="o">.</span><span class="n">getParticleParameters</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
     <span class="n">custom_force</span><span class="o">.</span><span class="n">addParticle</span><span class="p">([</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">alchemical_particles</span><span class="p">:</span>
+        <span class="c1"># remove the alchemical particle from the existing NonBondedForce</span>
         <span class="n">nbforce</span><span class="o">.</span><span class="n">setParticleParameters</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">charge</span><span class="o">*</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">*</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Set the custom force to occur between just the alchemical particle and the other particles</span>
 <span class="n">custom_force</span><span class="o">.</span><span class="n">addInteractionGroup</span><span class="p">(</span><span class="n">alchemical_particles</span><span class="p">,</span> <span class="n">chemical_particles</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">custom_force</span><span class="p">)</span>
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 </section>
 <section id="Simulating-alchemically-modified-systems">
 <h2>Simulating alchemically-modified systems<a class="headerlink" href="#Simulating-alchemically-modified-systems" title="Permalink to this headline">¶</a></h2>
-<p>We then create a LangevinIntegrator and Context to run the simulation, and run a series of simulations at different values of lambda by using context.setParameter() to update the alchemical parameter on the fly. For each configuration sample that is collected, we can easily scan through the energy at different lambda values by simply alternating between context.setParameter() to update lambda and context.getState() to retrieve potential energies at the new alchemical state.</p>
+<p>We then create a <code class="docutils literal notranslate"><span class="pre">LangevinIntegrator</span></code> and <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> to run the simulation, and run a series of simulations at different values of lambda by using <code class="docutils literal notranslate"><span class="pre">simulation.context.setParameter()</span></code> to update the alchemical parameter on the fly. For each configuration sample that is collected, we can easily scan through the energy at different lambda values by simply alternating between <code class="docutils literal notranslate"><span class="pre">simulation.context.setParameter()</span></code> to update lambda and <code class="docutils literal notranslate"><span class="pre">simulation.context.getState()</span></code> to retrieve potential
+energies at the new alchemical state.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a context</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create an integrator</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">collision_rate</span><span class="p">,</span> <span class="n">timestep</span><span class="p">)</span>
-<span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
-<span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+
+<span class="c1"># Create a simulation</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
 
 <span class="c1"># Minimize energy</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Minimizing energy...&#39;</span><span class="p">)</span>
-<span class="n">LocalEnergyMinimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="c1">#LocalEnergyMinimizer.minimize(context)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
+
 
 <span class="c1"># Collect data</span>
 
 <span class="c1"># number of steps per sample</span>
-<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">2500</span>
 
 <span class="c1"># number of samples to collect per alchemical state</span>
 <span class="n">niterations</span> <span class="o">=</span> <span class="mi">50</span>
-
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="c1"># alchemical lambda schedule</span>
@@ -406,14 +433,14 @@ remaining particles using addInteractionGroup() to specify only interactions bet
     <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niterations</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;state </span><span class="si">%5d</span><span class="s1"> iteration </span><span class="si">%5d</span><span class="s1"> / </span><span class="si">%5d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">niterations</span><span class="p">))</span>
         <span class="c1"># Set alchemical state</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
         <span class="c1"># Run some dynamics</span>
-        <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)</span>
+        <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)</span>
         <span class="c1"># Compute energies at all alchemical states</span>
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
-            <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">iteration</span><span class="p">]</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getPotentialEnergy</span><span class="p">()</span> <span class="o">/</span> <span class="n">kT</span>
-</pre></div>
+            <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
+            <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">iteration</span><span class="p">]</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getPotentialEnergy</span><span class="p">()</span> <span class="o">/</span> <span class="n">kT</span>
+<br/><br/></pre></div>
 </div>
 </div>
 </section>
@@ -428,7 +455,7 @@ remaining particles using addInteractionGroup() to specify only interactions bet
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># Estimate free energy of Lennard-Jones particle insertion</span>
 <span class="kn">from</span> <span class="nn">pymbar</span> <span class="kn">import</span> <span class="n">MBAR</span><span class="p">,</span> <span class="n">timeseries</span>
 
-<span class="c1"># Subsample data to extract uncorrelated equilibrium timeseries</span>
+<span class="c1">## Subsample data to extract uncorrelated equilibrium timeseries</span>
 <span class="n">N_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nstates</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="c1"># number of uncorrelated samples</span>
 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
     <span class="p">[</span><span class="n">nequil</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">Neff_max</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">detectEquilibration</span><span class="p">(</span><span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,:])</span>
@@ -441,8 +468,10 @@ remaining particles using addInteractionGroup() to specify only interactions bet
 
 <span class="c1"># dont compute uncertainties here, if you do it may fail with an error for</span>
 <span class="c1"># pymbar versions &gt; 3.0.3. See this issue: https://github.com/choderalab/pymbar/issues/419</span>
-<span class="p">[</span> <span class="n">DeltaF_ij</span> <span class="p">]</span><span class="o">=</span> <span class="n">mbar</span><span class="o">.</span><span class="n">getFreeEnergyDifferences</span><span class="p">(</span><span class="n">compute_uncertainty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<br/><br/></pre></div>
+<span class="p">[</span><span class="n">DeltaF_ij</span><span class="p">]</span> <span class="o">=</span> <span class="n">mbar</span><span class="o">.</span><span class="n">getFreeEnergyDifferences</span><span class="p">(</span><span class="n">compute_uncertainty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Free energy change to insert a particle = &quot;</span><span class="p">,</span><span class="n">DeltaF_ij</span><span class="p">[</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
 </div>
 </div>
 </section>
