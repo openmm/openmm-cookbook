@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath("./sphinx"))
 
 # -- Project information -----------------------------------------------------
 
-project = "OpenMM Cookbook"
-copyright = "2022, The OpenMM Contributors"
+project = "OpenMM Cookbook & Tutorials"
+copyright = "2023, The OpenMM Contributors"
 author = "The OpenMM Contributors"
 release = os.getenv("PAGES_DEPLOY_PATH","dev")
 print(release)
