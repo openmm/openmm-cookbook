@@ -1,0 +1,56 @@
+conda-forge/osx-64                                          Using cache
+conda-forge/noarch                                          Using cache
+Transaction
+
+  Prefix: /Users/wangy1/miniconda3/envs/openmm
+
+  Updating specs:
+
+   - packaging
+   - numpy
+   - smirnoff99frosst
+   - openff-forcefields
+   - openff-units
+   - openff-utilities
+   - networkx
+   - xmltodict
+   - importlib-metadata
+   - python-constraint
+   - cachetools
+   - cached-property
+   - typing_extensions
+   - ca-certificates
+   - openssl
+
+
+  Package                  Version  Build         Channel                  Size
+─────────────────────────────────────────────────────────────────────────────────
+  Install:
+─────────────────────────────────────────────────────────────────────────────────
+
+  + cached-property          1.5.2  hd8ed1ab_1    conda-forge/noarch     Cached
+  + cached_property          1.5.2  pyha770c72_1  conda-forge/noarch     Cached
+  + cachetools               5.3.0  pyhd8ed1ab_0  conda-forge/noarch       14kB
+  + importlib-metadata       6.5.0  pyha770c72_0  conda-forge/noarch       26kB
+  + importlib_resources     5.12.0  pyhd8ed1ab_0  conda-forge/noarch       31kB
+  + networkx                   3.1  pyhd8ed1ab_0  conda-forge/noarch        1MB
+  + openff-forcefields   2023.04.1  pyh1a96a4e_0  conda-forge/noarch       75kB
+  + openff-units             0.2.0  pyh1a96a4e_0  conda-forge/noarch     Cached
+  + openff-utilities         0.1.8  pyh1a96a4e_0  conda-forge/noarch       14kB
+  + packaging                 23.1  pyhd8ed1ab_0  conda-forge/noarch       46kB
+  + pint                    0.20.1  pyhd8ed1ab_0  conda-forge/noarch     Cached
+  + python-constraint        1.4.0  py_0          conda-forge/noarch     Cached
+  + smirnoff99frosst         1.1.0  pyh44b312d_0  conda-forge/noarch     Cached
+  + typing_extensions        4.5.0  pyha770c72_0  conda-forge/noarch       31kB
+  + xmltodict               0.13.0  pyhd8ed1ab_0  conda-forge/noarch     Cached
+  + zipp                    3.15.0  pyhd8ed1ab_0  conda-forge/noarch       17kB
+
+  Summary:
+
+  Install: 16 packages
+
+  Total download: 2MB
+
+─────────────────────────────────────────────────────────────────────────────────
+
+Confirm changes: [Y/n] 
