@@ -22,6 +22,7 @@ notebooks/cookbook/Changing Temperature and Pressure
 notebooks/cookbook/Saving Systems to XML Files
 notebooks/cookbook/Merging Molecules
 notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules
+notebooks/cookbook/Enhanced sampling approaches
 :::
 
 ## Restraints, Constraints, and External Forces
