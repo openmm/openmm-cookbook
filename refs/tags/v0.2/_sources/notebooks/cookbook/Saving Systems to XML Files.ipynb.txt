@@ -1,0 +1,110 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "425832dd",
+   "metadata": {},
+   "source": [
+    "## Saving Systems to XML Files\n",
+    "\n",
+    "The XMLSerializer class can be used to save many kinds of objects to XML files: Systems, Integrators, States, and Forces.  Saving and loading State objects is most easily done by calling `saveState()` and `loadState()` on the Simulation.  For other objects, you need to invoke XMLSerializer directly.\n",
+    "\n",
+    "Here are some reasons you might want to save a System to a file.\n",
+    "\n",
+    "- Creating it with a class such as ForceField or CharmmPsfFile might be slow.  If you plan to run many simulations of the same System, writing it to a file and reloading it for future simulations will save time.\n",
+    "- Saving it to a file helps reproducibility.  It preserves a record of exactly what you simulated.  Otherwise, you might forget what arguments you passed to `createSystem()` and be unsure how to reproduce your earlier work.\n",
+    "- It can be used to communicate the exact system description.  You might have one script that builds the System and a different one that simulates it.  Or one person might be responsible for building it and a different person responsible for running the simulation.\n",
+    "- You can use Python tools like ForceField to build the System, then load it into a simulation code written in C++.\n",
+    "\n",
+    "Let's start by creating a System."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "2c70bd0f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm.app import *\n",
+    "from openmm import *\n",
+    "\n",
+    "pdb = PDBFile('ala_ala_ala.pdb')\n",
+    "forcefield = ForceField('amber14-all.xml')\n",
+    "system = forcefield.createSystem(pdb.topology)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5cc96bcb",
+   "metadata": {},
+   "source": [
+    "The following lines save it to a file on disk."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "a93baea5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "with open('system.xml', 'w') as output:\n",
+    "    output.write(XmlSerializer.serialize(system))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f0546df7",
+   "metadata": {},
+   "source": [
+    "Reloading the file and creating a new System is just as easy."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "4191151b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "with open('system.xml') as input:\n",
+    "    system2 = XmlSerializer.deserialize(input.read())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8df7c10f",
+   "metadata": {},
+   "source": [
+    "Loading a serialized System in C++ is very similar:\n",
+    "\n",
+    "```c++\n",
+    "ifstream input(\"system.xml\");\n",
+    "System* system = XmlSerializer::deserialize<System>(input);\n",
+    "```"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
