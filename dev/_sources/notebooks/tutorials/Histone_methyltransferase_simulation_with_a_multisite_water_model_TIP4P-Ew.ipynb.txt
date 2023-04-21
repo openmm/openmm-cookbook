@@ -1,0 +1,308 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "6b971986",
+   "metadata": {},
+   "source": [
+    "## Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)\n",
+    "\n",
+    "*Simulating a protein with a multisite water model.*\n",
+    "\n",
+    "This tutorial is described in [OpenMM 7](http://dx.doi.org/10.1371/journal.pcbi.1005659) publication.\n",
+    "\n",
+    "### Files\n",
+    "\n",
+    "- All input files can be found in [hkmt_tip4pew.zip](https://openmm.org/tutorials_/hkmt_tip4pew/files/hkmt_tip4pew.zip)\n",
+    "\n",
+    "### Introduction\n",
+    "\n",
+    "OpenMM includes a selection of [water models](https://en.wikipedia.org/wiki/Water_model), such as [TIP3P](http://www.sklogwiki.org/SklogWiki/index.php/TIP3P_model_of_water), [TIP4P-Ew](http://www.sklogwiki.org/SklogWiki/index.php/TIP4P-Ew_model_of_water), and [TIP5P](http://www.sklogwiki.org/SklogWiki/index.php/TIP5P_model_of_water). The use of the latter two is facilitated by OpenMM's support for Extra Particles---particles that are not ordinary atoms, such as the virtual sites in these water models, dummy atoms in multisite metal ion models, etc. This example illustrates the use of OpenMM's modeling and simulation pipelines to study the behavior of a water channel crucial to reactivity in the histone methyltransferase SET7/9 (Uniprot: [Q8WTS6](http://www.uniprot.org/uniprot/Q8WTS6)) after removal of ligands from the tertiary complex, using 3 different water models.\n",
+    "\n",
+    "\n",
+    "### Cleaning up the protein with pdbfixer\n",
+    "\n",
+    "We begin from the [1O9S PDB file](http://www.rcsb.org/pdb/explore.do?structureId=1o9s), remove unwanted chains (reduce the dimer to a monomer, remove ligands), add missing residues (only those in the middle of the chain) and missing heavy atoms using [PDBFixer](https://github.com/openmm/pdbfixer). We preserve all crystallographic waters because of the water channel we are interested in.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3ad9eeec",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Download and unzip the inputfiles\n",
+    "!wget https://openmm.org/tutorials_/hkmt_tip4pew/files/hkmt_tip4pew.zip\n",
+    "!unzip -o hkmt_tip4pew.zip"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f71a1767",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from pdbfixer import PDBFixer\n",
+    "from openmm.app import PDBFile\n",
+    "\n",
+    "fixer = PDBFixer('pdb1o9s.ent')\n",
+    "fixer.removeChains([1,2,3,4,5,7,9])\n",
+    "fixer.findMissingResidues()\n",
+    "\n",
+    "# only add missing residues in the middle of the chain, do not add terminal ones\n",
+    "chains = list(fixer.topology.chains())\n",
+    "keys = fixer.missingResidues.keys()\n",
+    "missingResidues = dict()\n",
+    "for key in keys:\n",
+    "    chain = chains[key[0]]\n",
+    "    if not (key[1] == 0 or key[1] == len(list(chain.residues()))):\n",
+    "        missingResidues[key] = fixer.missingResidues[key]\n",
+    "fixer.missingResidues = missingResidues\n",
+    "\n",
+    "fixer.findMissingAtoms()\n",
+    "fixer.addMissingAtoms()\n",
+    "\n",
+    "PDBFile.writeFile(fixer.topology, fixer.positions, open('1o9s_fixed.pdb', 'w'))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f7d01388",
+   "metadata": {},
+   "source": [
+    "We load in the resulting PDB file and add hydrogens and solvent using the OpenMM's `app.Modeller`. We will use the following water models: TIP3P, TIP4P-ew, and TIP5P. For the latter two an additional step - addition of the water extra particles to the crystallographic waters - is performed. We use the `amber99sbildn` forcefield - the `ForceField` object is created by passing the appropriate XML files. The `System` is created by calling the `createSystem` method on the `ForceField` object. Next, the `LangevinIntegrator` and the `Simulation` are set up, using the topology and positions from the `Modeller` object. The simulation is energy minimized and equilibrated for 100 steps. Reporters are attached and the production simulation propagated for 50 ns."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ded8dc31",
+   "metadata": {},
+   "source": [
+    "### Solvating and simulating with TIP3P\n",
+    "If we want to use TIP3P, setup is straightforward:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3113e6f4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "from openmm import app\n",
+    "import openmm as mm\n",
+    "from openmm import unit\n",
+    "from sys import stdout\n",
+    "\n",
+    "# load in input PDB file and force field XML files\n",
+    "pdb = app.PDBFile('1o9s_fixed.pdb')\n",
+    "forcefield = app.ForceField('amber99sbildn.xml', 'tip3p.xml')\n",
+    "\n",
+    "# use app.Modeller to add hydrogens and solvent\n",
+    "modeller = app.Modeller(pdb.topology, pdb.positions)\n",
+    "modeller.addHydrogens(forcefield)\n",
+    "modeller.addSolvent(forcefield, model='tip3p', padding=1.0*unit.nanometers)\n",
+    "app.PDBFile.writeFile(modeller.topology, modeller.positions, open('1o9s_modeller_tip3p.pdb', 'w'))\n",
+    "\n",
+    "# prepare system and integrator\n",
+    "system = forcefield.createSystem(modeller.topology, nonbondedMethod=app.PME,\n",
+    "    nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True,\n",
+    "    ewaldErrorTolerance=0.0005)\n",
+    "integrator = mm.LangevinIntegrator(300*unit.kelvin, 1.0/unit.picoseconds,\n",
+    "    2.0*unit.femtoseconds)\n",
+    "integrator.setConstraintTolerance(0.00001)\n",
+    "\n",
+    "# prepare simulation\n",
+    "simulation = app.Simulation(modeller.topology, system, integrator)\n",
+    "simulation.context.setPositions(modeller.positions)\n",
+    "\n",
+    "# minimize\n",
+    "print('Minimizing...')\n",
+    "simulation.minimizeEnergy()\n",
+    "\n",
+    "# equilibrate for 100 steps\n",
+    "simulation.context.setVelocitiesToTemperature(300*unit.kelvin)\n",
+    "print('Equilibrating...')\n",
+    "simulation.step(100)\n",
+    "\n",
+    "# append reporters\n",
+    "simulation.reporters.append(app.DCDReporter('trajectory_tip3p.dcd', 1000))\n",
+    "simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True,\n",
+    "    potentialEnergy=True, temperature=True, progress=True, remainingTime=True,\n",
+    "    speed=True, totalSteps=25000000, separator='\\t'))\n",
+    "\n",
+    "# run 50 ns of production simulation\n",
+    "print('Running Production...')\n",
+    "simulation.step(25000000)\n",
+    "print('Done!')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "55950bb6",
+   "metadata": {},
+   "source": [
+    "### Solvating and simulating TIP4P-Ew\n",
+    "\n",
+    "Using a four-site water model like TIP4P-Ew requires making sure we explicitly call `modeller.addExtraParticles` to model in the missing virtual sites:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "232f1890",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "from openmm import app\n",
+    "import openmm as mm\n",
+    "from openmm import unit\n",
+    "from sys import stdout\n",
+    "\n",
+    "# load in input PDB file and force field XML files\n",
+    "pdb = app.PDBFile('1o9s_fixed.pdb')\n",
+    "forcefield = app.ForceField('amber99sbildn.xml', 'tip4pew.xml')\n",
+    "\n",
+    "# use app.Modeller to add hydrogens, extra particles, and solvent\n",
+    "modeller = app.Modeller(pdb.topology, pdb.positions)\n",
+    "modeller.addHydrogens()\n",
+    "modeller.addExtraParticles(forcefield)\n",
+    "modeller.addSolvent(forcefield, model='tip4pew', padding=1.0*unit.nanometers)\n",
+    "app.PDBFile.writeFile(modeller.topology, modeller.positions, open('1o9s_modeller_tip4pew.pdb', 'w'))\n",
+    "\n",
+    "# prepare system and integrator\n",
+    "system = forcefield.createSystem(modeller.topology, nonbondedMethod=app.PME,\n",
+    "    nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True,\n",
+    "    ewaldErrorTolerance=0.0005)\n",
+    "integrator = mm.LangevinIntegrator(300*unit.kelvin, 1.0/unit.picoseconds,\n",
+    "    2.0*unit.femtoseconds)\n",
+    "integrator.setConstraintTolerance(0.00001)\n",
+    "\n",
+    "# prepare simulation\n",
+    "simulation = app.Simulation(modeller.topology, system, integrator)\n",
+    "simulation.context.setPositions(modeller.positions)\n",
+    "\n",
+    "# minimize\n",
+    "print('Minimizing...')\n",
+    "simulation.minimizeEnergy()\n",
+    "\n",
+    "# equilibrate for 100 steps\n",
+    "simulation.context.setVelocitiesToTemperature(300*unit.kelvin)\n",
+    "print('Equilibrating...')\n",
+    "simulation.step(100)\n",
+    "\n",
+    "# append reporters\n",
+    "simulation.reporters.append(app.DCDReporter('trajectory_tip4pew.dcd', 1000))\n",
+    "simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True,\n",
+    "    potentialEnergy=True, temperature=True, progress=True, remainingTime=True,\n",
+    "    speed=True, totalSteps=25000000, separator='\\t'))\n",
+    "\n",
+    "# run 50 ns of production simulation\n",
+    "print('Running Production...')\n",
+    "simulation.step(25000000)\n",
+    "print('Done!')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c2c865e1",
+   "metadata": {},
+   "source": [
+    "### TIP5P:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "de0a1e54",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "from openmm import app\n",
+    "import openmm as mm\n",
+    "from simtk import unit\n",
+    "from sys import stdout\n",
+    "\n",
+    "# load in input PDB file and force field XML files\n",
+    "pdb = app.PDBFile('1o9s_fixed.pdb')\n",
+    "forcefield = app.ForceField('amber99sbildn.xml', 'tip5p.xml')\n",
+    "\n",
+    "# use app.Modeller to add hydrogens, extra particles, and solvent\n",
+    "modeller = app.Modeller(pdb.topology, pdb.positions)\n",
+    "modeller.addHydrogens()\n",
+    "modeller.addExtraParticles(forcefield)\n",
+    "modeller.addSolvent(forcefield, model='tip5p', padding=1.0*unit.nanometers)\n",
+    "app.PDBFile.writeFile(modeller.topology, modeller.positions, open('1o9s_modeller_tip5p.pdb', 'w'))\n",
+    "\n",
+    "# prepare system and integrator\n",
+    "system = forcefield.createSystem(modeller.topology, nonbondedMethod=app.PME,\n",
+    "    nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True,\n",
+    "    ewaldErrorTolerance=0.0005)\n",
+    "integrator = mm.LangevinIntegrator(300*unit.kelvin, 1.0/unit.picoseconds,\n",
+    "    2.0*unit.femtoseconds)\n",
+    "integrator.setConstraintTolerance(0.00001)\n",
+    "\n",
+    "# prepare simulation\n",
+    "simulation = app.Simulation(modeller.topology, system, integrator)\n",
+    "simulation.context.setPositions(modeller.positions)\n",
+    "\n",
+    "# minimize\n",
+    "print('Minimizing...')\n",
+    "simulation.minimizeEnergy()\n",
+    "\n",
+    "# equilibrate for 100 steps\n",
+    "simulation.context.setVelocitiesToTemperature(300*unit.kelvin)\n",
+    "print('Equilibrating...')\n",
+    "simulation.step(100)\n",
+    "\n",
+    "# append reporters\n",
+    "simulation.reporters.append(app.DCDReporter('trajectory_tip5p.dcd', 1000))\n",
+    "simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True,\n",
+    "    potentialEnergy=True, temperature=True, progress=True, remainingTime=True,\n",
+    "    speed=True, totalSteps=25000000, separator='\\t'))\n",
+    "\n",
+    "# run 50 ns of production simulation\n",
+    "print('Running Production...')\n",
+    "simulation.step(25000000)\n",
+    "print('Done!')"
+   ]
+  }
+ ],
+ "metadata": {
+  "tags": [
+	"tutorial"
+   ],
+  "kernelspec": {
+   "display_name": "Python 3.9.13 ('openmm')",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.13"
+  },
+  "nbsphinx": {
+   "execute": "never"
+  },
+  "vscode": {
+   "interpreter": {
+    "hash": "16b2d2c1789d035bceb6d775bd7ffc39b805c8f0529038638d98b11c7a85ade5"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
