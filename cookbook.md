@@ -26,6 +26,10 @@ notebooks/cookbook/Changing Temperature and Pressure
 notebooks/cookbook/Saving Systems to XML Files
 notebooks/cookbook/Merging Molecules
 notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules
+notebooks/cookbook/Enhanced sampling methods/Accelerated MD
+notebooks/cookbook/Enhanced sampling methods/Gaussian Accelerated MD
+notebooks/cookbook/Enhanced sampling methods/Metadynamics
+notebooks/cookbook/Enhanced sampling methods/Umbrella sampling MD
 :::
 
 ## Restraints, Constraints, and External Forces
