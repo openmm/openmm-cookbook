@@ -2,7 +2,9 @@
 
 This repo is home to the OpenMM Cookbook and the OpenMM Tutorials
 
-Preview at https://openmm.github.io/openmm-cookbook
+The latest release can be viewed here: https://openmm.github.io/openmm-cookbook
+
+The main branch of this repo can be viewed on the development version: https://openmm.github.io/openmm-cookbook/dev/
 
 ## Adding a notebook
 

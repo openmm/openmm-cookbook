@@ -13,7 +13,7 @@ These can also be run in Colab, but due to the longer compute time required (ten
 :::{toctree}
 ---
 hidden: true
-maxdepth: 3
+maxdepth: 4
 ---
 cookbook.md
 tutorials.md
