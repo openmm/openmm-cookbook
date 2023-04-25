@@ -315,7 +315,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 <h2>01 - Construct a vanilla OpenMM system<a class="headerlink" href="#01---Construct-a-vanilla-OpenMM-system" title="Permalink to this headline">¶</a></h2>
 <p>We first load a PDB file consisting of villin in water and build a <code class="docutils literal notranslate"><span class="pre">System</span></code> from it, which we refer to as the “vanilla system”. The villin PDB file is present in the current directory (<code class="docutils literal notranslate"><span class="pre">openmm-cookbook/notebooks/cookbook/</span></code>), but can be also be downloaded here: <a class="reference external" href="https://raw.githubusercontent.com/openmm/openmm-cookbook/main/notebooks/cookbook/villin.pdb">https://raw.githubusercontent.com/openmm/openmm-cookbook/main/notebooks/cookbook/villin.pdb</a></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">openmm</span>
@@ -324,7 +324,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
@@ -341,7 +341,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -351,7 +351,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 <p>We check the forces in the vanilla system to make sure they’re as expected.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span>
@@ -359,23 +359,23 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;openmm.openmm.HarmonicBondForce; proxy of &lt;Swig Object of type &#39;OpenMM::HarmonicBondForce *&#39; at 0x2b47acd87630&gt; &gt;,
- &lt;openmm.openmm.NonbondedForce; proxy of &lt;Swig Object of type &#39;OpenMM::NonbondedForce *&#39; at 0x2b47acd87780&gt; &gt;,
- &lt;openmm.openmm.PeriodicTorsionForce; proxy of &lt;Swig Object of type &#39;OpenMM::PeriodicTorsionForce *&#39; at 0x2b47acd87750&gt; &gt;,
- &lt;openmm.openmm.HarmonicAngleForce; proxy of &lt;Swig Object of type &#39;OpenMM::HarmonicAngleForce *&#39; at 0x2b47acd87f00&gt; &gt;,
- &lt;openmm.openmm.MonteCarloBarostat; proxy of &lt;Swig Object of type &#39;OpenMM::MonteCarloBarostat *&#39; at 0x2b47acd87d80&gt; &gt;]
+[&lt;openmm.openmm.HarmonicBondForce; proxy of &lt;Swig Object of type &#39;OpenMM::HarmonicBondForce *&#39; at 0x11fae7450&gt; &gt;,
+ &lt;openmm.openmm.NonbondedForce; proxy of &lt;Swig Object of type &#39;OpenMM::NonbondedForce *&#39; at 0x11fae7e70&gt; &gt;,
+ &lt;openmm.openmm.PeriodicTorsionForce; proxy of &lt;Swig Object of type &#39;OpenMM::PeriodicTorsionForce *&#39; at 0x11fae7f60&gt; &gt;,
+ &lt;openmm.openmm.HarmonicAngleForce; proxy of &lt;Swig Object of type &#39;OpenMM::HarmonicAngleForce *&#39; at 0x11fae7300&gt; &gt;,
+ &lt;openmm.openmm.MonteCarloBarostat; proxy of &lt;Swig Object of type &#39;OpenMM::MonteCarloBarostat *&#39; at 0x11fae72d0&gt; &gt;]
 </pre></div></div>
 </div>
 </section>
 <section id="02---Construct-a-REST-capable-OpenMM-system">
 <h2>02 - Construct a REST-capable OpenMM system<a class="headerlink" href="#02---Construct-a-REST-capable-OpenMM-system" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">copy</span>
@@ -394,7 +394,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 <p>There are 15 REST atoms.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">rest_atoms</span><span class="p">)</span>
@@ -402,7 +402,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -412,7 +412,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 <p>We create a new <code class="docutils literal notranslate"><span class="pre">System</span></code> (which we refer to as the “REST system”) and copy over the particles, barostat, box vectors, and constraints from the vanilla system.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create REST system</span>
@@ -446,7 +446,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 <p>We add per-bond parameters that are booleans indicating whether each bond is: - REST (if all atoms are REST atoms, <code class="docutils literal notranslate"><span class="pre">is_rest</span></code> is 1, otherwise 0) - inter (if at least one, but not all atoms are REST atoms, <code class="docutils literal notranslate"><span class="pre">is_inter</span></code> is 1, otherwise 0), or - non-REST (if no atoms are REST atoms, <code class="docutils literal notranslate"><span class="pre">is_nonrest</span></code> is 1, otherwise 0).</p>
 <p>We also add per-bond parameters that keep track of the length and spring constant for each bond.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
@@ -474,7 +474,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -484,7 +484,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 </div>
 <p>We next want to add bonds to the REST system’s bond force. To do so, we need to determine whether each bond should be considered REST, inter, or non-REST, so that we can set each of the following per-bond parameters: <code class="docutils literal notranslate"><span class="pre">is_rest</span></code>, <code class="docutils literal notranslate"><span class="pre">is_inter</span></code>, <code class="docutils literal notranslate"><span class="pre">is_nonrest</span></code>. We define a function <code class="docutils literal notranslate"><span class="pre">get_rest_identifier</span></code> to do this.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_rest_identifier</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">rest_atoms</span><span class="p">):</span>
@@ -532,7 +532,7 @@ thermodynamic states and use the sampler to run the replica exchange simulation.
 <p>Now we can add the bonds to the REST system’s bond force. We copy the periodic boundary conditions and bonds from the vanilla system’s bond force to the REST system’s bond force. Each bond is defined by the indices of the two atoms that form the bond (<code class="docutils literal notranslate"><span class="pre">p1</span></code>, <code class="docutils literal notranslate"><span class="pre">p1</span></code>), the bond length (<code class="docutils literal notranslate"><span class="pre">r0</span></code>), and the force constant (<code class="docutils literal notranslate"><span class="pre">k</span></code>). Each bond also has a <code class="docutils literal notranslate"><span class="pre">rest_id</span></code> (determined using <code class="docutils literal notranslate"><span class="pre">get_rest_identifier()</span></code>, defined above), which indicates whether each bond should be considered REST, inter, or
 non-REST.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get vanilla system bond force</span>
@@ -557,7 +557,7 @@ non-REST.</p>
 </div>
 <p>We then repeat the same process to 1) construct the REST system’s angle force (i.e., a <code class="docutils literal notranslate"><span class="pre">CustomAngleForce</span></code>) and 2) copy the angles from the vanilla system’s angle force to the REST system’s angle force.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
@@ -604,7 +604,7 @@ non-REST.</p>
 </div>
 <p>We next repeat the same process to 1) construct the REST system’s torsion force (i.e., a <code class="docutils literal notranslate"><span class="pre">PeriodicTorsionForce</span></code>) and 2) copy the torsions from the vanilla system’s torsion force to the REST system’s torsion force.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
@@ -653,7 +653,7 @@ non-REST.</p>
 </div>
 <p>Finally, we construct the REST system’s nonbonded force (i.e., a <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>) by copying the nonbonded method and related parameters from the vanilla system’s nonbonded force. We add two global parameters (<code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>) to act as scale factors for nonbonded interactions involving REST atoms.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create nonbonded force</span>
@@ -695,7 +695,7 @@ non-REST.</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -706,7 +706,7 @@ non-REST.</p>
 <p>We then copy the nonbonded particles and exceptions from the vanilla system’s nonbonded force to the rest system’s nonbonded force. We add offsets to the particles and exceptions in order to apply REST scaling. The offsets for electrostatics and sterics depend on <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>, respectively. The offsets for REST and inter exceptions conveniently depend on <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code>, respectively (derivation available in
 the Appendix).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add nonbondeds to rest_system</span>
@@ -748,8 +748,17 @@ the Appendix).</p>
 </section>
 <section id="03---Run-replica-exchange">
 <h2>03 - Run replica exchange<a class="headerlink" href="#03---Run-replica-exchange" title="Permalink to this headline">¶</a></h2>
+<p>This section requires <a class="reference external" href="https://openmmtools.readthedocs.io/en/stable/index.html">openmmtools</a></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-qy<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
@@ -767,7 +776,7 @@ the Appendix).</p>
 <p>Given <code class="docutils literal notranslate"><span class="pre">beta_m</span></code> and <code class="docutils literal notranslate"><span class="pre">beta_0</span></code>, the <code class="docutils literal notranslate"><span class="pre">RESTState</span></code> takes care of actually computing the value for each global parameter (based on <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">functions</span></code>). For <code class="docutils literal notranslate"><span class="pre">lambda_rest_bonds</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_angles</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_torsions</span></code>, the value will be computed according to <span class="math notranslate nohighlight">\(\sqrt{\frac{\beta_m}{\beta_0}}\)</span>. For <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code>, the value will be computed as <span class="math notranslate nohighlight">\(\sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span>. For <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>, the value will be computed as
 <span class="math notranslate nohighlight">\(\frac{\beta_m}{\beta_0} - 1\)</span>. See Appendix for derivation of the functions for <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RESTState</span><span class="p">(</span><span class="n">GlobalParameterState</span><span class="p">):</span>
@@ -803,7 +812,7 @@ the Appendix).</p>
 </div>
 <p>We next determine the number of replicas and states (both are 12) and choose the <code class="docutils literal notranslate"><span class="pre">T_min</span></code> (the minimum temperature, i.e., the temperature of the desired distribution) and <code class="docutils literal notranslate"><span class="pre">T_max</span></code> (the maximum temperature to be scaled to during REST) to be 300 and 600 Kelvin, respectively. We set the temperatures of each thermodynamic state to be exponentially spaced between 300 and 600 Kelvin.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set temperatures for each thermodynamic state</span>
@@ -817,7 +826,7 @@ the Appendix).</p>
 </div>
 <p>We now create a reference thermodynamic state (i.e., <code class="docutils literal notranslate"><span class="pre">RESTState</span></code>) from the <code class="docutils literal notranslate"><span class="pre">rest_system</span></code> and use that state to create OpenMMTools <code class="docutils literal notranslate"><span class="pre">ThermodynamicState</span></code> and <code class="docutils literal notranslate"><span class="pre">CompoundThermodynamicState</span></code> objects which will be used with other OpenMMTools objects below to run replica exchange.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create reference thermodynamic state</span>
@@ -829,7 +838,7 @@ the Appendix).</p>
 </div>
 <p>Using the reference thermodynamic state, we create a list of 12 thermodynamic states, one for each temperature in <code class="docutils literal notranslate"><span class="pre">temperatures</span></code>. Each of these thermodynamic states also has an associated OpenMMTools <code class="docutils literal notranslate"><span class="pre">SamplerState</span></code> object which contains the corresponding box vectors and minimized positions.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create thermodynamic states</span>
@@ -856,7 +865,7 @@ the Appendix).</p>
 <p>We now create OpenMMTools objects to run replica exchange. We instantiate a <code class="docutils literal notranslate"><span class="pre">LangevinDynamicsMove</span></code> which tells the <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeSampler</span></code> to run 1 ps of molecular dynamics (here, Langevin dynamics) between swap attempts. We instantiate the <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeSampler</span></code> with 100 iterations (i.e., swap attempts). We then initialize a <code class="docutils literal notranslate"><span class="pre">MultiStateReporter</span></code> to save critical information from the replica exchange simulation, e.g., reduced potentials, positions, box vectors, etc. And finally, we
 run the REST simulation!</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set up sampler</span>
@@ -881,6 +890,7 @@ run the REST simulation!</p>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
 Warning: The openmmtools.multistate API is experimental and may change in future releases
+/bin/sh: nvidia-smi: command not found
 Warning: The openmmtools.multistate API is experimental and may change in future releases
 </pre></div></div>
 </div>
@@ -900,29 +910,31 @@ Please cite the following:
 </pre></div></div>
 </div>
 </section>
-</section>
 <section id="Appendix">
-<h1>Appendix<a class="headerlink" href="#Appendix" title="Permalink to this headline">¶</a></h1>
+<h2>Appendix<a class="headerlink" href="#Appendix" title="Permalink to this headline">¶</a></h2>
 <section id="REST-potential">
-<h2>REST potential<a class="headerlink" href="#REST-potential" title="Permalink to this headline">¶</a></h2>
+<h3>REST potential<a class="headerlink" href="#REST-potential" title="Permalink to this headline">¶</a></h3>
 <p>According to Wang et al. 2011 (DOI: 10.1021/jp204407d, available at: <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3172817/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3172817/</a>), the modified REST potential is defined as:</p>
 <p><span class="math notranslate nohighlight">\(U_\text{total}(x) = \frac{\beta_m}{\beta_0} U_\text{REST}(x) + \sqrt{\frac{\beta_m}{\beta_0}} U_\text{inter}(x) + U_\text{non-REST}(x)\)</span></p>
 <p>where <span class="math notranslate nohighlight">\(U_\text{total}(x)\)</span> represents the total potential energy of configuration <span class="math notranslate nohighlight">\(x\)</span>, <span class="math notranslate nohighlight">\(U_\text{REST}(x)\)</span> represents the potential energy of interactions between REST atoms, <span class="math notranslate nohighlight">\(U_\text{inter}(x)\)</span> represents the potential energy of interactions between REST and non-REST atoms (i.e., “inter”), and <span class="math notranslate nohighlight">\(U_\text{non-REST}(x)\)</span> represents interactions between non-REST atoms.</p>
 </section>
 <section id="Electrostatic-interactions">
-<h2>Electrostatic interactions<a class="headerlink" href="#Electrostatic-interactions" title="Permalink to this headline">¶</a></h2>
+<h3>Electrostatic interactions<a class="headerlink" href="#Electrostatic-interactions" title="Permalink to this headline">¶</a></h3>
 <p>For the <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>, we use offsets to scale the energies according to REST. We first explore how offsets are applied for electrostatic interactions.</p>
 <p>For electrostatics, the potential energy is defined by: <span class="math notranslate nohighlight">\(U_\text{elec} = \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r}\)</span> where <span class="math notranslate nohighlight">\(q\)</span> is the charge of an atom, <span class="math notranslate nohighlight">\(\epsilon_0\)</span> is the vacuum permittivity, and <span class="math notranslate nohighlight">\(r\)</span> is the distance between atoms.</p>
 <p>We apply offsets to the charge (<span class="math notranslate nohighlight">\(q\)</span>) according to:</p>
-<p><span class="math notranslate nohighlight">\(\text{charge} = \text{baseCharge} + \text{lambda_rest_electrostatics}*\text{chargeScale}\)</span></p>
+<p>charge = baseCharge + lambda_rest_electrostatics*chargeScale</p>
 <p>where <code class="docutils literal notranslate"><span class="pre">baseCharge</span></code> is the current charge value for the atom in the <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> is a global parameter and must be between 0 and 1, and <code class="docutils literal notranslate"><span class="pre">chargeScale</span></code> (when multiplied with <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code>) controls the value to be added to <code class="docutils literal notranslate"><span class="pre">baseCharge</span></code>.</p>
 <p>We set <code class="docutils literal notranslate"><span class="pre">chargeScale</span></code> = <code class="docutils literal notranslate"><span class="pre">baseCharge</span></code> and derive the functional form for <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> to enable REST scaling for each of the following cases:</p>
-<p>Case 1: Both atoms are non-REST - The interaction should not be scaled, meaning no offset is needed.</p>
-<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa) - We can express the electrostatics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{elec} =  \sqrt{\frac{\beta_m}{\beta_0}} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 (q_2 + \lambda q_2)}{4\pi\epsilon_0}\frac{1}{r}$
-</pre></div>
-</div>
+<p>Case 1: Both atoms are non-REST</p>
+<ul class="simple">
+<li><p>The interaction should not be scaled, meaning no offset is needed.</p></li>
+</ul>
+<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)</p>
 <ul>
+<li><p>We can express the electrostatics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{elec} = \sqrt{\frac{\beta_m}{\beta_0}} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 (q_2 + \lambda q_2)}{4\pi\epsilon_0}\frac{1}{r}\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{elec} = \sqrt{\frac{\beta_m}{\beta_0}} = 1 + \lambda\)</span></p>
 </li>
@@ -930,11 +942,11 @@ Please cite the following:
 <p><span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span></p>
 </li>
 </ul>
-<p>Case 3: Both atoms are REST - We can express the electrostatics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{elec} =  \frac{\beta_m}{\beta_0} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{(q_1 + q_1 \lambda) (q_2 + \lambda q_2)}{4\pi\epsilon_0}\frac{1}{r}$
-</pre></div>
-</div>
+<p>Case 3: Both atoms are REST</p>
 <ul>
+<li><p>We can express the electrostatics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{elec} = \frac{\beta_m}{\beta_0} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{(q_1 + q_1 \lambda) (q_2 + \lambda q_2)}{4\pi\epsilon_0}\frac{1}{r}\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{elec} = \frac{\beta_m}{\beta_0} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 q_2 (1 + \lambda)^2}{4\pi\epsilon_0}\frac{1}{r}\)</span></p>
 </li>
@@ -945,19 +957,22 @@ Please cite the following:
 <p>In both cases 2 and 3, <span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span>. We use this as our lambda function for <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code>.</p>
 </section>
 <section id="Steric-interactions">
-<h2>Steric interactions<a class="headerlink" href="#Steric-interactions" title="Permalink to this headline">¶</a></h2>
+<h3>Steric interactions<a class="headerlink" href="#Steric-interactions" title="Permalink to this headline">¶</a></h3>
 <p>We also use offsets to modify steric interactions involving REST atoms.</p>
 <p>For sterics, the potential energy is defined by: <span class="math notranslate nohighlight">\(U_\text{sterics} = 4\epsilon\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span> where <span class="math notranslate nohighlight">\(\sigma\)</span> is the distance at which the energy equals zero, <span class="math notranslate nohighlight">\(r\)</span> is the distance between atoms, and <span class="math notranslate nohighlight">\(\epsilon\)</span> is the strength of the interaction (computed from the the <span class="math notranslate nohighlight">\(\epsilon\)</span>s of atoms 1 and 2: <span class="math notranslate nohighlight">\(\epsilon = \sqrt{\epsilon_1\epsilon_2}\)</span>).</p>
 <p>We apply offsets to <span class="math notranslate nohighlight">\(\epsilon_i\)</span> according to:</p>
-<p><span class="math notranslate nohighlight">\(\text{epsilon} = \text{baseEpsilon} + \text{lambda_rest_sterics}*\text{epsilonScale}\)</span></p>
+<p>epsilon = baseEpsilon + lambda_rest_sterics*epsilonScale$</p>
 <p>where <code class="docutils literal notranslate"><span class="pre">baseEpsilon</span></code> is the current <span class="math notranslate nohighlight">\(\epsilon\)</span> value for the atom in the <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> is a global parameter and must be between 0 and 1, and <code class="docutils literal notranslate"><span class="pre">epsilonScale</span></code> (when multiplied with <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>) controls the value to be added to <code class="docutils literal notranslate"><span class="pre">baseEpsilon</span></code>.</p>
 <p>We set <code class="docutils literal notranslate"><span class="pre">epsilonScale</span></code> = <code class="docutils literal notranslate"><span class="pre">baseEpsilon</span></code> and derive the functional form for <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> to enable REST scaling for each of the following cases:</p>
-<p>Case 1: Both atoms are non-REST - The interaction should not be scaled, meaning no offset is needed.</p>
-<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa) - We can express the sterics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{sterics} =  \sqrt{\frac{\beta_m}{\beta_0}} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\sqrt{\epsilon_1(\epsilon_2 + \lambda\epsilon_2)}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)$
-</pre></div>
-</div>
+<p>Case 1: Both atoms are non-REST</p>
+<ul class="simple">
+<li><p>The interaction should not be scaled, meaning no offset is needed.</p></li>
+</ul>
+<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)</p>
 <ul>
+<li><p>We can express the sterics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \sqrt{\frac{\beta_m}{\beta_0}} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\sqrt{\epsilon_1(\epsilon_2 + \lambda\epsilon_2)}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{sterics} = \sqrt{\frac{\beta_m}{\beta_0}} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2(1 + \lambda)}\)</span></p>
 </li>
@@ -965,12 +980,14 @@ Please cite the following:
 <p><span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span></p>
 </li>
 </ul>
-<p>Case 3: Both atoms are REST - We can express the sterics energy as</p>
-<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\sqrt{\epsilon_1\epsilon_2 (1 + \lambda)^2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span> - which is equivalent to</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{sterics} =  \frac{\beta_m}{\beta_0} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2(1 + \lambda)^2}$
-</pre></div>
-</div>
+<p>Case 3: Both atoms are REST</p>
 <ul>
+<li><p>We can express the sterics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\sqrt{\epsilon_1\epsilon_2 (1 + \lambda)^2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span></p>
+</li>
+<li><p>which is equivalent to</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2(1 + \lambda)^2}\)</span></p>
+</li>
 <li><p>meaning</p>
 <p><span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span></p>
 </li>
@@ -978,19 +995,22 @@ Please cite the following:
 <p>In both cases 2 and 3, <span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span>. We use this as our lambda function for <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>.</p>
 </section>
 <section id="Electrostatic-exceptions">
-<h2>Electrostatic exceptions<a class="headerlink" href="#Electrostatic-exceptions" title="Permalink to this headline">¶</a></h2>
+<h3>Electrostatic exceptions<a class="headerlink" href="#Electrostatic-exceptions" title="Permalink to this headline">¶</a></h3>
 <p>We also use offsets to modify electrostatics exceptions involving REST atoms.</p>
 <p>For electrostatic exceptions, the functional form of the potential energy is the same as for electrostatic interactions, except that for exceptions, the functional form accepts the charge product directly, instead of the individual charges for each atom. Therefore, <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> will scale the product, not each individual charge.</p>
 <p>We apply offsets to the chargeProd (<span class="math notranslate nohighlight">\(q_1 q_2\)</span>) according to:</p>
-<p><span class="math notranslate nohighlight">\(\text{chargeProd} = \text{baseChargeProd} + \text{lambda_rest_electrostatics}*\text{chargeProdScale}\)</span></p>
+<p>chargeProd = baseChargeProd + lambda_rest_electrostatics*chargeProdScale</p>
 <p>where <code class="docutils literal notranslate"><span class="pre">baseChargeProd</span></code> is the current charge product for the two atoms in the <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> is a global parameter and must be between 0 and 1, and <code class="docutils literal notranslate"><span class="pre">chargeProdScale</span></code> (when multiplied with <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code>) controls the value to be added to <code class="docutils literal notranslate"><span class="pre">baseChargeProd</span></code>.</p>
 <p>We set <code class="docutils literal notranslate"><span class="pre">chargeProdScale</span></code> = <code class="docutils literal notranslate"><span class="pre">baseChargeProd</span></code> and derive the functional form for the rest scale factor (i.e., <span class="math notranslate nohighlight">\(\lambda\)</span>) for each of the following cases:</p>
-<p>Case 1: Both atoms are non-REST - The interaction should not be scaled, meaning no offset is needed.</p>
-<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa) - We can express the electrostatics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{elec} =  \sqrt{\frac{\beta_m}{\beta_0}} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 q_2 + \lambda q_1 q_2}{4\pi\epsilon_0}\frac{1}{r}$
-</pre></div>
-</div>
+<p>Case 1: Both atoms are non-REST</p>
+<ul class="simple">
+<li><p>The interaction should not be scaled, meaning no offset is needed.</p></li>
+</ul>
+<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)</p>
 <ul>
+<li><p>We can express the electrostatics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{elec} = \sqrt{\frac{\beta_m}{\beta_0}} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 q_2 + \lambda q_1 q_2}{4\pi\epsilon_0}\frac{1}{r}\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{elec} = \sqrt{\frac{\beta_m}{\beta_0}} = 1 + \lambda\)</span></p>
 </li>
@@ -998,11 +1018,11 @@ Please cite the following:
 <p><span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span></p>
 </li>
 </ul>
-<p>Case 3: Both atoms are REST - We can express the electrostatics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{elec} =  \frac{\beta_m}{\beta_0} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 q_2 + \lambda q_1 q_2}{4\pi\epsilon_0}\frac{1}{r}$
-</pre></div>
-</div>
+<p>Case 3: Both atoms are REST</p>
 <ul>
+<li><p>We can express the electrostatics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{elec} = \frac{\beta_m}{\beta_0} \frac{q_1 q_2}{4\pi\epsilon_0}\frac{1}{r} = \frac{q_1 q_2 + \lambda q_1 q_2}{4\pi\epsilon_0}\frac{1}{r}\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{elec} = \frac{\beta_m}{\beta_0} = 1 + \lambda\)</span></p>
 </li>
@@ -1013,19 +1033,22 @@ Please cite the following:
 <p>In case 2, <span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span>, which matches the <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> function. In case 3, <span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span>, which matches the <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> function. We therefore use <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> to control the offsets for inter and REST exceptions, respectively.</p>
 </section>
 <section id="Steric-exceptions">
-<h2>Steric exceptions<a class="headerlink" href="#Steric-exceptions" title="Permalink to this headline">¶</a></h2>
+<h3>Steric exceptions<a class="headerlink" href="#Steric-exceptions" title="Permalink to this headline">¶</a></h3>
 <p>We also use offsets to modify steric exceptions involving REST atoms.</p>
 <p>For steric exceptions, the functional form of the potential energy is the same as for steric interactions, except that for exceptions, the functional form accepts the combined <span class="math notranslate nohighlight">\(\epsilon\)</span> directly, instead of the individual <span class="math notranslate nohighlight">\(\epsilon\)</span>s for each atom. Therefore, <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> will scale the product, not each individual <span class="math notranslate nohighlight">\(\epsilon\)</span>.</p>
 <p>We apply offsets to the combined <span class="math notranslate nohighlight">\(\epsilon\)</span> (computed from <span class="math notranslate nohighlight">\(\sqrt{\epsilon_1 \epsilon_2}\)</span>) according to:</p>
-<p><span class="math notranslate nohighlight">\(\text{epsilonCombined} = \text{baseEpsilonCombined} + \text{lambda_rest_sterics}*\text{epsilonCombinedScale}\)</span></p>
+<p>epsilonCombined = baseEpsilonCombined + lambda_rest_sterics*epsilonCombinedScale</p>
 <p>where <code class="docutils literal notranslate"><span class="pre">baseEpsilonCombined</span></code> is the current combined epsilon for the two atoms in the <code class="docutils literal notranslate"><span class="pre">NonbondedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> is a global parameter and must be between 0 and 1, and <code class="docutils literal notranslate"><span class="pre">epsilonCombinedScale</span></code> (when multiplied with <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code>) controls the value to be added to <code class="docutils literal notranslate"><span class="pre">baseEpsilonCombined</span></code>.</p>
 <p>We set <code class="docutils literal notranslate"><span class="pre">epsilonCombinedScale</span></code> = <code class="docutils literal notranslate"><span class="pre">baseEpsilonCombined</span></code> and derive the functional form for the rest scale factor (i.e., <span class="math notranslate nohighlight">\(\lambda\)</span>) for each of the following cases:</p>
-<p>Case 1: Both atoms are non-REST - The interaction should not be scaled, meaning no offset is needed.</p>
-<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa) - We can express the sterics energy as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{sterics} =  \sqrt{\frac{\beta_m}{\beta_0}} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\left(\sqrt{\epsilon_1\epsilon_2} + \lambda\sqrt{\epsilon_1\epsilon_2}\right)\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)$
-</pre></div>
-</div>
+<p>Case 1: Both atoms are non-REST</p>
+<ul class="simple">
+<li><p>The interaction should not be scaled, meaning no offset is needed.</p></li>
+</ul>
+<p>Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)</p>
 <ul>
+<li><p>We can express the sterics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \sqrt{\frac{\beta_m}{\beta_0}} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\left(\sqrt{\epsilon_1\epsilon_2} + \lambda\sqrt{\epsilon_1\epsilon_2}\right)\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span></p>
+</li>
 <li><p>which is equivalent to</p>
 <p><span class="math notranslate nohighlight">\(U_\text{sterics} = \sqrt{\frac{\beta_m}{\beta_0}} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2}(1 + \lambda)\)</span></p>
 </li>
@@ -1033,25 +1056,20 @@ Please cite the following:
 <p><span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span></p>
 </li>
 </ul>
-<p>Case 3: Both atoms are REST - We can express the sterics energy as</p>
-<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\left(\sqrt{\epsilon_1\epsilon_2} + \lambda \sqrt{\epsilon_1\epsilon_2}\right)\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span> - which is equivalent to</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$U_\text{sterics} =  \frac{\beta_m}{\beta_0} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2}(1 + \lambda)$
-</pre></div>
-</div>
+<p>Case 3: Both atoms are REST</p>
 <ul>
+<li><p>We can express the sterics energy as</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot 4\sqrt{\epsilon_1\epsilon_2}\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right) = 4\left(\sqrt{\epsilon_1\epsilon_2} + \lambda \sqrt{\epsilon_1\epsilon_2}\right)\left(\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6\right)\)</span></p>
+</li>
+<li><p>which is equivalent to</p>
+<p><span class="math notranslate nohighlight">\(U_\text{sterics} = \frac{\beta_m}{\beta_0} \cdot \sqrt{\epsilon_1\epsilon_2} = \sqrt{\epsilon_1\epsilon_2}(1 + \lambda)\)</span></p>
+</li>
 <li><p>meaning</p>
 <p><span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span></p>
 </li>
 </ul>
 <p>In case 2, <span class="math notranslate nohighlight">\(\lambda = \sqrt{\frac{\beta_m}{\beta_0}} - 1\)</span>, which matches the <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> function. In case 3, <span class="math notranslate nohighlight">\(\lambda = \frac{\beta_m}{\beta_0} - 1\)</span>, which matches the <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> function. We therefore use <code class="docutils literal notranslate"><span class="pre">lambda_rest_electrostatics</span></code> and <code class="docutils literal notranslate"><span class="pre">lambda_rest_sterics</span></code> to control the offsets for inter and REST exceptions, respectively.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
-</div>
+</section>
 </section>
 </section>
 
@@ -1113,8 +1131,13 @@ Please cite the following:
 <li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Run a REST simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Appendix">Appendix</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Run a REST simulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#01---Construct-a-vanilla-OpenMM-system">01 - Construct a vanilla OpenMM system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#02---Construct-a-REST-capable-OpenMM-system">02 - Construct a REST-capable OpenMM system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#03---Run-replica-exchange">03 - Run replica exchange</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Appendix">Appendix</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

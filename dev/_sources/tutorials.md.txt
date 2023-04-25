@@ -14,7 +14,7 @@ notebooks/tutorials/protein_in_water
 :::
 
 ## Advanced Tutorials
-Tutorials showing more the more advanced capabilities from the [OpenMM 7 publication](https://doi.org/10.1371/journal.pcbi.1005659)
+Tutorials showing more the more advanced capabilities.
 :::{nbgallery}
 ---
 glob: True
