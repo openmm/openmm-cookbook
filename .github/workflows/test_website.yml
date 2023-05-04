@@ -1,0 +1,45 @@
+name: test website
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, synchronize, reopened]
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache conda
+        uses: actions/cache@v2
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{hashFiles('environment.yml') }}
+
+      - uses: conda-incubator/setup-miniconda@v2
+        name: Install dependencies
+        with:
+          environment-file: environment.yml
+          auto-activate-base: false
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
+
+      - name: Describe environment
+        run: |
+          pwd
+          ls
+          conda list
+
+      - name: Build Sphinx documentation
+        run: |
+          make html
+          
