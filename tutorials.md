@@ -26,6 +26,7 @@ notebooks/tutorials/HSP90_with_ADPMg2_simulation.ipynb
 notebooks/tutorials/Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.ipynb
 notebooks/tutorials/Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.ipynb
 notebooks/tutorials/Running_a_REST_simulation.ipynb
+notebooks/tutorials/umbrella_sampling.ipynb
 :::
 
 ----
