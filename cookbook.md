@@ -49,6 +49,7 @@ glob: True
 caption: Analysis and System Inspection
 ---
 notebooks/cookbook/Analyzing Energy Contributions
+notebooks/cookbook/Computing Interaction Energies
 notebooks/cookbook/Querying and Modifying Charges and Other Parameters.ipynb
 :::
 
