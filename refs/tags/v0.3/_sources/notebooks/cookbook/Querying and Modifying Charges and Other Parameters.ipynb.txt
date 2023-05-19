@@ -1,0 +1,202 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "3a4fdeed",
+   "metadata": {},
+   "source": [
+    "## Querying and Modifying Charges and Other Parameters\n",
+    "\n",
+    "Sometimes you want to inspect the charges or other parameters of the particles or bonds in a System.  Force field parameters are stored in the Force objects added to a System.  As an example, let's load a PDB file and model it using the Amber14 force field."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "9323aaae",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm.app import *\n",
+    "from openmm import *\n",
+    "\n",
+    "pdb = PDBFile('ala_ala_ala.pdb')\n",
+    "forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')\n",
+    "system = forcefield.createSystem(pdb.topology)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3c6c73f4",
+   "metadata": {},
+   "source": [
+    "Now suppose we want to retrieve the charge of every particle.  These are stored in the NonbondedForce object.  We can call `getForces()` to retrieve all forces, then find the one of the correct class."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "1734190f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "nonbonded = [f for f in system.getForces() if isinstance(f, NonbondedForce)][0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1f722e97",
+   "metadata": {},
+   "source": [
+    "Now that we have the NonbondedForce, we can call `getParticleParameters()` to get the nonbonded parameters (charge, sigma, and epsilon) of each particle.  Let's build a list of all the charges."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "bf38fc9a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "charges = []\n",
+    "for i in range(system.getNumParticles()):\n",
+    "    charge, sigma, epsilon = nonbonded.getParticleParameters(i)\n",
+    "    charges.append(charge)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3d8c83ef",
+   "metadata": {},
+   "source": [
+    "You can record the Lennard-Jones parameters (sigma and epsilon) in the same way, but be aware that some force fields compute Van der Waals interactions differently.  If you model your system with CHARMM36, for example, you may find that epsilon is 0 for every atom.  In that case, it is using a CustomNonbondedForce to implement the Lennard-Jones force.\n",
+    "\n",
+    "You can retrieve bonded parameters in the same way.  For example, let's print out every bond involving particle 0 (the N-terminal nitrogen).  This information is stored in the HarmonicBondForce."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "933928f9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Particles (4, 0), length = 0.1471 nm, k = 307105.5999999999 kJ/(nm**2 mol)\n",
+      "Particles (1, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)\n",
+      "Particles (2, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)\n",
+      "Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)\n"
+     ]
+    }
+   ],
+   "source": [
+    "bonded = [f for f in system.getForces() if isinstance(f, HarmonicBondForce)][0]\n",
+    "for i in range(bonded.getNumBonds()):\n",
+    "    particle1, particle2, length, k = bonded.getBondParameters(i)\n",
+    "    if particle1 == 0 or particle2 == 0:\n",
+    "        print(f'Particles ({particle1}, {particle2}), length = {length}, k = {k}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "50f5157c",
+   "metadata": {},
+   "source": [
+    "In some cases you may want to modify those parameters to make a bond behave differently from what the `ForceField` assigned.\n",
+    "We show you here that to modify these parameters are also easy."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "cd5396c5",
+   "metadata": {},
+   "source": [
+    "Let's say we would want to modify the force constant of the bond connecting particle 1 and 0 to a new number."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "086c7629",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "for i in range(bonded.getNumBonds()):\n",
+    "    particle1, particle2, length, k = bonded.getBondParameters(i)\n",
+    "    if particle1 == 1 and particle2 == 0:\n",
+    "        bonded.setBondParameters(i, particle1, particle2, length, 2666 * unit.kilojoules_per_mole/unit.nanometer**2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f9728ad",
+   "metadata": {},
+   "source": [
+    "Now if you query again you can see new parameters."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "68498ff5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Particles (4, 0), length = 0.1471 nm, k = 307105.5999999999 kJ/(nm**2 mol)\n",
+      "Particles (1, 0), length = 0.101 nm, k = 2666.0 kJ/(nm**2 mol)\n",
+      "Particles (2, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)\n",
+      "Particles (3, 0), length = 0.101 nm, k = 363171.19999999995 kJ/(nm**2 mol)\n"
+     ]
+    }
+   ],
+   "source": [
+    "for i in range(bonded.getNumBonds()):\n",
+    "    particle1, particle2, length, k = bonded.getBondParameters(i)\n",
+    "    if particle1 == 0 or particle2 == 0:\n",
+    "        print(f'Particles ({particle1}, {particle2}), length = {length}, k = {k}')"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "47729e2e",
+   "metadata": {},
+   "source": [
+    "Modifying `Force` objects will affect any new `Simulations` or `Contexts` you create, but it will have no effect on ones that already exist. \n",
+    "If you want your modifications to apply to an existing `Simulation`, you can copy them over by calling `bonded.updateParametersInContext(simulation.context)`."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.3"
+  },
+  "tags": [
+   "force field",
+   "inspection",
+   "forces"
+  ]
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
