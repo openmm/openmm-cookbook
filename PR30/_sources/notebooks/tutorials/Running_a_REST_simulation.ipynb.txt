@@ -1,0 +1,1137 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "73344755",
+   "metadata": {},
+   "source": [
+    "# Run a REST simulation"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e110b4e9",
+   "metadata": {},
+   "source": [
+    "Replica exchange solute tempering (REST) is an enhanced sampling approach that aims to improve sampling for a user-defined subset of atoms (i.e., REST atoms) by increasing its effective temperature.\n",
+    "\n",
+    "REST involves running replica exchange to sample a set of thermodynamic states, where one state contains the unmodified Hamiltonian and all other states involve modified Hamiltonians where the REST atom interactions are scaled to increased temperatures (Wang et al. 2011, DOI: 10.1021/jp204407d, available at: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3172817/).\n",
+    "\n",
+    "In this tutorial, we show how to 1) build a REST-capable OpenMM system and then 2) run REST (using OpenMMTools (https://openmmtools.readthedocs.io) objects).\n",
+    "\n",
+    "Overview of the tutorial: \n",
+    "\n",
+    "Build a REST-capable system\n",
+    "- We first build a \"vanilla\" OpenMM `System`, which represents the unmodified Hamiltonian from which we will construct the modified REST Hamiltonian (i.e., the REST system). \n",
+    "- We then define the REST atoms, i.e., the atoms whose interactions will be heated up. \n",
+    "- We begin creating the REST system by initializing an empty OpenMM `System` and copying the particles, barostat, box vectors, and constraints from the vanilla system.\n",
+    "- We then create custom forces for each valence force in the REST system: `CustomBondForce`, `CustomAngleForce`, `CustomTorsionForce`, where each force has a custom expression that allow the energy to be scaled according to REST. Each custom expression utilizes a global parameter to control the REST scale factor and per-bond (or per-angle or per-torsion) parameters to keep track of parameters needed to compute the energy for each bond (or angle or torsion). \n",
+    "- For the REST system's nonbonded force, we create a `NonbondedForce` and use offsets to scale the energies for interactions involving REST atoms. We use the `NonbondedForce` (and not custom forces) for simplicity. If we used custom forces, we would need to use a `CustomNonbondedForce` for nonbonded interactions and a `CustomBondForce` for nonbonded exceptions, and these forces can be tricky to work with.\n",
+    "- Finally, we copy the bonds, angles, torsions, particles, and nonbonded exceptions from each force in the vanilla system to each new force in the REST system.\n",
+    "\n",
+    "Run REST\n",
+    "- We define a class called RESTState that creates a \"state\" (aka version of the REST system) with a particular set of global parameters.\n",
+    "- We choose the temperatures we'd like use for REST scaling and then create thermodynamic states corresponding to each temperature using the previously defined RESTState class. For each thermodynamic state, we minimize the positions with respect to the modified Hamiltonian.\n",
+    "- Finally, we create a replica exchange sampler that samples each of the thermodynamic states and use the sampler to run the replica exchange simulation. \n",
+    "\n",
+    "Note that this tutorial is inspired by the `RESTCapableHybridTopologyFactory` in Perses (https://github.com/choderalab/perses), which can be used to run relative alchemical free energy calculations.\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3600abfc",
+   "metadata": {},
+   "source": [
+    "## 01 - Construct a vanilla OpenMM system"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9fc22b65",
+   "metadata": {},
+   "source": [
+    "We first load a PDB file consisting of villin in water and build a `System` from it, which we refer to as the \"vanilla system\". The villin PDB file is present in the current directory (`openmm-cookbook/notebooks/cookbook/`), but can be also be downloaded here: https://raw.githubusercontent.com/openmm/openmm-cookbook/main/notebooks/cookbook/villin.pdb"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "b1a7f398",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import openmm\n",
+    "from openmm import app, unit"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "ba6c3c6c",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "4"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pdb = app.PDBFile('villin.pdb')\n",
+    "forcefield = app.ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')\n",
+    "system = forcefield.createSystem(pdb.topology, \n",
+    "                                 nonbondedMethod=app.PME,\n",
+    "                                 nonbondedCutoff=1*unit.nanometer, \n",
+    "                                 constraints=app.HBonds, \n",
+    "                                 removeCMMotion=False, \n",
+    "                                 hydrogenMass=3*unit.amu)\n",
+    "barostat = openmm.MonteCarloBarostat(1*unit.atmosphere, 300*unit.kelvin, 50)\n",
+    "system.addForce(barostat)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6da1d769",
+   "metadata": {},
+   "source": [
+    "We check the forces in the vanilla system to make sure they're as expected."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "ebc2011b",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[<openmm.openmm.HarmonicBondForce; proxy of <Swig Object of type 'OpenMM::HarmonicBondForce *' at 0x11fae7450> >,\n",
+       " <openmm.openmm.NonbondedForce; proxy of <Swig Object of type 'OpenMM::NonbondedForce *' at 0x11fae7e70> >,\n",
+       " <openmm.openmm.PeriodicTorsionForce; proxy of <Swig Object of type 'OpenMM::PeriodicTorsionForce *' at 0x11fae7f60> >,\n",
+       " <openmm.openmm.HarmonicAngleForce; proxy of <Swig Object of type 'OpenMM::HarmonicAngleForce *' at 0x11fae7300> >,\n",
+       " <openmm.openmm.MonteCarloBarostat; proxy of <Swig Object of type 'OpenMM::MonteCarloBarostat *' at 0x11fae72d0> >]"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "system.getForces()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4a00723c",
+   "metadata": {},
+   "source": [
+    "## 02 - Construct a REST-capable OpenMM system"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "3d2e008c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import copy"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4c6d1f59",
+   "metadata": {},
+   "source": [
+    "We now choose the REST atoms to be all atoms in one residue (residue index 3) of villin."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "57ccf168",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "res = list(pdb.topology.residues())[3]\n",
+    "rest_atoms = [atom.index for atom in res.atoms()]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7fef6ef2",
+   "metadata": {},
+   "source": [
+    "There are 15 REST atoms."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "4aba5ba6",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "15"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(rest_atoms)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "711c5f12",
+   "metadata": {},
+   "source": [
+    "We create a new `System` (which we refer to as the \"REST system\") and copy over the particles, barostat, box vectors, and constraints from the vanilla system."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "1cadabe7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create REST system\n",
+    "rest_system = openmm.System()\n",
+    "\n",
+    "# Create dict of vanilla system forces (for easy retrieval of force objects later)\n",
+    "system_forces = {type(force).__name__ : force for force in system.getForces()}\n",
+    "\n",
+    "# Add particles\n",
+    "for particle_idx in range(system.getNumParticles()):\n",
+    "    particle_mass = system.getParticleMass(particle_idx)\n",
+    "    rest_system.addParticle(particle_mass)\n",
+    "\n",
+    "# Copy barostat\n",
+    "if \"MonteCarloBarostat\" in system_forces:\n",
+    "    barostat = copy.deepcopy(system_forces[\"MonteCarloBarostat\"])\n",
+    "    rest_system.addForce(barostat)\n",
+    "\n",
+    "# Copy box vectors\n",
+    "box_vectors = system.getDefaultPeriodicBoxVectors()\n",
+    "rest_system.setDefaultPeriodicBoxVectors(*box_vectors)\n",
+    "\n",
+    "# Copy constraints\n",
+    "for constraint_idx in range(system.getNumConstraints()):\n",
+    "    atom1, atom2, length = system.getConstraintParameters(constraint_idx)\n",
+    "    rest_system.addConstraint(atom1, atom2, length)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1dc7b68d",
+   "metadata": {},
+   "source": [
+    "We create the REST system's bond force as a `CustomBondForce` which uses a custom energy expression that allows for REST scaling. We add a global parameter (`lambda_rest_bonds`) to act as the REST scale factor for bonds, i.e., to control the extent to which the bonds involving REST atoms are scaled. \n",
+    "\n",
+    "We add per-bond parameters that are booleans indicating whether each bond is:\n",
+    "- REST (if all atoms are REST atoms, `is_rest` is 1, otherwise 0)\n",
+    "- inter (if at least one, but not all atoms are REST atoms, `is_inter` is 1, otherwise 0), or \n",
+    "- non-REST (if no atoms are REST atoms, `is_nonrest` is 1, otherwise 0).\n",
+    "\n",
+    "We also add per-bond parameters that keep track of the length and spring constant for each bond."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "0c32ac8f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "4"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Define the custom expression\n",
+    "bond_expression = \"rest_scale * (K / 2) * (r - length)^2;\"\n",
+    "bond_expression += \"rest_scale = is_rest * lambda_rest_bonds * lambda_rest_bonds \" \\\n",
+    "                   \"+ is_inter * lambda_rest_bonds \" \\\n",
+    "                   \"+ is_nonrest;\"\n",
+    "\n",
+    "# Create custom force\n",
+    "rest_bond_force = openmm.CustomBondForce(bond_expression)\n",
+    "rest_system.addForce(rest_bond_force)\n",
+    "\n",
+    "# Add global parameters\n",
+    "rest_bond_force.addGlobalParameter(\"lambda_rest_bonds\", 1.0)\n",
+    "\n",
+    "# Add per-bond parameters for rest scaling\n",
+    "rest_bond_force.addPerBondParameter(\"is_rest\")\n",
+    "rest_bond_force.addPerBondParameter(\"is_inter\")\n",
+    "rest_bond_force.addPerBondParameter(\"is_nonrest\")\n",
+    "\n",
+    "# Add per-bond parameters for defining bond energy\n",
+    "rest_bond_force.addPerBondParameter('length')  # equilibrium bond length\n",
+    "rest_bond_force.addPerBondParameter('K')  # force constant"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0ceb9ff2",
+   "metadata": {},
+   "source": [
+    "We next want to add bonds to the REST system's bond force. To do so, we need to determine whether each bond should be considered REST, inter, or non-REST, so that we can set each of the following per-bond parameters: `is_rest`, `is_inter`, `is_nonrest`. We define a function `get_rest_identifier` to do this."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "e8eec0b2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def get_rest_identifier(atoms, rest_atoms):\n",
+    "    \"\"\"\n",
+    "    For a given atom or set of atoms, get the rest_id which is a list of binary ints that defines which\n",
+    "    (mutually exclusive) set the atom(s) belong to.\n",
+    "    \n",
+    "    If there is a single atom, the sets are: is_rest, is_nonrest\n",
+    "    If there is a set of atoms, the sets are: is_rest, is_inter, is_nonrest\n",
+    "    \n",
+    "    Example: if there is a single atom that is in the nonrest set, the rest_id is [0, 1]\n",
+    "    \n",
+    "    Arguments\n",
+    "    ---------\n",
+    "    atoms : set or int\n",
+    "        a set of hybrid atom indices or single atom\n",
+    "    rest_atoms : set or list\n",
+    "        a list (or list-like) of atoms whose interactions will be scaled by REST\n",
+    "    Returns\n",
+    "    -------\n",
+    "    rest_id : list\n",
+    "        list of binaries indicating which set the atom(s) belong to\n",
+    "    \"\"\"\n",
+    "\n",
+    "    if isinstance(atoms, int):\n",
+    "        rest_id = [0, 1] # Set the default rest_id to non-REST\n",
+    "        if atoms in rest_atoms:\n",
+    "            rest_id = [1, 0]\n",
+    "        return rest_id\n",
+    "\n",
+    "    elif isinstance(atoms, set):\n",
+    "        rest_id = [0, 0, 1] # Set the default rest_id to non-REST\n",
+    "        if atoms.intersection(rest_atoms) != set(): # At least one of the atoms is REST\n",
+    "            if atoms.issubset(rest_atoms): # All atoms are REST\n",
+    "                rest_id = [1, 0, 0]\n",
+    "            else: # At least one (but not all) of the atoms is are REST\n",
+    "                rest_id = [0, 1, 0]\n",
+    "        return rest_id\n",
+    "\n",
+    "    else:\n",
+    "        raise Exception(f\"atoms is of type {type(atoms)}, but only `int` and `set` are allowable\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d33d88e6",
+   "metadata": {},
+   "source": [
+    "Now we can add the bonds to the REST system's bond force. We copy the periodic boundary conditions and bonds from the vanilla system's bond force to the REST system's bond force. Each bond is defined by the indices of the two atoms that form the bond (`p1`, `p1`), the bond length (`r0`), and the force constant (`k`). Each bond also has a `rest_id` (determined using `get_rest_identifier()`, defined above), which indicates whether each bond should be considered REST, inter, or non-REST."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "3f020403",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get vanilla system bond force\n",
+    "bond_force = system_forces['HarmonicBondForce']\n",
+    "\n",
+    "# Set periodicity\n",
+    "if bond_force.usesPeriodicBoundaryConditions():\n",
+    "    rest_bond_force.setUsesPeriodicBoundaryConditions(True)\n",
+    "\n",
+    "# Add bonds to rest_system\n",
+    "for term_idx in range(bond_force.getNumBonds()):\n",
+    "    # Get the bond parameters and rest id\n",
+    "    p1, p2, r0, k = bond_force.getBondParameters(term_idx)\n",
+    "    idx_set = set([p1, p2])\n",
+    "    rest_id = get_rest_identifier(idx_set, rest_atoms)\n",
+    "\n",
+    "    # Add the bond\n",
+    "    bond_term = (p1, p2, rest_id + [r0, k])\n",
+    "    rest_bond_force.addBond(*bond_term)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bd7f05de",
+   "metadata": {},
+   "source": [
+    "We then repeat the same process to 1) construct the REST system's angle force (i.e., a `CustomAngleForce`) and 2) copy the angles from the vanilla system's angle force to the REST system's angle force."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "5a126cab",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Define the custom expression\n",
+    "angle_expression = \"rest_scale * (K / 2) * (theta - theta0)^2;\"\n",
+    "angle_expression += \"rest_scale = is_rest * lambda_rest_angles * lambda_rest_angles \" \\\n",
+    "                    \"+ is_inter * lambda_rest_angles \" \\\n",
+    "                    \"+ is_nonrest;\"\n",
+    "\n",
+    "# Create custom force\n",
+    "rest_angle_force = openmm.CustomAngleForce(angle_expression)\n",
+    "rest_system.addForce(rest_angle_force)\n",
+    "\n",
+    "# Add global parameters\n",
+    "rest_angle_force.addGlobalParameter(\"lambda_rest_angles\", 1.0)\n",
+    "\n",
+    "# Add per-angle parameters for rest scaling\n",
+    "rest_angle_force.addPerAngleParameter(\"is_rest\")\n",
+    "rest_angle_force.addPerAngleParameter(\"is_inter\")\n",
+    "rest_angle_force.addPerAngleParameter(\"is_nonrest\")\n",
+    "\n",
+    "# Add per-angle parameters for defining angle energy\n",
+    "rest_angle_force.addPerAngleParameter('theta0')  # equilibrium angle \n",
+    "rest_angle_force.addPerAngleParameter('K')  # force constant\n",
+    "\n",
+    "# Get vanilla system angle force\n",
+    "angle_force = system_forces['HarmonicAngleForce']\n",
+    "\n",
+    "# Set periodicity\n",
+    "if angle_force.usesPeriodicBoundaryConditions():\n",
+    "    rest_angle_force.setUsesPeriodicBoundaryConditions(True)\n",
+    "\n",
+    "# Add angles to rest_system\n",
+    "for term_idx in range(angle_force.getNumAngles()):\n",
+    "    # Get the angle parameters and rest id\n",
+    "    p1, p2, p3, theta0, k = angle_force.getAngleParameters(term_idx)\n",
+    "    idx_set = set([p1, p2, p3])\n",
+    "    rest_id = get_rest_identifier(idx_set, rest_atoms)\n",
+    "\n",
+    "    # Add the angle\n",
+    "    angle_term = (p1, p2, p3, rest_id + [theta0, k])\n",
+    "    rest_angle_force.addAngle(*angle_term)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c8b7d27b",
+   "metadata": {},
+   "source": [
+    "We next repeat the same process to 1) construct the REST system's torsion force (i.e., a `PeriodicTorsionForce`) and 2) copy the torsions from the vanilla system's torsion force to the REST system's torsion force."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "75c6c6b5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Define the custom expression\n",
+    "torsion_expression = \"rest_scale * U;\"\n",
+    "torsion_expression += \"rest_scale = is_rest * lambda_rest_torsions * lambda_rest_torsions \" \\\n",
+    "                      \"+ is_inter * lambda_rest_torsions \" \\\n",
+    "                      \"+ is_nonrest;\"\n",
+    "torsion_expression += \"U = (K * (1 + cos(periodicity * theta - phase)));\"\n",
+    "\n",
+    "# Create custom force\n",
+    "rest_torsion_force = openmm.CustomTorsionForce(torsion_expression)\n",
+    "rest_system.addForce(rest_torsion_force)\n",
+    "\n",
+    "# Add global parameters\n",
+    "rest_torsion_force.addGlobalParameter(\"lambda_rest_torsions\", 1.0)\n",
+    "\n",
+    "# Add per-torsion parameters for rest scaling\n",
+    "rest_torsion_force.addPerTorsionParameter(\"is_rest\")\n",
+    "rest_torsion_force.addPerTorsionParameter(\"is_inter\")\n",
+    "rest_torsion_force.addPerTorsionParameter(\"is_nonrest\")\n",
+    "\n",
+    "# Add per-torsion parameters for defining torsion energy\n",
+    "rest_torsion_force.addPerTorsionParameter('periodicity')\n",
+    "rest_torsion_force.addPerTorsionParameter('phase') # phase offset\n",
+    "rest_torsion_force.addPerTorsionParameter('K') # force constant\n",
+    "\n",
+    "# Get vanilla system torsion force\n",
+    "torsion_force = system_forces['PeriodicTorsionForce']\n",
+    "\n",
+    "# Set periodicity\n",
+    "if torsion_force.usesPeriodicBoundaryConditions():\n",
+    "    rest_torsion_force.setUsesPeriodicBoundaryConditions(True)\n",
+    "\n",
+    "# Add torsions to rest_system\n",
+    "for torsion_idx in range(torsion_force.getNumTorsions()):\n",
+    "    # Get the torsion parameters and rest id\n",
+    "    p1, p2, p3, p4, periodicity, phase, K = torsion_force.getTorsionParameters(torsion_idx)\n",
+    "    idx_set = set([p1, p2, p3, p4])\n",
+    "    rest_id = get_rest_identifier(idx_set, rest_atoms)\n",
+    "\n",
+    "    # Add torsion\n",
+    "    torsion_term = (p1, p2, p3, p4, rest_id + [periodicity, phase, K])\n",
+    "    rest_torsion_force.addTorsion(*torsion_term)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a29a7ccd",
+   "metadata": {},
+   "source": [
+    "Finally, we construct the REST system's nonbonded force (i.e., a `NonbondedForce`) by copying the nonbonded method and related parameters from the vanilla system's nonbonded force. We add two global parameters (`lambda_rest_electrostatics` and `lambda_rest_sterics`) to act as scale factors for nonbonded interactions involving REST atoms."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "9426f9f6",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Create nonbonded force\n",
+    "rest_nonbonded_force = openmm.NonbondedForce()\n",
+    "rest_system.addForce(rest_nonbonded_force)\n",
+    "\n",
+    "# Get vanilla system nonbonded force\n",
+    "nonbonded_force = system_forces['NonbondedForce']\n",
+    "\n",
+    "# Set the nonbonded method and related parameters\n",
+    "nonbonded_method = nonbonded_force.getNonbondedMethod()\n",
+    "rest_nonbonded_force.setNonbondedMethod(nonbonded_method)\n",
+    "if nonbonded_method != openmm.NonbondedForce.NoCutoff:\n",
+    "    epsilon_solvent = nonbonded_force.getReactionFieldDielectric()\n",
+    "    cutoff = nonbonded_force.getCutoffDistance()\n",
+    "    rest_nonbonded_force.setReactionFieldDielectric(epsilon_solvent)\n",
+    "    rest_nonbonded_force.setCutoffDistance(cutoff)\n",
+    "if nonbonded_method in [openmm.NonbondedForce.PME, openmm.NonbondedForce.Ewald]:\n",
+    "    [alpha_ewald, nx, ny, nz] = nonbonded_force.getPMEParameters()\n",
+    "    delta = nonbonded_force.getEwaldErrorTolerance()\n",
+    "    rest_nonbonded_force.setPMEParameters(alpha_ewald, nx, ny, nz)\n",
+    "    rest_nonbonded_force.setEwaldErrorTolerance(delta)\n",
+    "\n",
+    "# Copy switching function from vanilla system\n",
+    "switch_bool = nonbonded_force.getUseSwitchingFunction()\n",
+    "rest_nonbonded_force.setUseSwitchingFunction(switch_bool)\n",
+    "if switch_bool:\n",
+    "    switching_distance = nonbonded_force.getSwitchingDistance()\n",
+    "    rest_nonbonded_force.setSwitchingDistance(switching_distance)\n",
+    "\n",
+    "# Copy dispersion correction\n",
+    "dispersion_bool = nonbonded_force.getUseDispersionCorrection()\n",
+    "rest_nonbonded_force.setUseDispersionCorrection(dispersion_bool)\n",
+    "\n",
+    "# Add global parameters\n",
+    "rest_nonbonded_force.addGlobalParameter('lambda_rest_electrostatics', 0.)\n",
+    "rest_nonbonded_force.addGlobalParameter('lambda_rest_sterics', 0.)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "299a5712",
+   "metadata": {},
+   "source": [
+    "We then copy the nonbonded particles and exceptions from the vanilla system's nonbonded force to the rest system's nonbonded force. We add offsets to the particles and exceptions in order to apply REST scaling. The offsets for electrostatics and sterics depend on `lambda_rest_electrostatics` and `lambda_rest_sterics`, respectively. The offsets for REST and inter exceptions conveniently depend on `lambda_rest_sterics` and `lambda_rest_electrostatics`, respectively (derivation available in the Appendix)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "f0ed37a9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Add nonbondeds to rest_system\n",
+    "for particle_idx in range(nonbonded_force.getNumParticles()):\n",
+    "    # Get the nonbonded parameters and rest id\n",
+    "    q, sigma, epsilon = nonbonded_force.getParticleParameters(particle_idx)\n",
+    "    rest_id = get_rest_identifier(particle_idx, rest_atoms)\n",
+    "    \n",
+    "    # Add particles and offsets\n",
+    "    if rest_id == [0, 1]: # nonrest\n",
+    "        rest_nonbonded_force.addParticle(q, sigma, epsilon)\n",
+    "    \n",
+    "    else: # rest\n",
+    "        rest_nonbonded_force.addParticle(q, sigma, epsilon)\n",
+    "        rest_nonbonded_force.addParticleParameterOffset('lambda_rest_electrostatics', particle_idx, q, 0.0*sigma, epsilon*0.0)\n",
+    "        rest_nonbonded_force.addParticleParameterOffset('lambda_rest_sterics', particle_idx, q*0.0, 0.0*sigma, epsilon)\n",
+    "\n",
+    "# Handle exceptions\n",
+    "for exception_idx in range(nonbonded_force.getNumExceptions()):\n",
+    "    # Get exception parameters and rest id\n",
+    "    p1, p2, chargeProd, sigma, epsilon = nonbonded_force.getExceptionParameters(exception_idx)\n",
+    "    idx_set = set([p1, p2])\n",
+    "    rest_id = get_rest_identifier(idx_set, rest_atoms)\n",
+    "    \n",
+    "    # Add exceptions and offsets\n",
+    "    exc_idx = rest_nonbonded_force.addException(p1, p2, chargeProd, sigma, epsilon)\n",
+    "    if rest_id == [0, 0, 1]: # nonrest\n",
+    "        pass\n",
+    "    \n",
+    "    elif rest_id == [1, 0, 0]: # rest\n",
+    "        rest_nonbonded_force.addExceptionParameterOffset('lambda_rest_sterics', exc_idx, chargeProd, 0.0*sigma, epsilon)\n",
+    "        \n",
+    "    elif rest_id == [0, 1, 0]: # inter\n",
+    "        rest_nonbonded_force.addExceptionParameterOffset('lambda_rest_electrostatics', exc_idx, chargeProd, 0.0*sigma, epsilon)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "79cda46c",
+   "metadata": {},
+   "source": [
+    "We've now finished building a REST-capable OpenMM system for villin, `rest_system`!"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "f7fe78fb",
+   "metadata": {},
+   "source": [
+    "## 03 - Run replica exchange\n",
+    "\n",
+    "This section requires [openmmtools](https://openmmtools.readthedocs.io/en/stable/index.html)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "c455fe91",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!mamba install -qy -c conda-forge openmmtools"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "7eb9c10a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import math\n",
+    "import logging\n",
+    "import numpy as np\n",
+    "from openmmtools.constants import kB\n",
+    "from openmmtools import cache, mcmc, multistate\n",
+    "from openmmtools.multistate import ReplicaExchangeSampler\n",
+    "from openmmtools.states import GlobalParameterState, SamplerState, ThermodynamicState, CompoundThermodynamicState"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fd1e9f2f",
+   "metadata": {},
+   "source": [
+    "Now, we would like to use `rest_system` to run REST, which consists of using replica exchange to sample a number of thermodynamic states, each of which has a different REST-modified Hamiltonian. To construct each of the thermodynamic states, we define a class called `RESTState` that creates a \"state\" (aka version of the system) with a particular set of global parameters (`lambda_rest_bonds`, `lambda_rest_angles`, `lambda_rest_torsions`, `lambda_rest_electrostatics`, `lambda_rest_sterics`). To set the global parameters for each thermodynamic state, we just need to supply `beta_m` (proportional to the temperature `m` we wish to scale to) and `beta_0` (proportional to the temperature of distribution of interest), where `beta` = $\\frac{1}{k_b T}$. See Wang et al. 2011 (DOI: 10.1021/jp204407d) for more details.\n",
+    "\n",
+    "Given `beta_m` and `beta_0`, the `RESTState` takes care of actually computing the value for each global parameter (based on `lambda functions`). For `lambda_rest_bonds`, `lambda_rest_angles`, `lambda_rest_torsions`, the value will be computed according to $\\sqrt{\\frac{\\beta_m}{\\beta_0}}$. For `lambda_rest_electrostatics`, the value will be computed as $\\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$. For `lambda_rest_sterics`, the value will be computed as $\\frac{\\beta_m}{\\beta_0} - 1$. See Appendix for derivation of  the functions for `lambda_rest_electrostatics` and `lambda_rest_sterics`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "81f82a91",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class RESTState(GlobalParameterState):\n",
+    "    lambda_rest_bonds = GlobalParameterState.GlobalParameter('lambda_rest_bonds', standard_value=1.0)\n",
+    "    lambda_rest_angles = GlobalParameterState.GlobalParameter('lambda_rest_angles', standard_value=1.0)\n",
+    "    lambda_rest_torsions = GlobalParameterState.GlobalParameter('lambda_rest_torsions', standard_value=1.0)\n",
+    "    lambda_rest_electrostatics = GlobalParameterState.GlobalParameter('lambda_rest_electrostatics', standard_value=0.0)\n",
+    "    lambda_rest_sterics = GlobalParameterState.GlobalParameter('lambda_rest_sterics', standard_value=0.0)\n",
+    "\n",
+    "    def set_rest_parameters(self, beta_m, beta_0):\n",
+    "        \"\"\"Set all defined lambda parameters to the given value.\n",
+    "\n",
+    "        The undefined parameters (i.e. those being set to None) remain undefined.\n",
+    "\n",
+    "        Parameters\n",
+    "        ----------\n",
+    "        new_value : float\n",
+    "            The new value for all defined parameters.\n",
+    "        \"\"\"\n",
+    "        lambda_functions = {'lambda_rest_bonds': lambda beta_m, beta_0 : np.sqrt(beta_m / beta_0),\n",
+    "                 'lambda_rest_angles' : lambda beta_m, beta_0 : np.sqrt(beta_m / beta_0),\n",
+    "                 'lambda_rest_torsions' : lambda beta_m, beta_0 : np.sqrt(beta_m / beta_0),\n",
+    "                 'lambda_rest_electrostatics' : lambda beta_m, beta_0 : np.sqrt(beta_m / beta_0) - 1,\n",
+    "                 'lambda_rest_sterics' : lambda beta_m, beta_0 : beta_m / beta_0 - 1\n",
+    "                 }\n",
+    "\n",
+    "        for parameter_name in self._parameters:\n",
+    "            if self._parameters[parameter_name] is not None:\n",
+    "                new_value = lambda_functions[parameter_name](beta_m, beta_0)\n",
+    "                setattr(self, parameter_name, new_value)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2ac114fa",
+   "metadata": {},
+   "source": [
+    "We next determine the number of replicas and states (both are 12) and choose the `T_min` (the minimum temperature, i.e., the temperature of the desired distribution) and `T_max` (the maximum temperature to be scaled to during REST) to be 300 and 600 Kelvin, respectively. We set the temperatures of each thermodynamic state to be exponentially spaced between 300 and 600 Kelvin."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "5c1ef1b6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Set temperatures for each thermodynamic state\n",
+    "n_replicas = 12  # Number of temperature replicas\n",
+    "T_min = 300 * unit.kelvin  # Minimum temperature (i.e., temperature of desired distribution)\n",
+    "T_max = 600 * unit.kelvin  # Maximum temperature\n",
+    "temperatures = [T_min + (T_max - T_min) * (math.exp(float(i) / float(n_replicas-1)) - 1.0) / (math.e - 1.0)\n",
+    "                for i in range(n_replicas)]\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "691532bc",
+   "metadata": {},
+   "source": [
+    "We now create a reference thermodynamic state (i.e., `RESTState`) from the `rest_system` and use that state to create OpenMMTools `ThermodynamicState` and `CompoundThermodynamicState` objects which will be used with other OpenMMTools objects below to run replica exchange."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "b9fe7d93",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create reference thermodynamic state\n",
+    "rest_state = RESTState.from_system(rest_system)\n",
+    "thermostate = ThermodynamicState(rest_system, temperature=T_min)\n",
+    "compound_thermodynamic_state = CompoundThermodynamicState(thermostate, composable_states=[rest_state])\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "af88a570",
+   "metadata": {},
+   "source": [
+    "Using the reference thermodynamic state, we create a list of 12 thermodynamic states, one for each temperature in `temperatures`. Each of these thermodynamic states also has an associated OpenMMTools `SamplerState` object which contains the corresponding box vectors and minimized positions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "8f7afac8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create thermodynamic states\n",
+    "sampler_state =  SamplerState(pdb.positions, box_vectors=rest_system.getDefaultPeriodicBoxVectors())\n",
+    "beta_0 = 1/(kB*T_min)\n",
+    "thermodynamic_state_list = []\n",
+    "sampler_state_list = []\n",
+    "for temperature in temperatures:\n",
+    "    # Create a thermodynamic state with REST interactions scaled to the given temperature\n",
+    "    beta_m = 1/(kB*temperature)\n",
+    "    compound_thermodynamic_state_copy = copy.deepcopy(compound_thermodynamic_state)\n",
+    "    compound_thermodynamic_state_copy.set_rest_parameters(beta_m, beta_0)\n",
+    "    thermodynamic_state_list.append(compound_thermodynamic_state_copy)\n",
+    "\n",
+    "    # Generate a sampler_state with minimized positions\n",
+    "    context, integrator = cache.global_context_cache.get_context(compound_thermodynamic_state_copy)\n",
+    "    sampler_state.apply_to_context(context, ignore_velocities=True)\n",
+    "    openmm.LocalEnergyMinimizer.minimize(context)\n",
+    "    sampler_state.update_from_context(context)\n",
+    "    sampler_state_list.append(copy.deepcopy(sampler_state))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "448079da",
+   "metadata": {},
+   "source": [
+    "We now create OpenMMTools objects to run replica exchange. We instantiate a `LangevinDynamicsMove` which tells the `ReplicaExchangeSampler` to run 1 ps of molecular dynamics (here, Langevin dynamics) between swap attempts. We instantiate the `ReplicaExchangeSampler` with 100 iterations (i.e., swap attempts). We then initialize a `MultiStateReporter` to save critical information from the replica exchange simulation, e.g., reduced potentials, positions, box vectors, etc. And finally, we run the REST simulation!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "8fdefc50",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Warning: The openmmtools.multistate API is experimental and may change in future releases\n",
+      "/bin/sh: nvidia-smi: command not found\n",
+      "Warning: The openmmtools.multistate API is experimental and may change in future releases\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Please cite the following:\n",
+      "\n",
+      "        Friedrichs MS, Eastman P, Vaidyanathan V, Houston M, LeGrand S, Beberg AL, Ensign DL, Bruns CM, and Pande VS. Accelerating molecular dynamic simulations on graphics processing unit. J. Comput. Chem. 30:864, 2009. DOI: 10.1002/jcc.21209\n",
+      "        Eastman P and Pande VS. OpenMM: A hardware-independent framework for molecular simulations. Comput. Sci. Eng. 12:34, 2010. DOI: 10.1109/MCSE.2010.27\n",
+      "        Eastman P and Pande VS. Efficient nonbonded interactions for molecular dynamics on a graphics processing unit. J. Comput. Chem. 31:1268, 2010. DOI: 10.1002/jcc.21413\n",
+      "        Eastman P and Pande VS. Constant constraint matrix approximation: A robust, parallelizable constraint method for molecular simulations. J. Chem. Theor. Comput. 6:434, 2010. DOI: 10.1021/ct900463w\n",
+      "        Chodera JD and Shirts MR. Replica exchange and expanded ensemble simulations as Gibbs multistate: Simple improvements for enhanced mixing. J. Chem. Phys., 135:194110, 2011. DOI:10.1063/1.3660669\n",
+      "        \n"
+     ]
+    }
+   ],
+   "source": [
+    "# Set up sampler\n",
+    "_logger = logging.getLogger()\n",
+    "_logger.setLevel(logging.DEBUG)\n",
+    "move = mcmc.LangevinDynamicsMove(timestep=4*unit.femtoseconds, n_steps=250) # each move is 1 ps\n",
+    "simulation = ReplicaExchangeSampler(mcmc_moves=move, number_of_iterations=100)\n",
+    "\n",
+    "# Run repex\n",
+    "reporter_file = \"test.nc\"\n",
+    "reporter = multistate.MultiStateReporter(reporter_file, checkpoint_interval=100)\n",
+    "simulation.create(thermodynamic_states=thermodynamic_state_list,\n",
+    "                  sampler_states=sampler_state_list,\n",
+    "                  storage=reporter)\n",
+    "simulation.run()"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "9e7f5f10",
+   "metadata": {},
+   "source": [
+    "## Appendix"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "a57265cc",
+   "metadata": {},
+   "source": [
+    "### REST potential"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6dfb9c85",
+   "metadata": {},
+   "source": [
+    "According to Wang et al. 2011 (DOI: 10.1021/jp204407d, available at: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3172817/), the modified REST potential is defined as: \n",
+    "\n",
+    "$U_\\text{total}(x) = \\frac{\\beta_m}{\\beta_0} U_\\text{REST}(x) + \\sqrt{\\frac{\\beta_m}{\\beta_0}} U_\\text{inter}(x) + U_\\text{non-REST}(x)$ \n",
+    "\n",
+    "where $U_\\text{total}(x)$ represents the total potential energy of configuration $x$, $U_\\text{REST}(x)$ represents the potential energy of interactions between REST atoms, $U_\\text{inter}(x)$ represents the potential energy of interactions between REST and non-REST atoms (i.e., \"inter\"), and $U_\\text{non-REST}(x)$ represents interactions between non-REST atoms.\n",
+    "\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "714482c9",
+   "metadata": {},
+   "source": [
+    "### Electrostatic interactions"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "34345848",
+   "metadata": {},
+   "source": [
+    "For the `NonbondedForce`, we use offsets to scale the energies according to REST. We first explore how offsets are applied for electrostatic interactions.\n",
+    "\n",
+    "For electrostatics, the potential energy is defined by: \n",
+    "$U_\\text{elec} = \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "where $q$ is the charge of an atom, $\\epsilon_0$ is the vacuum permittivity, and $r$ is the distance between atoms.\n",
+    "\n",
+    "We apply offsets to the charge ($q$) according to: \n",
+    "\n",
+    "charge = baseCharge + lambda_rest_electrostatics*chargeScale\n",
+    "\n",
+    "where `baseCharge` is the current charge value for the atom in the `NonbondedForce`, `lambda_rest_electrostatics` is a global parameter and must be between 0 and 1, and `chargeScale` (when multiplied with `lambda_rest_electrostatics`) controls the value to be added to `baseCharge`.\n",
+    "\n",
+    "We set `chargeScale` = `baseCharge` and derive the functional form for `lambda_rest_electrostatics` to enable REST scaling for each of the following cases:\n",
+    "\n",
+    "Case 1: Both atoms are non-REST\n",
+    "\n",
+    "- The interaction should not be scaled, meaning no offset is needed.\n",
+    "\n",
+    "Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)\n",
+    "\n",
+    "- We can express the electrostatics energy as \n",
+    "\n",
+    "    $U_\\text{elec} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r} = \\frac{q_1 (q_2 + \\lambda q_2)}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{elec} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} = 1 + \\lambda$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$\n",
+    "\n",
+    "Case 3: Both atoms are REST\n",
+    "\n",
+    "- We can express the electrostatics energy as \n",
+    "\n",
+    "    $U_\\text{elec} =  \\frac{\\beta_m}{\\beta_0} \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r} = \\frac{(q_1 + q_1 \\lambda) (q_2 + \\lambda q_2)}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{elec} =  \\frac{\\beta_m}{\\beta_0} \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r} = \\frac{q_1 q_2 (1 + \\lambda)^2}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$\n",
+    "\n",
+    "In both cases 2 and 3, $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$. We use this as our lambda function for `lambda_rest_electrostatics`.\n",
+    "\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "e22ee9fb",
+   "metadata": {},
+   "source": [
+    "### Steric interactions"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "7f56b8d1",
+   "metadata": {},
+   "source": [
+    "We also use offsets to modify steric interactions involving REST atoms.\n",
+    "\n",
+    "For sterics, the potential energy is defined by: \n",
+    "$U_\\text{sterics} = 4\\epsilon\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right)$\n",
+    "where $\\sigma$ is the distance at which the energy equals zero, $r$ is the distance between atoms, and $\\epsilon$ is the strength of the interaction (computed from the the $\\epsilon$s of atoms 1 and 2: $\\epsilon = \\sqrt{\\epsilon_1\\epsilon_2}$).\n",
+    "\n",
+    "We apply offsets to $\\epsilon_i$ according to: \n",
+    "\n",
+    "epsilon = baseEpsilon + lambda_rest_sterics*epsilonScale$\n",
+    "\n",
+    "where `baseEpsilon` is the current $\\epsilon$ value for the atom in the `NonbondedForce`, `lambda_rest_sterics` is a global parameter and must be between 0 and 1, and `epsilonScale` (when multiplied with `lambda_rest_sterics`) controls the value to be added to `baseEpsilon`.\n",
+    "\n",
+    "We set `epsilonScale` = `baseEpsilon` and derive the functional form for `lambda_rest_sterics` to enable REST scaling for each of the following cases:\n",
+    "\n",
+    "Case 1: Both atoms are non-REST\n",
+    "\n",
+    "- The interaction should not be scaled, meaning no offset is needed.\n",
+    "\n",
+    "Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)\n",
+    "\n",
+    "- We can express the sterics energy as \n",
+    "\n",
+    "    $U_\\text{sterics} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\cdot 4\\sqrt{\\epsilon_1\\epsilon_2}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right) = 4\\sqrt{\\epsilon_1(\\epsilon_2 + \\lambda\\epsilon_2)}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right)$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{sterics} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\cdot \\sqrt{\\epsilon_1\\epsilon_2} = \\sqrt{\\epsilon_1\\epsilon_2(1 + \\lambda)}$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$\n",
+    "\n",
+    "Case 3: Both atoms are REST\n",
+    "\n",
+    "- We can express the sterics energy as \n",
+    "\n",
+    "   $U_\\text{sterics} =  \\frac{\\beta_m}{\\beta_0} \\cdot 4\\sqrt{\\epsilon_1\\epsilon_2}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right) = 4\\sqrt{\\epsilon_1\\epsilon_2 (1 + \\lambda)^2}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right)$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{sterics} =  \\frac{\\beta_m}{\\beta_0} \\cdot \\sqrt{\\epsilon_1\\epsilon_2} = \\sqrt{\\epsilon_1\\epsilon_2(1 + \\lambda)^2}$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$\n",
+    "\n",
+    "In both cases 2 and 3, $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$. We use this as our lambda function for `lambda_rest_sterics`.\n",
+    "\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "2b2010ed",
+   "metadata": {},
+   "source": [
+    "### Electrostatic exceptions"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "2ce3fb6a",
+   "metadata": {},
+   "source": [
+    "We also use offsets to modify electrostatics exceptions involving REST atoms.\n",
+    "\n",
+    "For electrostatic exceptions, the functional form of the potential energy is the same as for electrostatic interactions, except that for exceptions, the functional form accepts the charge product directly, instead of the individual charges for each atom. Therefore, `lambda_rest_electrostatics` will scale the product, not each individual charge. \n",
+    "\n",
+    "We apply offsets to the chargeProd ($q_1 q_2$) according to: \n",
+    "\n",
+    "chargeProd = baseChargeProd + lambda_rest_electrostatics*chargeProdScale\n",
+    "\n",
+    "where `baseChargeProd` is the current charge product for the two atoms in the `NonbondedForce`, `lambda_rest_electrostatics` is a global parameter and must be between 0 and 1, and `chargeProdScale` (when multiplied with `lambda_rest_electrostatics`) controls the value to be added to `baseChargeProd`.\n",
+    "\n",
+    "We set `chargeProdScale` = `baseChargeProd` and derive the functional form for the rest scale factor (i.e., $\\lambda$) for each of the following cases:\n",
+    "\n",
+    "Case 1: Both atoms are non-REST\n",
+    "\n",
+    "- The interaction should not be scaled, meaning no offset is needed.\n",
+    "\n",
+    "Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)\n",
+    "\n",
+    "- We can express the electrostatics energy as \n",
+    "\n",
+    "    $U_\\text{elec} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r} = \\frac{q_1 q_2 + \\lambda q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{elec} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} = 1 + \\lambda$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$\n",
+    "\n",
+    "Case 3: Both atoms are REST\n",
+    "\n",
+    "- We can express the electrostatics energy as \n",
+    "\n",
+    "    $U_\\text{elec} =  \\frac{\\beta_m}{\\beta_0} \\frac{q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r} = \\frac{q_1 q_2 + \\lambda q_1 q_2}{4\\pi\\epsilon_0}\\frac{1}{r}$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{elec} =  \\frac{\\beta_m}{\\beta_0} = 1 + \\lambda$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$\n",
+    "\n",
+    "In case 2, $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$, which matches the `lambda_rest_electrostatics` function. In case 3, $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$, which matches the `lambda_rest_sterics` function. We therefore use `lambda_rest_electrostatics` and `lambda_rest_sterics` to control the offsets for inter and REST exceptions, respectively.\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "88683a37",
+   "metadata": {},
+   "source": [
+    "### Steric exceptions"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "id": "930918f5",
+   "metadata": {},
+   "source": [
+    "We also use offsets to modify steric exceptions involving REST atoms.\n",
+    "\n",
+    "For steric exceptions, the functional form of the potential energy is the same as for steric interactions, except that for exceptions, the functional form accepts the combined $\\epsilon$ directly, instead of the individual $\\epsilon$s for each atom. Therefore, `lambda_rest_sterics` will scale the product, not each individual $\\epsilon$. \n",
+    "\n",
+    "We apply offsets to the combined $\\epsilon$ (computed from $\\sqrt{\\epsilon_1 \\epsilon_2}$) according to: \n",
+    "\n",
+    "epsilonCombined = baseEpsilonCombined + lambda_rest_sterics*epsilonCombinedScale\n",
+    "\n",
+    "where `baseEpsilonCombined` is the current combined epsilon for the two atoms in the `NonbondedForce`, `lambda_rest_sterics` is a global parameter and must be between 0 and 1, and `epsilonCombinedScale` (when multiplied with `lambda_rest_sterics`) controls the value to be added to `baseEpsilonCombined`.\n",
+    "\n",
+    "We set `epsilonCombinedScale` = `baseEpsilonCombined` and derive the functional form for the rest scale factor (i.e., $\\lambda$) for each of the following cases:\n",
+    "\n",
+    "Case 1: Both atoms are non-REST\n",
+    "\n",
+    "- The interaction should not be scaled, meaning no offset is needed.\n",
+    "\n",
+    "Case 2: Atom 1 is non-REST, Atom 2 is REST (or vice-versa)\n",
+    "\n",
+    "- We can express the sterics energy as \n",
+    "\n",
+    "    $U_\\text{sterics} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\cdot 4\\sqrt{\\epsilon_1\\epsilon_2}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right) = 4\\left(\\sqrt{\\epsilon_1\\epsilon_2} + \\lambda\\sqrt{\\epsilon_1\\epsilon_2}\\right)\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right)$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{sterics} =  \\sqrt{\\frac{\\beta_m}{\\beta_0}} \\cdot \\sqrt{\\epsilon_1\\epsilon_2} = \\sqrt{\\epsilon_1\\epsilon_2}(1 + \\lambda)$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$\n",
+    "\n",
+    "Case 3: Both atoms are REST\n",
+    "\n",
+    "- We can express the sterics energy as \n",
+    "\n",
+    "   $U_\\text{sterics} =  \\frac{\\beta_m}{\\beta_0} \\cdot 4\\sqrt{\\epsilon_1\\epsilon_2}\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right) = 4\\left(\\sqrt{\\epsilon_1\\epsilon_2} + \\lambda \\sqrt{\\epsilon_1\\epsilon_2}\\right)\\left(\\left(\\frac{\\sigma}{r}\\right)^{12} - \\left(\\frac{\\sigma}{r}\\right)^6\\right)$\n",
+    "- which is equivalent to \n",
+    "    \n",
+    "    $U_\\text{sterics} =  \\frac{\\beta_m}{\\beta_0} \\cdot \\sqrt{\\epsilon_1\\epsilon_2} = \\sqrt{\\epsilon_1\\epsilon_2}(1 + \\lambda)$\n",
+    "- meaning \n",
+    "\n",
+    "    $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$\n",
+    "\n",
+    "In case 2, $\\lambda = \\sqrt{\\frac{\\beta_m}{\\beta_0}} - 1$, which matches the `lambda_rest_electrostatics` function. In case 3, $\\lambda = \\frac{\\beta_m}{\\beta_0} - 1$, which matches the `lambda_rest_sterics` function. We therefore use `lambda_rest_electrostatics` and `lambda_rest_sterics` to control the offsets for inter and REST exceptions, respectively.\n",
+    "\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "cookbook3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.10"
+  },
+  "vscode": {
+   "interpreter": {
+    "hash": "8e9b2cd2ea685a6a7537dbb8f22312fa5d418567523017b5ee2e8a8d1857a067"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
