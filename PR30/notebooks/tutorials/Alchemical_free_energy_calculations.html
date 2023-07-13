@@ -316,7 +316,8 @@ code <a class="reference external" href="http://github.com/choderalab/yank">YANK
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># openmmtools is also needed for this notebook</span>
-<span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools
+<span class="c1"># Pin pymbar to version 3 as this tutorial is not compatible with pymbar 4 API yet</span>
+<span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools<span class="w"> </span><span class="nv">pymbar</span><span class="o">=</span><span class="m">3</span>
 </pre></div>
 </div>
 </div>

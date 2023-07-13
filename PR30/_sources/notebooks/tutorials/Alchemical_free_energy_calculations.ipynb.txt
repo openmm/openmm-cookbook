@@ -29,7 +29,8 @@
    "outputs": [],
    "source": [
     "# openmmtools is also needed for this notebook\n",
-    "!mamba install -y -c conda-forge openmmtools"
+    "# Pin pymbar to version 3 as this tutorial is not compatible with pymbar 4 API yet\n",
+    "!mamba install -y -c conda-forge openmmtools pymbar=3"
    ]
   },
   {
