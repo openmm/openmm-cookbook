@@ -316,8 +316,7 @@ code <a class="reference external" href="http://github.com/choderalab/yank">YANK
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># openmmtools is also needed for this notebook</span>
-<span class="c1"># Pin pymbar to version 3 as this tutorial is not compatible with pymbar 4 API yet</span>
-<span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools<span class="w"> </span><span class="nv">pymbar</span><span class="o">=</span><span class="m">3</span>
+<span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools
 </pre></div>
 </div>
 </div>
@@ -454,6 +453,7 @@ energies at the new alchemical state.</p>
 <h2>Analyzing the data with MBAR<a class="headerlink" href="#Analyzing-the-data-with-MBAR" title="Permalink to this headline">¶</a></h2>
 <p>Finally, the <a class="reference external" href="https://dx.doi.org/10.1063%2F1.2978177">multistate Bennett acceptance ratio (MBAR)</a> is used to estimate the free energy of annihilating the particle using the conda-installable <a class="reference external" href="http://pymbar.org/">pymbar</a> package. In order to estimate how much data must be discarded to equilibration, we use a scheme for <a class="reference external" href="http://dx.doi.org/10.1021/acs.jctc.5b00784">automated equilibration detection</a> and subsequent extraction of decorrelated samples found in the
 <a class="reference external" href="http://github.com/choderalab/pymbar">pymbar.timeseries</a> module.</p>
+<p>Please note that we have updated this tutorial for pymbar version 4 <a class="reference external" href="https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html">https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -464,20 +464,21 @@ energies at the new alchemical state.</p>
 <span class="c1">## Subsample data to extract uncorrelated equilibrium timeseries</span>
 <span class="n">N_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nstates</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="c1"># number of uncorrelated samples</span>
 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
-    <span class="p">[</span><span class="n">nequil</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">Neff_max</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">detectEquilibration</span><span class="p">(</span><span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,:])</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">subsampleCorrelatedData</span><span class="p">(</span><span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,:],</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">nequil</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">Neff_max</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">detect_equilibration</span><span class="p">(</span><span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,:])</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">subsample_correlated_data</span><span class="p">(</span><span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,:],</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">)</span>
     <span class="n">N_k</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
     <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,:,</span><span class="mi">0</span><span class="p">:</span><span class="n">N_k</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="o">=</span> <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,:,</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
 
 <span class="c1"># Compute free energy differences</span>
 <span class="n">mbar</span> <span class="o">=</span> <span class="n">MBAR</span><span class="p">(</span><span class="n">u_kln</span><span class="p">,</span> <span class="n">N_k</span><span class="p">)</span>
 
-<span class="c1"># dont compute uncertainties here, if you do it may fail with an error for</span>
-<span class="c1"># pymbar versions &gt; 3.0.3. See this issue: https://github.com/choderalab/pymbar/issues/419</span>
-<span class="p">[</span><span class="n">DeltaF_ij</span><span class="p">]</span> <span class="o">=</span> <span class="n">mbar</span><span class="o">.</span><span class="n">getFreeEnergyDifferences</span><span class="p">(</span><span class="n">compute_uncertainty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># If this fails try setting compute_uncertainty to false</span>
+<span class="c1"># See this issue: https://github.com/choderalab/pymbar/issues/419</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">mbar</span><span class="o">.</span><span class="n">compute_free_energy_differences</span><span class="p">(</span><span class="n">compute_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Free energy change to insert a particle = &quot;</span><span class="p">,</span><span class="n">DeltaF_ij</span><span class="p">[</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-</pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Free energy change to insert a particle = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;Delta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Statistical uncertainty = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;dDelta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<br/></pre></div>
 </div>
 </div>
 </section>
