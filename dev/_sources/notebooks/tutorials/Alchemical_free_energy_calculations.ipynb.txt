@@ -99,6 +99,11 @@
     "energy_function += 'sigma = 0.5*(sigma1+sigma2); epsilon = sqrt(epsilon1*epsilon2);'\n",
     "custom_force = CustomNonbondedForce(energy_function)\n",
     "\n",
+    "# Set the custom force to use a cutoff\n",
+    "custom_force.setNonbondedMethod(CustomNonbondedForce.CutoffPeriodic)\n",
+    "# and set the cutoff distance to be the same as the existing nbforce\n",
+    "custom_force.setCutoffDistance(nbforce.getCutoffDistance())\n",
+    "\n",
     "# Add lambda as a parameter we can change during the simulation\n",
     "custom_force.addGlobalParameter('lambda', 1.0)\n",
     "\n",
@@ -176,13 +181,16 @@
    ]
   },
   {
+   "attachments": {},
    "cell_type": "markdown",
    "id": "05abedbb",
    "metadata": {},
    "source": [
     "### Analyzing the data with MBAR\n",
     "\n",
-    "Finally, the [multistate Bennett acceptance ratio (MBAR)](https://dx.doi.org/10.1063%2F1.2978177) is used to estimate the free energy of annihilating the particle using the conda-installable [pymbar](http://pymbar.org/) package. In order to estimate how much data must be discarded to equilibration, we use a scheme for [automated equilibration detection](http://dx.doi.org/10.1021/acs.jctc.5b00784) and subsequent extraction of decorrelated samples found in the [pymbar.timeseries](http://github.com/choderalab/pymbar) module."
+    "Finally, the [multistate Bennett acceptance ratio (MBAR)](https://dx.doi.org/10.1063%2F1.2978177) is used to estimate the free energy of annihilating the particle using the conda-installable [pymbar](http://pymbar.org/) package. In order to estimate how much data must be discarded to equilibration, we use a scheme for [automated equilibration detection](http://dx.doi.org/10.1021/acs.jctc.5b00784) and subsequent extraction of decorrelated samples found in the [pymbar.timeseries](http://github.com/choderalab/pymbar) module.\n",
+    "\n",
+    "Please note that we have updated this tutorial for pymbar version 4 https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html."
    ]
   },
   {
@@ -199,19 +207,20 @@
     "## Subsample data to extract uncorrelated equilibrium timeseries\n",
     "N_k = np.zeros([nstates], np.int32) # number of uncorrelated samples\n",
     "for k in range(nstates):\n",
-    "    [nequil, g, Neff_max] = timeseries.detectEquilibration(u_kln[k,k,:])\n",
-    "    indices = timeseries.subsampleCorrelatedData(u_kln[k,k,:], g=g)\n",
+    "    [nequil, g, Neff_max] = timeseries.detect_equilibration(u_kln[k,k,:])\n",
+    "    indices = timeseries.subsample_correlated_data(u_kln[k,k,:], g=g)\n",
     "    N_k[k] = len(indices)\n",
     "    u_kln[k,:,0:N_k[k]] = u_kln[k,:,indices].T\n",
     "\n",
     "# Compute free energy differences\n",
     "mbar = MBAR(u_kln, N_k)\n",
     "\n",
-    "# dont compute uncertainties here, if you do it may fail with an error for\n",
-    "# pymbar versions > 3.0.3. See this issue: https://github.com/choderalab/pymbar/issues/419\n",
-    "[DeltaF_ij] = mbar.getFreeEnergyDifferences(compute_uncertainty=False)\n",
+    "# If this fails try setting compute_uncertainty to false\n",
+    "# See this issue: https://github.com/choderalab/pymbar/issues/419\n",
+    "results = mbar.compute_free_energy_differences(compute_uncertainty=True)\n",
     "\n",
-    "print(\"Free energy change to insert a particle = \",DeltaF_ij[nstates-1][0])"
+    "print(\"Free energy change to insert a particle = \", results['Delta_f'][nstates-1,0])\n",
+    "print(\"Statistical uncertainty = \", results['dDelta_f'][nstates-1,0])\n"
    ]
   }
  ],
