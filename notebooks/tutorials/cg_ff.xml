@@ -9,7 +9,7 @@
         <!-- Each bead is a single residue.
         Need a template for the different Residue types. 
         First type is the end. This only has one bond. -->
-        <Residue name="CG-residue-end"> -->
+        <Residue name="CG-residue-end">
             <Atom name="CG-bead" type="CG-bead"/>
             <ExternalBond atomName="CG-bead"/>
         </Residue>
