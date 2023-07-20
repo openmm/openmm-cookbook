@@ -1,0 +1,37 @@
+<!-- Coarse-grained forcefield for a bead-spring polymer. -->
+<ForceField>
+	
+    <AtomTypes>
+		<Type name="CG-bead" class="CG-bead" element="CG" mass="120.0"/>
+	</AtomTypes>
+
+	<Residues>
+        <!-- Each bead is a single residue.
+        Need a template for the different Residue types. 
+        First type is the end. This only has one bond. -->
+        <Residue name="CG-residue-end">
+            <Atom name="CG-bead" type="CG-bead"/>
+            <ExternalBond atomName="CG-bead"/>
+        </Residue>
+
+        <!-- Second type is in the middle of the chain. This has two bonds. -->
+        <Residue name="CG-residue-middle">
+            <Atom name="CG-bead" type="CG-bead"/>
+            <ExternalBond atomName="CG-bead"/>
+            <ExternalBond atomName="CG-bead"/>
+        </Residue>
+    </Residues>
+
+    <!-- Define a harmonic bond between the CA-beads -->
+    <HarmonicBondForce>
+        <Bond class1="CG-bead" class2="CG-bead" length="0.38" k="1000.0"/>
+    </HarmonicBondForce>
+
+    <!-- Use a custom non-bonded force for maximum flexibility.
+    The bondCutoff=1 tells it to only exclude interactions between directly bonded atoms. -->
+    <CustomNonbondedForce energy="4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)" bondCutoff="1">
+        <PerParticleParameter name="sigma"/>
+        <PerParticleParameter name="epsilon"/>
+		<Atom type="CG-bead" charge="0.0" sigma="0.5" epsilon="1.0"/>
+	</CustomNonbondedForce>
+</ForceField>

@@ -13,6 +13,16 @@ caption: Basic Tutorials
 notebooks/tutorials/protein_in_water
 :::
 
+## Coarse-graining
+:::{nbgallery}
+---
+glob: True
+caption: Coarse-graining
+---
+notebooks/tutorials/coarse_grained_polymer.ipynb
+:::
+
+
 ## Advanced Tutorials
 Tutorials showing more the more advanced capabilities.
 :::{nbgallery}
