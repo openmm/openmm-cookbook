@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>First Simulation &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <title>Reporting Minimization &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -20,8 +20,8 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Changing Temperature and Pressure" href="Changing%20Temperature%20and%20Pressure.html" />
-    <link rel="prev" title="The OpenMM Cookbook" href="../../cookbook.html" />
+    <link rel="next" title="The OpenMM Tutorials" href="../../tutorials.html" />
+    <link rel="prev" title="Querying and Modifying Charges and Other Parameters" href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -297,14 +297,15 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <div class="nbsphinx-prolog">
-    <a href="first_simulation.ipynb">Download Notebook</a>
-    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/first_simulation.ipynb">View in GitHub</a>
-    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/cookbook/first_simulation.ipynb">Open in Google Colab</a>
-</div><span class="target" id="index-0"></span><section id="First-Simulation">
-<h1>First Simulation<a class="headerlink" href="#First-Simulation" title="Permalink to this headline">¶</a></h1>
-<p>This is a good starting point for learning how to use OpenMM.</p>
-<p>It loads a PDB file <code class="docutils literal notranslate"><span class="pre">villin.pdb</span></code>, which is the <a class="reference external" href="https://en.wikipedia.org/wiki/Villin-1">villin headpiece protein</a> in a box of water. In then parameterizes it using the Amber14 forcefield and TIP3P-FB water model, energy minimizes it, and simulates it for 1000 steps with a langevin intergator.</p>
-<div class="nbinput docutils container">
+    <a href="report_minimization.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/report_minimization.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/cookbook/report_minimization.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Reporting-Minimization">
+<h1>Reporting Minimization<a class="headerlink" href="#Reporting-Minimization" title="Permalink to this headline">¶</a></h1>
+<p>You can report the status of <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html?#openmm.app.simulation.Simulation.minimizeEnergy">simulation.minimizeEnergy()</a> using a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.MinimizationReporter.html">MinimizationReporter</a>. Note that <code class="docutils literal notranslate"><span class="pre">MinimizationReporter</span></code> was introduced in OpenMM 8.1.</p>
+<p>The syntax for doing this is somewhat different to typical OpenMM functionality. You will need to define a subclass of <code class="docutils literal notranslate"><span class="pre">MinimizationReporter</span></code> that has a <code class="docutils literal notranslate"><span class="pre">report()</span></code> method. Within this report method you can write code to take any action you want. The report method is called every iteration of the minimizer. Read the <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.MinimizationReporter.html">API documentation</a> for more explanation.</p>
+<p>First we will create a test system then we will show an example.</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
@@ -313,41 +314,91 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
 
-<span class="c1"># Load in the PDB strucure</span>
 <span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
-
-<span class="c1"># Specifiy the forcefield</span>
 <span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
-
-
-<span class="c1"># Combine the molecular topology and the forcefield</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
         <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
-
-<span class="c1"># Create the integrator to use for advacing the equations of motion.</span>
-<span class="c1"># It specifies a Langevin integrator.</span>
-<span class="c1"># The paramters set are temperature, friction coefficient, and timestep.</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
-
-<span class="c1"># Combines the molecular topology, system, and integrator</span>
-<span class="c1"># to begin a new simulation.</span>
 <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Below is an example which prints the current energy to the screen and saves the energy to an array for plotting. The comments explain each part.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># The class can have any name but it must subclass MinimizationReporter.</span>
+<span class="k">class</span> <span class="nc">MyMinimizationReporter</span><span class="p">(</span><span class="n">MinimizationReporter</span><span class="p">):</span>
 
-<span class="c1"># Perform local energy minimization</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Minimizing energy...&quot;</span><span class="p">)</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">(</span><span class="n">maxIterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="c1"># within the class you can declare variables that persist throughout the</span>
+    <span class="c1"># minimization</span>
 
-<span class="c1"># Write the trajectory to a file called &quot;output.pdb&quot;</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PDBReporter</span><span class="p">(</span><span class="s1">&#39;output.pdb&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">))</span>
+    <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># array to record progress</span>
 
-<span class="c1"># Report infomation to the screen as the simulation runs</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="c1"># you must override the report method and it must have this signature.</span>
+    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        the report method is called every iteration of the minimization.</span>
 
-<span class="c1">#Run the simulation for 1000 timsteps</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running simulation...&quot;</span><span class="p">)</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            iteration (int): The index of the current iteration. This refers</span>
+<span class="sd">                             to the current call to the L-BFGS optimizer.</span>
+<span class="sd">                             Each time the minimizer increases the restraint strength,</span>
+<span class="sd">                             the iteration index is reset to 0.</span>
+
+<span class="sd">            x (array-like): The current particle positions in flattened order:</span>
+<span class="sd">                            the three coordinates of the first particle,</span>
+<span class="sd">                            then the three coordinates of the second particle, etc.</span>
+
+<span class="sd">            grad (array-like): The current gradient of the objective function</span>
+<span class="sd">                               (potential energy plus restraint energy) with</span>
+<span class="sd">                               respect to the particle coordinates, in flattened order.</span>
+
+<span class="sd">            args (dict): Additional statistics described above about the current state of minimization.</span>
+<span class="sd">                         In particular:</span>
+<span class="sd">                         “system energy”: the current potential energy of the system</span>
+<span class="sd">                         “restraint energy”: the energy of the harmonic restraints</span>
+<span class="sd">                         “restraint strength”: the force constant of the restraints (in kJ/mol/nm^2)</span>
+<span class="sd">                         “max constraint error”: the maximum relative error in the length of any constraint</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : Specify if minimization should be stopped.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># Within the report method you write the code you want to be executed at</span>
+        <span class="c1"># each iteration of the minimization.</span>
+        <span class="c1"># In this example we get the current energy, print it to the screen, and save it to an array.</span>
+
+        <span class="n">current_energy</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;system energy&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># only print to screen every 100 iterations for clarity of webpage display</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">current_energy</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_energy</span><span class="p">)</span>
+
+        <span class="c1"># The report method must return a bool specifying if minimization should be stopped.</span>
+        <span class="c1"># You can use this functionality for early termination.</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+<p>We now create an instance of the reporter and minimize the system with the reporter attached.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reporter</span> <span class="o">=</span> <span class="n">MyMinimizationReporter</span><span class="p">()</span>
+
+<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">(</span><span class="n">reporter</span><span class="o">=</span><span class="n">reporter</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">reporter</span><span class="o">.</span><span class="n">energies</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;System energy (kJ/mol)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Minimization iteration&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -356,7 +407,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Minimizing energy...
+-142752.4829820002
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -364,7 +415,7 @@ Minimizing energy...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Running simulation...
+-172600.61286814426
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -372,7 +423,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-#&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;
+-176350.9121980728
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -380,7 +431,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-100,-154182.69328281307,146.84014181906187
+-178082.39053243893
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -388,7 +439,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-200,-150561.54412725402,202.21333959234298
+-179001.32075730423
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -396,7 +447,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-300,-148167.39953218953,236.4575767860512
+-179449.9535824655
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -404,7 +455,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-400,-146560.86349830756,258.436486685377
+-179787.81424348694
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -412,7 +463,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-500,-145439.13934520682,272.4278095164674
+-130436.52349621359
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -420,7 +471,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-600,-144398.90692638594,277.474536908782
+-153731.81033183183
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -428,7 +479,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-700,-143922.56028575602,282.9090864511679
+-158893.09683325
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -436,7 +487,7 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-800,-143300.68101606035,284.0890902651323
+-161371.83576248403
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -444,17 +495,200 @@ Running simulation...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-900,-142839.77902464525,288.5596484705654
+-162798.59830031695
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-163750.27338761103
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-164583.5929359414
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-165111.86466812095
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-165685.33011257192
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-166095.94886591853
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-166419.86401987408
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-166714.80609204687
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-166905.94190024622
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167103.17940697435
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167268.17701494784
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167420.67852697457
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167555.70245464446
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167657.1597443788
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167756.66600105583
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167831.22170631718
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167907.68236496928
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167963.4909734041
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167999.72042089768
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-168059.21264844976
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-168105.44811788748
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-167198.26465962586
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-166862.8159779532
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-1000,-142368.53374238528,291.514018724144
-</pre></div></div>
+<img alt="../../_images/notebooks_cookbook_report_minimization_6_34.png" src="../../_images/notebooks_cookbook_report_minimization_6_34.png" />
 </div>
+</div>
+<p>You will notice that the energy does not change continuously and does not always decrease. This is because the L-BFGS algorithm used by the minimizer does not support constraints. The minimizer therefore replaces all constraints with harmonic restraints, then performs unconstrained minimization of a combined objective function that is the sum of the system’s potential energy and the restraint energy. Once minimization completes, it checks whether all constraints are satisfied to an acceptable
+tolerance. It not, it increases the strength of the harmonic restraints and performs additional minimization. If the error in constrained distances is especially large, it may choose to throw out all work that has been done so far and start over with stronger restraints. This has several important consequences:</p>
+<ul class="simple">
+<li><p>The objective function being minimized not actually the same as the potential energy.</p></li>
+<li><p>The objective function and the potential energy can both increase between iterations.</p></li>
+<li><p>The total number of iterations performed could be larger than the number specified by the maxIterations argument, if that many iterations leaves unacceptable constraint errors.</p></li>
+<li><p>All work is provisional. It is possible for the minimizer to throw it out and start over.</p></li>
+</ul>
 </section>
 
 
@@ -465,10 +699,10 @@ Running simulation...
     <ul>
         <li>
           &larr;
-          <a href="../../cookbook.html" title="Previous document">The OpenMM Cookbook</a>
+          <a href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html" title="Previous document">Querying and Modifying Charges and Other Parameters</a>
         </li>
         <li>
-          <a href="Changing%20Temperature%20and%20Pressure.html" title="Next document">Changing Temperature and Pressure</a>
+          <a href="../../tutorials.html" title="Next document">The OpenMM Tutorials</a>
           &rarr;
         </li>
     </ul>
@@ -511,13 +745,16 @@ Running simulation...
     <div class="nav-toctree">
     <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../cookbook.html#getting-started">Getting Started</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">First Simulation</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#simulation-protocols">Simulation Protocols</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#restraints-constraints-and-external-forces">Restraints, Constraints, and External Forces</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#analysis-and-system-inspection">Analysis and System Inspection</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../cookbook.html#analysis-and-system-inspection">Analysis and System Inspection</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Analyzing%20Energy%20Contributions.html">Analyzing Energy Contributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Computing%20Interaction%20Energies.html">Computing Interaction Energies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html">Querying and Modifying Charges and Other Parameters</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Reporting Minimization</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a></li>
@@ -578,7 +815,7 @@ Running simulation...
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
-      <a href="../../_sources/notebooks/cookbook/first_simulation.ipynb.txt"
+      <a href="../../_sources/notebooks/cookbook/report_minimization.ipynb.txt"
           rel="nofollow">Page source</a>
     </div>
 
