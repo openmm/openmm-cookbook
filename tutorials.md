@@ -11,6 +11,7 @@ glob: True
 caption: Basic Tutorials
 ---
 notebooks/tutorials/protein_in_water
+notebooks/tutorials/protein_ligand_complex
 :::
 
 ## Coarse-graining
