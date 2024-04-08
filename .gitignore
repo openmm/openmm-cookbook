@@ -141,3 +141,6 @@ cython_debug/
 build
 .ipynb_checkpoints
 openmm
+
+# MacOS specific files
+.DS_Store
