@@ -2,16 +2,11 @@ name: openmm-cookbook
 channels:
   - conda-forge
 dependencies:
-  - python >= 3.7
-  - pip
-  - sphinx>=4.0.0,<5
-  - nbsphinx<0.9.0 #keep default thumbnails from sphinx_gallery.load_style https://github.com/spatialaudio/nbsphinx/releases/tag/0.9.0
-  - nbformat<5.2 #https://github.com/jupyter/nbformat/issues/303
-  - pytest
-  - nbval
-  - myst-parser
-  - sphinx-gallery<0.11 #https://github.com/spatialaudio/nbsphinx/issues/655
-  # This should always point to the latest release of OpenMM.
-  # If the above dependencies constrain the version of OpenMM
-  # to something older than that, they should be updated.
-  - openmm
+ - matplotlib
+ - nbsphinx
+ - nbval
+ - openmm
+ - pip
+ - pytest
+ - python>=3.12
+ - sphinx
