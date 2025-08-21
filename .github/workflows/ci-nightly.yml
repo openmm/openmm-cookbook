@@ -24,9 +24,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
+        include:
+          - os: ubuntu-latest
+            env: ubuntu-latest
+          - os: macos-latest
+            env: macos
         python:
           - 3.12
 
@@ -53,7 +55,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           activate-environment: build
-          environment-file: openmm/devtools/ci/gh-actions/conda-envs/build-${{ matrix.os }}.yml
+          environment-file: openmm/devtools/ci/gh-actions/conda-envs/build-${{ matrix.env }}.yml
           auto-activate-base: false
           miniforge-variant: Miniforge3
           use-mamba: true
