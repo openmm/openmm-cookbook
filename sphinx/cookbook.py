@@ -116,7 +116,7 @@ def create_colab_notebook(notebook, notebook_path: Path, outpath: Path, config: 
         cell_type="code",
         source=[
             "# Execute this cell to install OpenMM in the Colab environment",
-            f"!pip install {' '.join(pypi_deps)}",
+            f"!pip install -q {' '.join(pypi_deps)}",
             *wgets,
         ],
     )
