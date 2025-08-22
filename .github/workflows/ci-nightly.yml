@@ -24,11 +24,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
+        include:
+          - os: ubuntu-latest
+            env: ubuntu-latest
+          - os: macos-latest
+            env: macos
         python:
-          - 3.7
+          - 3.12
 
     steps:
       - name: Checkout openmm-cookbook (nightly branch if it exists, default otherwise)
@@ -43,20 +45,19 @@ jobs:
           fi
 
       - name: Checkout openmm
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: openmm/openmm
           path: openmm
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         name: "Prepare openmm dev dependencies"
         with:
           python-version: ${{ matrix.python }}
           activate-environment: build
-          environment-file: openmm/devtools/ci/gh-actions/conda-envs/build-${{ matrix.os }}.yml
+          environment-file: openmm/devtools/ci/gh-actions/conda-envs/build-${{ matrix.env }}.yml
           auto-activate-base: false
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
+          miniforge-variant: Miniforge3
           use-mamba: true
 
       - name: Install nbval for tests
@@ -74,7 +75,7 @@ jobs:
           ccache -z
 
       - name: "Restore ccache"
-        uses: actions/cache@v1.1.0
+        uses: actions/cache@v4
         with:
           path: .ccache
           key: ccache-${{ secrets.CACHE_VERSION }}-${{ steps.prepare-ccache.outputs.key }}-${{ steps.prepare-ccache.outputs.timestamp }}

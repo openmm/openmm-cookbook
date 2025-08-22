@@ -65,14 +65,14 @@ def create_colab_notebook(notebook, notebook_path: Path, outpath: Path, config: 
 
     The copy will have a cell inserted at the start of the notebook that gathers
     the notebook's dependencies. These dependencies come in two sorts:
-     - Conda dependencies, installed via mambaforge
+     - PyPI dependencies, installed via pip
      - Files, downloaded from the config value `cookbook_required_files_base_uri`
 
     These dependencies can be specified in the following places. The first value found
     in the following order is used:
-    1. In the `conda_forge_dependencies` or `required_files` metadata fields for an
+    1. In the `pypi_dependencies` or `required_files` metadata fields for an
        individual notebook
-    2. In the `cookbook_default_conda_forge_deps` or `cookbook_default_required_files`
+    2. In the `cookbook_default_pypi_deps` or `cookbook_default_required_files`
        config values for the entire cookbook
     3. (files only) If the `cookbook_default_required_files` config value is not set,
        all files in the notebook's directory except those with the `.ipynb` file extension
@@ -94,10 +94,10 @@ def create_colab_notebook(notebook, notebook_path: Path, outpath: Path, config: 
         file_list,
     )
 
-    conda_deps = get_metadata(
+    pypi_deps = get_metadata(
         notebook,
-        "conda_forge_dependencies",
-        list(config.cookbook_default_conda_forge_deps),
+        "pypi_dependencies",
+        list(config.cookbook_default_pypi_deps),
     )
 
     if file_deps:
@@ -116,10 +116,7 @@ def create_colab_notebook(notebook, notebook_path: Path, outpath: Path, config: 
         cell_type="code",
         source=[
             "# Execute this cell to install OpenMM in the Colab environment",
-            "!pip install -q condacolab",
-            "import condacolab",
-            "condacolab.install_mambaforge()",
-            f"!mamba install {' '.join(conda_deps)}",
+            f"!pip install -q {' '.join(pypi_deps)}",
             *wgets,
         ],
     )
@@ -169,7 +166,7 @@ def remove_colab_notebook(app: Application, env: BuildEnvironment, docname: str)
 
 def setup(app: Application):
     app.add_config_value(
-        "cookbook_default_conda_forge_deps",
+        "cookbook_default_pypi_deps",
         default=[],
         rebuild="env",
     )

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath("./sphinx"))
 # -- Project information -----------------------------------------------------
 
 project = "OpenMM Cookbook & Tutorials"
-copyright = "2023, The OpenMM Contributors"
+copyright = "2025, The OpenMM Contributors"
 author = "The OpenMM Contributors"
 release = os.getenv("PAGES_DEPLOY_PATH","dev")
 print(release)
@@ -33,23 +33,16 @@ extensions = [
     "sphinx.ext.intersphinx",
     "nbsphinx",
     "cookbook",
-    "myst_parser",
-    "sphinx_gallery.load_style",
-]
-
-myst_enable_extensions = [
-    "colon_fence",
-    "substitution",
 ]
 
 # Links to the OpenMM docs
 intersphinx_mapping = {
-    "openmm": ("http://docs.openmm.org/latest/api-python/", None),
-    "userguide": ("http://docs.openmm.org/latest/userguide/", None),
-    "devguide": ("http://docs.openmm.org/latest/developerguide/", None),
+    "openmm": ("https://docs.openmm.org/latest/api-python/", None),
+    "userguide": ("https://docs.openmm.org/latest/userguide/", None),
+    "devguide": ("https://docs.openmm.org/latest/developerguide/", None),
 }
 
-cookbook_default_conda_forge_deps = ["openmm"]
+cookbook_default_pypi_deps = ["openmm"]
 cookbook_required_files_base_uri = (
     "https://raw.githubusercontent.com/openmm/openmm-cookbook/main"
 )
@@ -73,6 +66,10 @@ nbsphinx_prolog = """
     </div>
 
 """
+
+nbsphinx_thumbnails = {
+    "notebooks/*/*": "_static/logo.png"
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["sphinx/_templates"]
@@ -112,22 +109,22 @@ html_theme_options = {
         },
         {
             "title": "User's Manual",
-            "uri": "http://docs.openmm.org/latest/userguide/",
+            "uri": "https://docs.openmm.org/latest/userguide/",
             "relative": False,
         },
         {
             "title": "Developer Guide",
-            "uri": "http://docs.openmm.org/latest/developerguide/",
+            "uri": "https://docs.openmm.org/latest/developerguide/",
             "relative": False,
         },
         {
             "title": "C++ API reference",
-            "uri": "http://docs.openmm.org/latest/api-c++/",
+            "uri": "https://docs.openmm.org/latest/api-c++/",
             "relative": False,
         },
         {
             "title": "Python API reference",
-            "uri": "http://docs.openmm.org/latest/api-python/",
+            "uri": "https://docs.openmm.org/latest/api-python/",
             "relative": False,
         },
         {
