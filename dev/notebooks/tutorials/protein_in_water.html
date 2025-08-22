@@ -1,23 +1,20 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Protein in Water &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/doctools.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Coarse-Grained Polymer" href="coarse_grained_polymer.html" />
@@ -39,272 +36,15 @@
 
           <div class="body" role="main">
             
-  
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars and line breaks on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-    white-space: pre;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-.jp-RenderedHTMLCommon table,
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-.jp-RenderedHTMLCommon thead,
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-.jp-RenderedHTMLCommon tr,
-.jp-RenderedHTMLCommon th,
-.jp-RenderedHTMLCommon td,
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-.jp-RenderedHTMLCommon th,
-div.rendered_html th {
-  font-weight: bold;
-}
-.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-.jp-RenderedHTMLCommon tbody tr:hover,
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-</style>
-<div class="nbsphinx-prolog">
+  <div class="nbsphinx-prolog">
     <a href="protein_in_water.ipynb">Download Notebook</a>
     <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/protein_in_water.ipynb">View in GitHub</a>
     <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/protein_in_water.ipynb">Open in Google Colab</a>
 </div><span class="target" id="index-0"></span><section id="Protein-in-Water">
-<h1>Protein in Water<a class="headerlink" href="#Protein-in-Water" title="Permalink to this headline">¶</a></h1>
+<h1>Protein in Water<a class="headerlink" href="#Protein-in-Water" title="Link to this heading">¶</a></h1>
 <p><em>Solvating a protein structure from the PDB and running NPT dynamics</em></p>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">¶</a></h2>
 <p>This is the OpenMM version of <a class="reference external" href="http://www.mdtutorials.com/gmx/lysozyme/index.html">Justin A. Lemkul’s Lysozyme in Water GROMACS tutorial</a>.</p>
 <p>It will cover the following steps</p>
 <ul class="simple">
@@ -320,7 +60,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Download-the-protein-structure-file">
-<h2>Download the protein structure file<a class="headerlink" href="#Download-the-protein-structure-file" title="Permalink to this headline">¶</a></h2>
+<h2>Download the protein structure file<a class="headerlink" href="#Download-the-protein-structure-file" title="Link to this heading">¶</a></h2>
 <p>First we need to download the PDB file of the lysozome from the RCSB Protein Data Bank <a class="reference external" href="https://www.rcsb.org/structure/1aki">https://www.rcsb.org/structure/1aki</a></p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -350,15 +90,15 @@ Saving to: ‘1AKI.pdb’
 </div>
 </section>
 <section id="Load-the-PDB-file-into-OpenMM">
-<h2>Load the PDB file into OpenMM<a class="headerlink" href="#Load-the-PDB-file-into-OpenMM" title="Permalink to this headline">¶</a></h2>
+<h2>Load the PDB file into OpenMM<a class="headerlink" href="#Load-the-PDB-file-into-OpenMM" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">openmm.app</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">openmm</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">openmm.unit</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">stdout</span>
 
 <span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s2">&quot;1AKI.pdb&quot;</span><span class="p">)</span>
 <br/></pre></div>
@@ -366,7 +106,7 @@ Saving to: ‘1AKI.pdb’
 </div>
 </section>
 <section id="Define-the-forcefield">
-<h2>Define the forcefield<a class="headerlink" href="#Define-the-forcefield" title="Permalink to this headline">¶</a></h2>
+<h2>Define the forcefield<a class="headerlink" href="#Define-the-forcefield" title="Link to this heading">¶</a></h2>
 <p>We need to define the forcefield we want to use. We will use the Amber14 forcefield and the TIP3P-FB water model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -379,7 +119,7 @@ Saving to: ‘1AKI.pdb’
 </div>
 </section>
 <section id="Clean-up">
-<h2>Clean up<a class="headerlink" href="#Clean-up" title="Permalink to this headline">¶</a></h2>
+<h2>Clean up<a class="headerlink" href="#Clean-up" title="Link to this heading">¶</a></h2>
 <p>This PDB file contains some crystal water molecules which we want to strip out. This can be done using the Modeller class. We also add in any missing H atoms.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -393,7 +133,7 @@ Saving to: ‘1AKI.pdb’
 </div>
 </section>
 <section id="Solvate">
-<h2>Solvate<a class="headerlink" href="#Solvate" title="Permalink to this headline">¶</a></h2>
+<h2>Solvate<a class="headerlink" href="#Solvate" title="Link to this heading">¶</a></h2>
 <p>We can use the <code class="docutils literal notranslate"><span class="pre">addSolvent</span></code> method to add water molecules</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -406,7 +146,7 @@ Saving to: ‘1AKI.pdb’
 <p>This command creates a box that has edges at least 1nm away from the solute and fills it with water molecules. Addionally it adds in the required number of CL and Na ions to make the system charge neutral.</p>
 </section>
 <section id="Setup-system-and-Integrator">
-<h2>Setup system and Integrator<a class="headerlink" href="#Setup-system-and-Integrator" title="Permalink to this headline">¶</a></h2>
+<h2>Setup system and Integrator<a class="headerlink" href="#Setup-system-and-Integrator" title="Link to this heading">¶</a></h2>
 <p>We now need to combine our molecular topology and the forcefield to create a complete description of the system. This is done using the <code class="docutils literal notranslate"><span class="pre">ForceField</span></code> object’s <code class="docutils literal notranslate"><span class="pre">createSystem()</span></code> function. We then create the integrator, and combine the integrator and system to create the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> object. Finally we set the initial atomic positions.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -421,7 +161,7 @@ Saving to: ‘1AKI.pdb’
 </div>
 </section>
 <section id="Local-energy-minimization">
-<h2>Local energy minimization<a class="headerlink" href="#Local-energy-minimization" title="Permalink to this headline">¶</a></h2>
+<h2>Local energy minimization<a class="headerlink" href="#Local-energy-minimization" title="Link to this heading">¶</a></h2>
 <p>It is a good idea to run local energy minimization at the start of a simulation, since the coordinates in the PDB file might produce very large forces</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -442,7 +182,7 @@ Minimizing energy
 </div>
 </section>
 <section id="Setup-reporting">
-<h2>Setup reporting<a class="headerlink" href="#Setup-reporting" title="Permalink to this headline">¶</a></h2>
+<h2>Setup reporting<a class="headerlink" href="#Setup-reporting" title="Link to this heading">¶</a></h2>
 <p>To get output from our simulation we can add reporters. We use <code class="docutils literal notranslate"><span class="pre">PDBReporter</span></code> to write the coorinates every 1000 timesteps to “output.pdb” and we use <code class="docutils literal notranslate"><span class="pre">StateDataReporter</span></code> to print the timestep, potential energy, temperature, and volume to the screen and to a file called “md_log.txt”.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -458,7 +198,7 @@ Minimizing energy
 </div>
 </section>
 <section id="NVT-equillibration">
-<h2>NVT equillibration<a class="headerlink" href="#NVT-equillibration" title="Permalink to this headline">¶</a></h2>
+<h2>NVT equillibration<a class="headerlink" href="#NVT-equillibration" title="Link to this heading">¶</a></h2>
 <p>We are using a Langevin integrator which means we are simulating in the NVT ensemble. To equilibrate the temperature we just need to run the simulation for a number of timesteps.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -490,7 +230,7 @@ Running NVT
 </div>
 </section>
 <section id="NPT-production-MD">
-<h2>NPT production MD<a class="headerlink" href="#NPT-production-MD" title="Permalink to this headline">¶</a></h2>
+<h2>NPT production MD<a class="headerlink" href="#NPT-production-MD" title="Link to this heading">¶</a></h2>
 <p>To run our simulation in the NPT ensemble we need to add in a barostat to control the pressure. We can use <code class="docutils literal notranslate"><span class="pre">MonteCarloBarostat</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -525,14 +265,14 @@ Running NPT
 </div>
 </section>
 <section id="Analysis">
-<h2>Analysis<a class="headerlink" href="#Analysis" title="Permalink to this headline">¶</a></h2>
+<h2>Analysis<a class="headerlink" href="#Analysis" title="Link to this heading">¶</a></h2>
 <p>We can now do some basic analysis using Python. We will plot the time evolution of the potential energy, temperature, and box volume. Remember that OpenMM itself is primarly an MD engine, for in-depth anaylsis of your simulations you can use other python packages such as MDtraj, or MDAnalysis.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;md_log.txt&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
 
 <span class="n">step</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
@@ -599,7 +339,7 @@ Running NPT
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -620,7 +360,7 @@ Running NPT
 
 
 
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -628,8 +368,8 @@ Running NPT
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script>$('#searchbox').show(0);</script><div class="navigation-scrollbox">
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
     <div class="nav-toctree">
     <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
@@ -652,7 +392,7 @@ Running NPT
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#coarse-graining">Coarse-graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#coarse-graining">Coarse-Graining</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#advanced-tutorials">Advanced Tutorials</a></li>
 </ul>
 </li>
@@ -669,25 +409,25 @@ Running NPT
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/userguide/">
+            <a href="https://docs.openmm.org/latest/userguide/">
                 User's Manual
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/developerguide/">
+            <a href="https://docs.openmm.org/latest/developerguide/">
                 Developer Guide
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-c++/">
+            <a href="https://docs.openmm.org/latest/api-c++/">
                 C++ API reference
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-python/">
+            <a href="https://docs.openmm.org/latest/api-python/">
                 Python API reference
             </a>
         </li>
@@ -706,11 +446,11 @@ Running NPT
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, The OpenMM Contributors.
+      &#169;2025, The OpenMM Contributors.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 4.5.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="../../_sources/notebooks/tutorials/protein_in_water.ipynb.txt"

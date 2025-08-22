@@ -145,7 +145,6 @@ nav#rellinks li + li:before {
 .sphinxsidebarwrapper li.toctree-l1 {
     padding: 0.15em 0;
     line-height: 1.4;
-    font-size: 80%;
 }
 
 /* Style TOC in sidebar more clearly */

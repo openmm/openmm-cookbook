@@ -1,23 +1,19 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Adding Hydrogens to Nonstandard Molecules &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/doctools.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Applying a Fixed External Force" href="Applying%20a%20Constant%20External%20Force.html" />
@@ -44,7 +40,7 @@
     <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules.ipynb">View in GitHub</a>
     <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules.ipynb">Open in Google Colab</a>
 </div><span class="target" id="index-0"></span><section id="Adding-Hydrogens-to-Nonstandard-Molecules">
-<h1>Adding Hydrogens to Nonstandard Molecules<a class="headerlink" href="#Adding-Hydrogens-to-Nonstandard-Molecules" title="Permalink to this headline">¶</a></h1>
+<h1>Adding Hydrogens to Nonstandard Molecules<a class="headerlink" href="#Adding-Hydrogens-to-Nonstandard-Molecules" title="Link to this heading">¶</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">Modeller.addHydrogens()</span></code> can be used to add missing hydrogens to standard molecules, like proteins and nucleic acids. But what if you need to simulate something it doesn’t know about, such as a drug molecule or a non-natural amino acid? It can also handle this case, but you need to give it some help.</p>
 <p>Start by creating an XML file describing the molecule or molecules. Here is an example of a file defining hydrogens for NLN, a modified ASN residue that is missing a hydrogen and can have a glycan bonded to it. (This example is taken from the <code class="docutils literal notranslate"><span class="pre">glycam-hydrogens.xml</span></code> file that is bundled with OpenMM. You would not actually need to define this particular residue yourself.)</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Residues&gt;</span>
@@ -96,7 +92,7 @@
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -117,7 +113,7 @@
 
 
 
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -125,8 +121,8 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script>$('#searchbox').show(0);</script><div class="navigation-scrollbox">
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
     <div class="nav-toctree">
     <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a><ul class="current">
@@ -156,25 +152,25 @@
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/userguide/">
+            <a href="https://docs.openmm.org/latest/userguide/">
                 User's Manual
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/developerguide/">
+            <a href="https://docs.openmm.org/latest/developerguide/">
                 Developer Guide
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-c++/">
+            <a href="https://docs.openmm.org/latest/api-c++/">
                 C++ API reference
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-python/">
+            <a href="https://docs.openmm.org/latest/api-python/">
                 Python API reference
             </a>
         </li>
@@ -193,11 +189,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, The OpenMM Contributors.
+      &#169;2025, The OpenMM Contributors.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 4.5.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="../../_sources/notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules.ipynb.txt"

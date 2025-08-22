@@ -1,20 +1,19 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Umbrella Sampling &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/doctools.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -38,279 +37,22 @@
 
           <div class="body" role="main">
             
-  
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars and line breaks on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-    white-space: pre;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-.jp-RenderedHTMLCommon table,
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-.jp-RenderedHTMLCommon thead,
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-.jp-RenderedHTMLCommon tr,
-.jp-RenderedHTMLCommon th,
-.jp-RenderedHTMLCommon td,
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-.jp-RenderedHTMLCommon th,
-div.rendered_html th {
-  font-weight: bold;
-}
-.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-.jp-RenderedHTMLCommon tbody tr:hover,
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-</style>
-<div class="nbsphinx-prolog">
+  <div class="nbsphinx-prolog">
     <a href="umbrella_sampling.ipynb">Download Notebook</a>
     <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/umbrella_sampling.ipynb">View in GitHub</a>
     <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/umbrella_sampling.ipynb">Open in Google Colab</a>
 </div><span class="target" id="index-0"></span><section id="Umbrella-Sampling">
-<h1>Umbrella Sampling<a class="headerlink" href="#Umbrella-Sampling" title="Permalink to this headline">¶</a></h1>
+<h1>Umbrella Sampling<a class="headerlink" href="#Umbrella-Sampling" title="Link to this heading">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">¶</a></h2>
 <p>Umbrella sampling is a technique used in molecular dynamics simulations to improve sampling in systems containing high barriers in the free energy landscape. With plain MD simulations the system can remain trapped in free energy minima whereas umbrella sampling adds extra biasing potentials to drive the system in the direction of a chosen collective variable (CV). This enables the calculation of free energy profiles much more efficiently than is possible with regular MD alone.</p>
 </section>
 <section id="Theory">
-<h2>Theory<a class="headerlink" href="#Theory" title="Permalink to this headline">¶</a></h2>
-<p>This section explains more of the details behind umbrella sampling. Refer to [<a class="reference external" href="#References">1</a>, <a class="reference external" href="#References">2</a>] for full information. The text in this section is from [<a class="reference external" href="#References">3</a>].</p>
+<h2>Theory<a class="headerlink" href="#Theory" title="Link to this heading">¶</a></h2>
+<p>This section explains more of the details behind umbrella sampling. Refer to [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>, <a class="reference internal" href="#References"><span class="std std-ref">2</span></a>] for full information. The text in this section is from [<a class="reference internal" href="#References"><span class="std std-ref">3</span></a>].</p>
 <p>The free energy of a system in the canonical ensemble is</p>
 <p><span class="math notranslate nohighlight">\(F=-k_B T \text{log}(Z),\)</span></p>
-<p>where <span class="math notranslate nohighlight">\(Z\)</span> is the canonical partition function. For all but the smallest systems <span class="math notranslate nohighlight">\(Z\)</span> is computationally intractable to calculate. However, often the most interesting information about a molecular system is given by the differences in the free energy across system states. A Collective Variable (CV; also called a reaction coordinate) can be defined which is a continuous variable that distinguishes different states. The simplest types of CVs are geometric distances (e.g. the distance
+<p>where <span class="math notranslate nohighlight">\(Z\)</span> is the canonical partition function. For all but the smallest systems <span class="math notranslate nohighlight">\(Z\)</span> is computationally intractable to calculate. However, often the most interesting information about a molecular system is given by the differences in the free energy across system states. A Collective Variable (CV; also called a reaction coordinate) can be defined which is a continuous variable that distinguishes different states. The simplest types of CVs are geometric distances (e.g. the distance
 between two molecules) but there are many other possibilities. The CV <span class="math notranslate nohighlight">\(x\)</span> is a function of the atomic coordinates, <span class="math notranslate nohighlight">\(x(r)\)</span>, and multiple different realizations of <span class="math notranslate nohighlight">\(r\)</span> can map to the same <span class="math notranslate nohighlight">\(x\)</span>. The probability distribution of the system can be written in terms of <span class="math notranslate nohighlight">\(x\)</span>:</p>
 <p><span class="math notranslate nohighlight">\(p(x) \propto \int{ e^{-\beta E(r)} \delta (x-x(r))dr},\)</span></p>
 <p>where we have integrated the Boltzmann distribution over all degrees of freedom for each value of <span class="math notranslate nohighlight">\(x\)</span>. The probability can be turned into a free energy:</p>
@@ -319,7 +61,8 @@ between two molecules) but there are many other possibilities. The CV <span clas
 <p>To enhance the sampling umbrella sampling can be used. This adds additional biasing potentials <span class="math notranslate nohighlight">\(w(x)\)</span> to the system to restrain it at certain values of <span class="math notranslate nohighlight">\(x\)</span>. The form of <span class="math notranslate nohighlight">\(w\)</span> is usually a harmonic term:</p>
 <p><span class="math notranslate nohighlight">\(w(x) = \frac{1}{2} k (x-x_0)^2,\)</span></p>
 <p>where <span class="math notranslate nohighlight">\(k\)</span> is a constant with units of energy per units of <span class="math notranslate nohighlight">\(x\)</span> squared. We then run multiple simulations, each restrained with a different <span class="math notranslate nohighlight">\(w\)</span>, and then combine them to generate a probability distribution that sufficiently samples the whole range of <span class="math notranslate nohighlight">\(x\)</span>. The process is illustrated in figure 1 and explained in more detail as follows.</p>
-<img alt="umbrella_sampling" src="../../_images/umbrella_sampling.svg" /><p><strong>Figure 1. Umbrella sampling method to compute a free energy profile.</strong> (a) Multiple biasing potentials are placed across the collective variable <span class="math notranslate nohighlight">\(x\)</span>. The blue curve is the free energy of the system which we are trying to calculate. (b) Simulations are run for each window <span class="math notranslate nohighlight">\(w\)</span>. The resulting biased probability distributions <span class="math notranslate nohighlight">\(P'(x)\)</span> are plotted. (c) The unbiased free energies <span class="math notranslate nohighlight">\(F_i\)</span> from each window. They are each offset by a different <span class="math notranslate nohighlight">\(C_i\)</span>. (d) The Weighted
+<p><img alt="umbrella_sampling" src="../../_images/umbrella_sampling.svg" /></p>
+<p><strong>Figure 1. Umbrella sampling method to compute a free energy profile.</strong> (a) Multiple biasing potentials are placed across the collective variable <span class="math notranslate nohighlight">\(x\)</span>. The blue curve is the free energy of the system which we are trying to calculate. (b) Simulations are run for each window <span class="math notranslate nohighlight">\(w\)</span>. The resulting biased probability distributions <span class="math notranslate nohighlight">\(P'(x)\)</span> are plotted. (c) The unbiased free energies <span class="math notranslate nohighlight">\(F_i\)</span> from each window. They are each offset by a different <span class="math notranslate nohighlight">\(C_i\)</span>. (d) The Weighted
 Histogram Analysis Method (WHAM) is used to combine the windows and compute the free energy curve.</p>
 <p>With a biasing potential <span class="math notranslate nohighlight">\(w(x(r))\)</span> the potential energy of the system becomes</p>
 <p><span class="math notranslate nohighlight">\(E'(r) = E(r) + w((x(r)))\)</span></p>
@@ -329,37 +72,44 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 <p><span class="math notranslate nohighlight">\(F'(x) = -k_B T \text{log}(p(x)) + w(x) + C = F(x) + w(x) + C.\)</span></p>
 <p>Thus, the unbiased free energy <span class="math notranslate nohighlight">\(F\)</span> can be obtained by subtracting the biasing potential <span class="math notranslate nohighlight">\(w\)</span> from the biased free energy <span class="math notranslate nohighlight">\(F'\)</span>. However, when more than one biasing window is used the value of <span class="math notranslate nohighlight">\(C\)</span> cannot be neglected as it will be different for each window. For multiple biasing windows we have a set of unbiased (but offset by different <span class="math notranslate nohighlight">\(C_i\)</span>) free energies,</p>
 <p><span class="math notranslate nohighlight">\(F_i(x) = -k_B T \text{log}(p'_i) + w_i + C_i.\)</span></p>
-<p>To compute <span class="math notranslate nohighlight">\(F\)</span> over the full range of <span class="math notranslate nohighlight">\(x\)</span> the different <span class="math notranslate nohighlight">\(F_i(x)\)</span> need to be combined. This can be accomplished by the Weighted Histogram Analysis Method (WHAM) [<a class="reference external" href="#References">1</a>]. The WHAM equations are shown in <a class="reference external" href="#WHAM-equations">appendix section 2</a>. The free energy profile is also called the Potential of Mean Force (PMF); in this example we will assume they are equivalent and use them interchangeably.</p>
+<p>To compute <span class="math notranslate nohighlight">\(F\)</span> over the full range of <span class="math notranslate nohighlight">\(x\)</span> the different <span class="math notranslate nohighlight">\(F_i(x)\)</span> need to be combined. This can be accomplished by the Weighted Histogram Analysis Method (WHAM) [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>]. The WHAM equations are shown in <a class="reference internal" href="#WHAM-equations"><span class="std std-ref">appendix section 2</span></a>. The free energy profile is also called the Potential of Mean Force (PMF); in this example we will assume they are equivalent and use them interchangeably.</p>
 </section>
 <section id="Umbrella-sampling-simulations">
-<h2>Umbrella sampling simulations<a class="headerlink" href="#Umbrella-sampling-simulations" title="Permalink to this headline">¶</a></h2>
+<h2>Umbrella sampling simulations<a class="headerlink" href="#Umbrella-sampling-simulations" title="Link to this heading">¶</a></h2>
 <p>Most umbrella sampling simulations have three main steps:</p>
 <ol class="arabic simple">
-<li><p>Preparing the windows. This is usually done using Steered Molecular Dynamics (SMD; see <a class="reference external" href="#Steered-MD">appendix section 1</a>).</p></li>
+<li><p>Preparing the windows. This is usually done using Steered Molecular Dynamics (SMD; see <a class="reference internal" href="#Steered-MD"><span class="std std-ref">appendix section 1</span></a>).</p></li>
 <li><p>Running the windows. These can be computed in parallel to take advantage of compute resources.</p></li>
 <li><p>Analysing the results. Typically this involves computing a PMF with WHAM.</p></li>
 </ol>
 <p>Often you will find in step 3 that the simulations do not produce a nicely converged PMF. You will need to return to step 1 and change some settings. This trial and improvement feedback loop is a normal part of the process. For this tutorial we will use settings already known to work.</p>
 </section>
 <section id="System">
-<h2>System<a class="headerlink" href="#System" title="Permalink to this headline">¶</a></h2>
-<p>This tutorial will use umbrella sampling to compute the free energy profile of the end-to-end distance (<span class="math notranslate nohighlight">\(r\)</span>) of deca-alanine in vacuum. Deca-alanine is commonly used as a toy system [<a class="reference external" href="#References">4</a>]. Its equilibrium structure is a stable alpha-helix. Starting with the alpha-helix structure we will first perform a SMD simulation to pull it from a helix into a coil. Next, we will run 24 umbrella sampling windows in the range 1.3nm to 3.3nm. Finally, we will compute the PMF along
+<h2>System<a class="headerlink" href="#System" title="Link to this heading">¶</a></h2>
+<p>This tutorial will use umbrella sampling to compute the free energy profile of the end-to-end distance (<span class="math notranslate nohighlight">\(r\)</span>) of deca-alanine in vacuum. Deca-alanine is commonly used as a toy system [<a class="reference internal" href="#References"><span class="std std-ref">4</span></a>]. Its equilibrium structure is a stable alpha-helix. Starting with the alpha-helix structure we will first perform a SMD simulation to pull it from a helix into a coil. Next, we will run 24 umbrella sampling windows in the range 1.3nm to 3.3nm. Finally, we will compute the PMF along
 <span class="math notranslate nohighlight">\(r\)</span>. Figure 2 shows the initial alpha-helix structure and the final extended coil structure.</p>
-<img alt="deca-alanine" src="../../_images/deca-alanine.png" />
+<p><img alt="deca-alanine" src="../../_images/deca-alanine.png" /></p>
 <p><strong>Figure 2</strong> Structure of deca-alanine for end-to-end distance <span class="math notranslate nohighlight">\(r\)</span>=1.3 and <span class="math notranslate nohighlight">\(r\)</span>=3.3nm.</p>
 </section>
 <section id="Step-1---Setting-up-the-windows-with-SMD">
-<h2>Step 1 - Setting up the windows with SMD<a class="headerlink" href="#Step-1---Setting-up-the-windows-with-SMD" title="Permalink to this headline">¶</a></h2>
-<p>The script below does the following steps: - Loads in a PDB file. - Defines a collective variable between the first and last alpha-carbon. - Adds a harmonic restraint to the CV. - Runs a simulation where the location of the harmonic restraint is moved with constant velocity from 1.3nm to 3.3nm (This is called constant velocity steered MD). - Saves a configuration for each of the 24 equally spaced windows between 1.3nm and 3.3nm.</p>
+<h2>Step 1 - Setting up the windows with SMD<a class="headerlink" href="#Step-1---Setting-up-the-windows-with-SMD" title="Link to this heading">¶</a></h2>
+<p>The script below does the following steps:</p>
+<ul class="simple">
+<li><p>Loads in a PDB file.</p></li>
+<li><p>Defines a collective variable between the first and last alpha-carbon.</p></li>
+<li><p>Adds a harmonic restraint to the CV.</p></li>
+<li><p>Runs a simulation where the location of the harmonic restraint is moved with constant velocity from 1.3nm to 3.3nm (This is called constant velocity steered MD).</p></li>
+<li><p>Saves a configuration for each of the 24 equally spaced windows between 1.3nm and 3.3nm.</p></li>
+</ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">openmm</span> <span class="k">as</span> <span class="nn">mm</span>
-<span class="kn">import</span> <span class="nn">openmm.app</span> <span class="k">as</span> <span class="nn">app</span>
-<span class="kn">import</span> <span class="nn">openmm.unit</span> <span class="k">as</span> <span class="nn">unit</span>
-<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">app</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">unit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">stdout</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;deca-ala.pdb&#39;</span><span class="p">)</span>
 
@@ -448,13 +198,13 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 <p>We now have the initial configurations for the umbrella sampling windows.</p>
 </section>
 <section id="Step-2---Running-the-windows">
-<h2>Step 2 - Running the windows<a class="headerlink" href="#Step-2---Running-the-windows" title="Permalink to this headline">¶</a></h2>
+<h2>Step 2 - Running the windows<a class="headerlink" href="#Step-2---Running-the-windows" title="Link to this heading">¶</a></h2>
 <p>The script to run the windows is very similar to the script in step 1. The key differences are that we load in an initial structure that corresponds to each specific window and that the harmonic restraint on the CV does not move. The script below defines a function to run one window. It re-uses the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> we created in step 1.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_window</span><span class="p">(</span><span class="n">window_index</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_window</span><span class="p">(</span><span class="n">window_index</span><span class="p">):</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;running window&#39;</span><span class="p">,</span> <span class="n">window_index</span><span class="p">)</span>
 
@@ -509,15 +259,15 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 <p>Once all the window simulations have completed you will have the CV timeseries files: “cv_values_window_n.txt”</p>
 </section>
 <section id="Step-3---Analysis---compute-the-PMF">
-<h2>Step 3 - Analysis - compute the PMF<a class="headerlink" href="#Step-3---Analysis---compute-the-PMF" title="Permalink to this headline">¶</a></h2>
+<h2>Step 3 - Analysis - compute the PMF<a class="headerlink" href="#Step-3---Analysis---compute-the-PMF" title="Link to this heading">¶</a></h2>
 <p>The first thing to check is that the histograms of the CV timeseries have good overlap. Here is an example: <img alt="histogram" src="../../_images/hist.png" /></p>
 <p>You can plot yours with the script below (This script also produces the metadata file we will need for the next step).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="c1"># plot the histograms</span>
 <span class="n">metafilelines</span> <span class="o">=</span> <span class="p">[]</span>
@@ -535,7 +285,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </pre></div>
 </div>
 </div>
-<p>To compute the PMF we can use WHAM [<a class="reference external" href="#References">1</a>]. An easy to use and widely compatible implementation is the WHAM program by Alan Grossfield which can be downloaded here: <a class="reference external" href="http://membrane.urmc.rochester.edu/?page_id=126">http://membrane.urmc.rochester.edu/?page_id=126</a>. It is a C program so it will need to be compiled. The command below should work on Linux and Mac.</p>
+<p>To compute the PMF we can use WHAM [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>]. An easy to use and widely compatible implementation is the WHAM program by Alan Grossfield which can be downloaded here: <a class="reference external" href="http://membrane.urmc.rochester.edu/?page_id=126">http://membrane.urmc.rochester.edu/?page_id=126</a>. It is a C program so it will need to be compiled. The command below should work on Linux and Mac.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -573,7 +323,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </div>
 </section>
 <section id="Next-steps">
-<h2>Next steps<a class="headerlink" href="#Next-steps" title="Permalink to this headline">¶</a></h2>
+<h2>Next steps<a class="headerlink" href="#Next-steps" title="Link to this heading">¶</a></h2>
 <p>You should now perform error analysis to confirm the PMF you have calculated is an accurate representation of the system you are simulating. Here are a few suggestions:</p>
 <ul class="simple">
 <li><p>Run some completely independent repeats and check the computed PMFs are the same.</p></li>
@@ -588,7 +338,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </ul>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">¶</a></h2>
 <div class="line-block">
 <div class="line">[1] Kumar, S., Rosenberg, J.M., Bouzida, D., Swendsen, R.H. and Kollman, P.A. (1992), <em>The weighted histogram analysis method for free-energy calculations on biomolecules. I. The method.</em> J. Comput. Chem., 13: 1011-1021. <a class="reference external" href="https://doi.org/10.1002/jcc.540130812">https://doi.org/10.1002/jcc.540130812</a></div>
 <div class="line">[2] Kästner, J. (2011), <em>Umbrella sampling.</em> WIREs Comput Mol Sci, 1: 932-942. <a class="reference external" href="https://doi.org/10.1002/wcms.66">https://doi.org/10.1002/wcms.66</a></div>
@@ -597,15 +347,16 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </div>
 </section>
 <section id="Appendix">
-<h2>Appendix<a class="headerlink" href="#Appendix" title="Permalink to this headline">¶</a></h2>
+<h2>Appendix<a class="headerlink" href="#Appendix" title="Link to this heading">¶</a></h2>
 <section id="Steered-MD">
-<h3>Steered MD<a class="headerlink" href="#Steered-MD" title="Permalink to this headline">¶</a></h3>
+<h3>Steered MD<a class="headerlink" href="#Steered-MD" title="Link to this heading">¶</a></h3>
 <p>Steered MD is a non-equilibrium method which means great care must be taken to ensure the results you get are meaningful. In this tutorial steered MD is just used in the setup phase and we do not calculate any properties with it. In constant velocity steered MD the biasing potential has the form</p>
-<p><span class="math notranslate nohighlight">\(w = \frac{1}{2} k (x-x_0(t))^2, x_0(t) = x_0(0)+vt,\)</span></p>
+<p><span class="math notranslate nohighlight">\(w = \frac{1}{2} k (x-x_0(t))^2,
+x_0(t) = x_0(0)+vt,\)</span></p>
 <p>which is just a moving version of the umbrella window bias potential.</p>
 </section>
 <section id="WHAM-equations">
-<h3>WHAM equations<a class="headerlink" href="#WHAM-equations" title="Permalink to this headline">¶</a></h3>
+<h3>WHAM equations<a class="headerlink" href="#WHAM-equations" title="Link to this heading">¶</a></h3>
 <p>The WHAM equations [1] are:</p>
 <p><span class="math notranslate nohighlight">\(P(x_j) = \frac{\sum^{N_w}_i h_i(x_j)}{\sum^{N_w}_i n_i e^ {\beta(C_i - w_i(x_j))} },\)</span></p>
 <p><span class="math notranslate nohighlight">\(C_i = -k_B T \log\left( \sum_j P(x_j) e^{-\beta w_i(x_j)} \right).\)</span></p>
@@ -631,7 +382,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
@@ -652,7 +403,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 
 
 
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -660,14 +411,14 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script>$('#searchbox').show(0);</script><div class="navigation-scrollbox">
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
     <div class="nav-toctree">
     <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#basic-tutorials">Basic Tutorials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#coarse-graining">Coarse-graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#coarse-graining">Coarse-Graining</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#advanced-tutorials">Advanced Tutorials</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical free energy calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
@@ -705,25 +456,25 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/userguide/">
+            <a href="https://docs.openmm.org/latest/userguide/">
                 User's Manual
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/developerguide/">
+            <a href="https://docs.openmm.org/latest/developerguide/">
                 Developer Guide
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-c++/">
+            <a href="https://docs.openmm.org/latest/api-c++/">
                 C++ API reference
             </a>
         </li>
         
         <li class="toctree-l1">
-            <a href="http://docs.openmm.org/latest/api-python/">
+            <a href="https://docs.openmm.org/latest/api-python/">
                 Python API reference
             </a>
         </li>
@@ -742,11 +493,11 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, The OpenMM Contributors.
+      &#169;2025, The OpenMM Contributors.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 4.5.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="../../_sources/notebooks/tutorials/umbrella_sampling.ipynb.txt"
