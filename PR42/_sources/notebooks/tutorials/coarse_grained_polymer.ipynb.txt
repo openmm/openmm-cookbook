@@ -1,0 +1,490 @@
+{
+ "cells": [
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Coarse-Grained Polymer\n",
+    "\n",
+    "This tutorial will give a basic example of creating a custom coarse-grained model in OpenMM. First it will demonstrate how to setup a molecular topology from scratch using the Python API. Next it will cover two methods for defining a custom forcefield: \n",
+    "\n",
+    "1. Using the Python API  \n",
+    "2. Creating a forcefield xml file.  \n",
+    "\n",
+    "It assumes you are familiar with the concept of coarse-graining and want to learn how to implement your CG model in OpenMM."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "## Example System\n",
+    "The example system in this tutorial is a Lennard-Jones bead-spring polymer model. We will demonstrate how to create a polymer melt of multiple chains. Note that we will set the bond lengths, particle mass, and Lennard-Jones interaction parameters to physical values that are typical of a residue level coarse-grained protein model (e.g. [1])."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Creating CG Topology\n",
+    "To demonstrate the full flexibility of OpenMM we will use the Python API to define the topology. Note that you could create a PDB file and read that in instead.\n",
+    "\n",
+    "First we do the usual imports for OpenMM."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import openmm as mm\n",
+    "import openmm.app as app\n",
+    "import openmm.unit as unit\n",
+    "import numpy as np\n",
+    "from sys import stdout"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can create a new element to represent our CG bead. We set the atomic index to a large number, however the actual value is unimportant in this simulation and is just used for book-keeping purposes. We set the mass to approximate the molar mass of an amino-acid. The mass we define is important as it needs to be consistent with the chosen integration timestep."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "cgElement = app.Element(number=1000, name='CG-element', symbol='CG', mass=120)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We then create an empty `Topology` object."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Make an empty topology\n",
+    "topology = app.Topology()"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we can create our simulation topology using python scripting. We will define `M = 100` polymer chains which each have `N = 10` beads. As we loop over the atoms in each chain we also record the list of bonds."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Number of polymer chains\n",
+    "M = 100\n",
+    "\n",
+    "# Number of atoms in each chain\n",
+    "N = 10\n",
+    "\n",
+    "# Add each chain to the topology\n",
+    "for m in range(M):\n",
+    "\n",
+    "    # Make the chain\n",
+    "    chain = topology.addChain()\n",
+    "\n",
+    "    # Create the first residue in the chain\n",
+    "    residue = topology.addResidue(name=\"CG-residue\", chain=chain)\n",
+    "\n",
+    "    # In this example each residue is one bead so we add a single atom\n",
+    "    atom1 = topology.addAtom(name=\"CG-bead\", element=cgElement, residue=residue)\n",
+    "\n",
+    "    # Now add the rest of residues in the chain\n",
+    "    for i in range(1, N):\n",
+    "        residue = topology.addResidue(name=\"CG-residue\",chain=chain)\n",
+    "        atom2 = topology.addAtom(name=\"CG-bead\", element=cgElement, residue=residue)\n",
+    "\n",
+    "        # add the bonds in as we go\n",
+    "        topology.addBond(atom1, atom2)\n",
+    "        atom1 = atom2\n",
+    "\n",
+    "# check the topology\n",
+    "print(topology)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Define the initial positions\n",
+    "\n",
+    "As we have created the topology from scratch we will also need to define the initial positions from scratch. We will arrange our 100 polymer chains in a 10x10 grid in the X,Y plane and each polymer will be in a linear configuration in the Z direction. Furthermore, we set the simulation box to be cubic with length 11nm."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "positions = []\n",
+    "for m in range(M):\n",
+    "    x0 = np.array(((m%10)*1.0, (m//10)*1.0, 0))\n",
+    "    positions.append(x0)\n",
+    "    for i in range(1,N):\n",
+    "        xi = positions[-1] + np.array((0, 0, 0.38))\n",
+    "        positions.append(xi)\n",
+    "\n",
+    "# Convert the list into OpenMM Quantity with units of nm\n",
+    "positions = positions * unit.nanometer\n",
+    "assert(len(positions) == topology.getNumAtoms())\n",
+    "\n",
+    "# Set the box to be a cube with length 11nm\n",
+    "topology.setPeriodicBoxVectors(np.eye(3)*11.0*unit.nanometers)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can check the initial topology by saving it to a PDB file.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# output the initial configuration\n",
+    "with open('initial_config.pdb','w') as f:\n",
+    "    app.PDBFile.writeFile(topology, positions, f)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The initial configuration looks like this:\n",
+    "![initial configuration](initial_config.png)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Defining the force field\n",
+    "We will cover two methods for defining the forcefield:\n",
+    "\n",
+    "1. Using the Python API.\n",
+    "2. Creating a forcefield xml file.\n",
+    "\n",
+    "Both methods achieve the same result of defining the forcefield. There are pros and cons of both ways. The key points are that using the Python API is more flexible, while creating a forcefield xml file makes it easier to share your forcefield and helps reproducibility. This is demonstrated in the other OpenMM tutorials --- the standard forcefields such as Amber are distributed with OpenMM as xml files, while the custom forces used to do free energy calculations are defined using the Python API."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Defining a force-field using the Python API\n",
+    "\n",
+    "We can create instances of the OpenMM [Force classes](http://docs.openmm.org/latest/api-python/library.html#forces), assign parameters, and add them to the system.\n",
+    "First we must create a [System](http://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html#openmm.openmm.System).\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# create the system and add the particles to it\n",
+    "system = mm.System()\n",
+    "system.setDefaultPeriodicBoxVectors(*topology.getPeriodicBoxVectors())\n",
+    "for atom in topology.atoms():\n",
+    "    system.addParticle(atom.element.mass)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We will then create a [HarmonicBondForce](http://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicBondForce.html#openmm.openmm.HarmonicBondForce) and a [CustomNonBondedForce](http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html#openmm.openmm.CustomNonbondedForce). \n",
+    "\n",
+    "For each bond that is defined in the topology we need to add it to the `HarmonicBondForce`. We set the equilibrium bond lengths and spring constants to be 0.38 nm and 1000 kJ/mol/nm respectively which are consistent with parameters used in amino-acid level CG models [1]. \n",
+    "\n",
+    "We define the `CustomNonBondedForce` to be a Lennard-Jones interaction. We set the value of sigma to be 0.5nm to approximate the size of an amino acid and the value of epsilon to 1 kJ/mol to create a potential that is attractive at 300K. Please do not use these parameters for real simulations. You should consult the literature and choose an appropriate CG force-field or systematically create your own parameter set! Finally, we add exclusions between atoms that are directly bonded and set a cutoff of 1.5nm.\n",
+    "\n",
+    "Note that because we have defined a Lennard-Jones potential we could have used the standard [`NonBondedForce`](http://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce), but to demonstrate the flexibility to use different user defined potentials we have used `CustomNonBondedForce`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "harmonic_bond_force = mm.HarmonicBondForce()\n",
+    "\n",
+    "# Add each bond to the force from the topology\n",
+    "for bond in topology.bonds():\n",
+    "    harmonic_bond_force.addBond(bond.atom1.index, bond.atom2.index, 0.38, 1000)\n",
+    "\n",
+    "# Define a Lennard-Jones potential\n",
+    "expression = '4*epsilon*((sigma/r)^12-(sigma/r)^6);'\\\n",
+    "            + ' sigma=0.5*(sigma1+sigma2);'\\\n",
+    "            + ' epsilon=sqrt(epsilon1*epsilon2)'\n",
+    "\n",
+    "custom_nb_force = mm.CustomNonbondedForce(expression)\n",
+    "\n",
+    "custom_nb_force.addPerParticleParameter('sigma')\n",
+    "custom_nb_force.addPerParticleParameter('epsilon')\n",
+    "\n",
+    "# Add the parameters for each particle\n",
+    "for atom in topology.atoms():\n",
+    "    custom_nb_force.addParticle([0.5, 1.0])\n",
+    "\n",
+    "# Create exclusions for directly bonded atoms\n",
+    "custom_nb_force.createExclusionsFromBonds([(bond[0].index, bond[1].index) for bond in topology.bonds()], 1)\n",
+    "\n",
+    "# Set a cutoff of 1.5nm\n",
+    "custom_nb_force.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)\n",
+    "custom_nb_force.setCutoffDistance(1.5*unit.nanometers)\n",
+    "\n",
+    "# Add the forces to the system\n",
+    "system.addForce(harmonic_bond_force)\n",
+    "system.addForce(custom_nb_force)\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The system is now ready to simulate. Before we run the simulation we will describe the other method of defining a forcefield by creating a custom forcefield xml file."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "## Creating a force-field xml file\n",
+    "Alternatively, we can create a custom force-field xml file for our system. You should look here first for the full information: http://docs.openmm.org/latest/userguide/application/05_creating_ffs.html.\n",
+    "\n",
+    "You will need to create a new file called \"cg_ff.xml\" using a text editor of your choice. Then paste the following lines into it:\n",
+    "\n",
+    "```xml\n",
+    "<!-- cg_ff.xml \n",
+    "Coarse-grained forcefield for a bead-spring polymer. -->\n",
+    "<ForceField>\n",
+    "\t\n",
+    "    <AtomTypes>\n",
+    "\t    <Type name=\"CG-bead\" class=\"CG-bead\" element=\"CG\" mass=\"120.0\"/>\n",
+    "\t</AtomTypes>\n",
+    "\n",
+    "\t<Residues>\n",
+    "        <!-- Each bead is a single residue.\n",
+    "        Need a template for the different Residue types. \n",
+    "        First type is the end. This only has one bond. -->\n",
+    "        <Residue name=\"CG-residue-end\">\n",
+    "            <Atom name=\"CG-bead\" type=\"CG-bead\"/>\n",
+    "            <ExternalBond atomName=\"CG-bead\"/>\n",
+    "        </Residue>\n",
+    "\n",
+    "        <!-- Second type is in the middle of the chain. This has two bonds. -->\n",
+    "        <Residue name=\"CG-residue-middle\">\n",
+    "            <Atom name=\"CG-bead\" type=\"CG-bead\"/>\n",
+    "            <ExternalBond atomName=\"CG-bead\"/>\n",
+    "            <ExternalBond atomName=\"CG-bead\"/>\n",
+    "        </Residue>\n",
+    "    </Residues>\n",
+    "\n",
+    "    <!-- Define a harmonic bond between the CA-beads -->\n",
+    "    <HarmonicBondForce>\n",
+    "        <Bond class1=\"CG-bead\" class2=\"CG-bead\" length=\"0.38\" k=\"1000.0\"/>\n",
+    "    </HarmonicBondForce>\n",
+    "\n",
+    "    <!-- Use a custom non-bonded force for maximum flexibility.\n",
+    "    The bondCutoff=1 tells it to only exclude interactions between directly bonded atoms. -->\n",
+    "    <CustomNonbondedForce energy=\"4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)\" bondCutoff=\"1\">\n",
+    "        <PerParticleParameter name=\"sigma\"/>\n",
+    "        <PerParticleParameter name=\"epsilon\"/>\n",
+    "\t\t<Atom type=\"CG-bead\" sigma=\"0.5\" epsilon=\"1.0\"/>\n",
+    "\t</CustomNonbondedForce>\n",
+    "</ForceField>\n",
+    "```\n",
+    "(If you have cloned the cookbook repo then this file will already exist)\n",
+    "The comments in the above code explain what the difference sections are for.\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Create the system\n",
+    "\n",
+    "We can now load in our previously created custom `ForceField` and use the `createSystem` method with the `topology`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# load in the ForceField we created\n",
+    "ff = app.ForceField('./cg_ff.xml')\n",
+    "system2 = ff.createSystem(topology, nonbondedMethod=app.CutoffPeriodic, nonbondedCutoff=1.5*unit.nanometers)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can compare the two systems to check if they are the same. A simple way to do this is to serialize the systems as save them as xml files."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "with open('system1.xml', 'w') as output:\n",
+    "    output.write(mm.XmlSerializer.serialize(system))\n",
+    "\n",
+    "with open('system2.xml', 'w') as output:\n",
+    "    output.write(mm.XmlSerializer.serialize(system2))\n",
+    "\n",
+    "!diff system1.xml system2.xml"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We actually find they are slightly different. `system2` created by `ForceField.createSystem` has a `CMMotionRemover` that was added by default when using the `createSystem` method. If we wanted to we could add this to the first system."
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Setup and run the simulation\n",
+    "\n",
+    "We will use a `LangevinMiddleIntegrator` with a friction term of 0.01ps^-1 and a timestep of 0.01ps as used in similar coarse-grained polymer models [1]. For your own models these parameters will be important and you will need to choose them carefully!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "integrator = mm.LangevinMiddleIntegrator(300*unit.kelvin, 0.01/unit.picosecond, 0.010*unit.picoseconds)\n",
+    "simulation = app.Simulation(topology, system, integrator)\n",
+    "simulation.context.setPositions(positions)\n",
+    "\n",
+    "# setup simulation reporters\n",
+    "# Write the trajectory to a file called 'traj.dcd'\n",
+    "simulation.reporters.append(app.DCDReporter('traj.dcd', 1000, enforcePeriodicBox=False))\n",
+    "\n",
+    "# Report information to the screen as the simulation runs\n",
+    "simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True,\n",
+    "        potentialEnergy=True, temperature=True, volume=True, speed=True))\n",
+    "\n",
+    "\n",
+    "# NVT equilibration\n",
+    "simulation.step(10000)\n",
+    "\n",
+    "# Add a barostat\n",
+    "barostatIndex=system.addForce(mm.MonteCarloBarostat(1.0*unit.bar, 300*unit.kelvin))\n",
+    "simulation.context.reinitialize(preserveState=True)\n",
+    "\n",
+    "# Run NPT equilibration\n",
+    "simulation.step(100000)\n",
+    "\n",
+    "\n",
+    "# output the equilibrated configuration\n",
+    "with open('equilibrated_config.pdb','w') as f:\n",
+    "    state = simulation.context.getState(getPositions=True, enforcePeriodicBox=True)\n",
+    "    topology.setPeriodicBoxVectors(state.getPeriodicBoxVectors())\n",
+    "    app.PDBFile.writeFile(topology, state.getPositions(), f)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The equilibrated system will be a polymer melt that looks similar to this:\n",
+    "![equilibrated polymer melt](equilibrated_config.png)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## References\n",
+    "[1] GL Dignon, W Zheng, YC Kim, RB Best, J Mittal, PLoS computational biology 14 (1), 2018.\n",
+    "https://doi.org/10.1371/journal.pcbi.1005941"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "cookbook3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.16"
+  },
+  "nbsphinx": {
+   "execute": "never"
+  },
+  "orig_nbformat": 4
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

@@ -1,0 +1,284 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "273f0a22",
+   "metadata": {},
+   "source": [
+    "## Computing Interaction Energies\n",
+    "\n",
+    "Sometimes you want to compute the interaction energy between two molecules, or between two sets of molecules such as solvent and solute.  This is complicated by the fact that many Force classes can compute nonbonded interactions, and different ones must be handled differently.  We consider three cases.\n",
+    "\n",
+    "1. NonbondedForce is the most common class used for nonbonded interactions.  It does not have an option to directly calculate interaction energies, only the total energy of the whole system.  Instead we can perform three energy evaluations: one for the two molecules together, and one for each of the molecules individually to get its internal energy.  Subtracting gives the interaction energy.\n",
+    "2. CustomNonbondedForce is also often used to compute nonbonded interactions.  It supports \"interaction groups\", which can be used to compute only the interaction energy between two groups of particles.\n",
+    "3. Some interactions are not pairwise, such as implicit solvent or polarizable force fields.  The interaction between two particles depends on many other particles, including ones in other molecules.  In these cases, the concept of an \"interaction energy\" is not well defined.  You must consider carefully what quantities you actually want to calculate and why.  We do not consider this case further here.\n",
+    "\n",
+    "Let's start by loading a file for the villin headpiece in water, and modelling it with the CHARMM36 force field."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "3760c693",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm import *\n",
+    "from openmm.app import *\n",
+    "from openmm.unit import *\n",
+    "\n",
+    "pdb = PDBFile('villin.pdb')\n",
+    "forcefield = ForceField('charmm36.xml', 'charmm36/water.xml')\n",
+    "system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cd8c950e",
+   "metadata": {},
+   "source": [
+    "We will compute a solute-solvent interaction energy.  We need to identify the two sets of atoms whose interaction we want.  In this file, the solvent consists of water and chloride ions.  We can select the atoms by residue name."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "9e594442",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "solvent = set([a.index for a in pdb.topology.atoms() if a.residue.name in ('HOH', 'Cl')])\n",
+    "protein = set([a.index for a in pdb.topology.atoms() if a.index not in solvent])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c3a2e08b",
+   "metadata": {},
+   "source": [
+    "Now we will modify the Forces in the System as follows.\n",
+    "\n",
+    "- For NonbondedForce objects, we will add parameter offsets that can be used to \"zero out\" the parameters of particles in each set, causing them to not interact.  We also zero out the exceptions, since they are used for bonds within a single molecule, not for interactions between molecules.\n",
+    "- For CustomNonbondedForce objects, we add interaction groups to compute just the solute-solvent interaction energy.\n",
+    "- We also sort the Force objects into different force groups so we can evaluate them separately: group 0 for NonbondedForce, group 1 for CustomNonbondedForce, and group 2 for everything else."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "75033f56",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "for force in system.getForces():\n",
+    "    if isinstance(force, NonbondedForce):\n",
+    "        force.setForceGroup(0)\n",
+    "        force.addGlobalParameter(\"solute_scale\", 1)\n",
+    "        force.addGlobalParameter(\"solvent_scale\", 1)\n",
+    "        for i in range(force.getNumParticles()):\n",
+    "            charge, sigma, epsilon = force.getParticleParameters(i)\n",
+    "            # Set the parameters to be 0 when the corresponding parameter is 0,\n",
+    "            # and to have their normal values when it is 1.\n",
+    "            param = \"solute_scale\" if i in protein else \"solvent_scale\"\n",
+    "            force.setParticleParameters(i, 0, 0, 0)\n",
+    "            force.addParticleParameterOffset(param, i, charge, sigma, epsilon)\n",
+    "        for i in range(force.getNumExceptions()):\n",
+    "            p1, p2, chargeProd, sigma, epsilon = force.getExceptionParameters(i)\n",
+    "            force.setExceptionParameters(i, p1, p2, 0, 0, 0)\n",
+    "    elif isinstance(force, CustomNonbondedForce):\n",
+    "        force.setForceGroup(1)\n",
+    "        force.addInteractionGroup(protein, solvent)\n",
+    "    else:\n",
+    "        force.setForceGroup(2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e28b3502",
+   "metadata": {},
+   "source": [
+    "Let's create a Context for performing calculations.  The integrator is not important, since we will only be performing single point energy evaluations."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "8f0698cc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "integrator = VerletIntegrator(0.001*picosecond)\n",
+    "context = Context(system, integrator)\n",
+    "context.setPositions(pdb.positions)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e5c58a8c",
+   "metadata": {},
+   "source": [
+    "CHARMM36 uses NonbondedForce for Coulomb interactions and CustomNonbondedForce for Lennard-Jones interactions.  To compute the Coulomb interaction energy, we evaluate group 0 three times to subtract the internal energy of each set from the total energy."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "91d92a35",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "-6345.739608764648 kJ/mol\n"
+     ]
+    }
+   ],
+   "source": [
+    "def coulomb_energy(solute_scale, solvent_scale):\n",
+    "    context.setParameter(\"solute_scale\", solute_scale)\n",
+    "    context.setParameter(\"solvent_scale\", solvent_scale)\n",
+    "    return context.getState(getEnergy=True, groups={0}).getPotentialEnergy()\n",
+    "\n",
+    "total_coulomb = coulomb_energy(1, 1)\n",
+    "solute_coulomb = coulomb_energy(1, 0)\n",
+    "solvent_coulomb = coulomb_energy(0, 1)\n",
+    "print(total_coulomb - solute_coulomb - solvent_coulomb)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4fe831f1",
+   "metadata": {},
+   "source": [
+    "The Lennard-Jones interaction energy is much simpler.  We just evaluate group 1."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "c92c6383",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "-472.0870351791382 kJ/mol\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(context.getState(getEnergy=True, groups={1}).getPotentialEnergy())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f958667d",
+   "metadata": {},
+   "source": [
+    "Other force fields may divide up the energy differently.  For example, they may use a single NonbondedForce to compute both Coulomb and Lennard-Jones interactions.  In that case, the energy computed from NonbondedForce alone represents the total interaction energy.\n",
+    "\n",
+    "If you still want to separate the Coulomb and Lennard-Jones interactions in that case, it can be done by defining separate parameters for the two.  In this example we decompose the interaction energy for Amber14, which uses a single NonbondedForce for all nonbonded interactions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "de78b885",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')\n",
+    "system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME)\n",
+    "for force in system.getForces():\n",
+    "    if isinstance(force, NonbondedForce):\n",
+    "        force.setForceGroup(0)\n",
+    "        force.addGlobalParameter(\"solute_coulomb_scale\", 1)\n",
+    "        force.addGlobalParameter(\"solute_lj_scale\", 1)\n",
+    "        force.addGlobalParameter(\"solvent_coulomb_scale\", 1)\n",
+    "        force.addGlobalParameter(\"solvent_lj_scale\", 1)\n",
+    "        for i in range(force.getNumParticles()):\n",
+    "            charge, sigma, epsilon = force.getParticleParameters(i)\n",
+    "            force.setParticleParameters(i, 0, 0, 0)\n",
+    "            if i in protein:\n",
+    "                force.addParticleParameterOffset(\"solute_coulomb_scale\", i, charge, 0, 0)\n",
+    "                force.addParticleParameterOffset(\"solute_lj_scale\", i, 0, sigma, epsilon)\n",
+    "            else:\n",
+    "                force.addParticleParameterOffset(\"solvent_coulomb_scale\", i, charge, 0, 0)\n",
+    "                force.addParticleParameterOffset(\"solvent_lj_scale\", i, 0, sigma, epsilon)\n",
+    "        for i in range(force.getNumExceptions()):\n",
+    "            p1, p2, chargeProd, sigma, epsilon = force.getExceptionParameters(i)\n",
+    "            force.setExceptionParameters(i, p1, p2, 0, 0, 0)\n",
+    "    else:\n",
+    "        force.setForceGroup(2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "37d59b2d",
+   "metadata": {},
+   "source": [
+    "Now we can evaluate the interaction energies as before, by subtracting internal energies from the total energy."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "8e20f1f7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Coulomb interaction energy: -5638.60320864596 kJ/mol\n",
+      "LJ interaction energy: 220.66263641439218 kJ/mol\n"
+     ]
+    }
+   ],
+   "source": [
+    "integrator = VerletIntegrator(0.001*picosecond)\n",
+    "context = Context(system, integrator)\n",
+    "context.setPositions(pdb.positions)\n",
+    "\n",
+    "def energy(solute_coulomb_scale, solute_lj_scale, solvent_coulomb_scale, solvent_lj_scale):\n",
+    "    context.setParameter(\"solute_coulomb_scale\", solute_coulomb_scale)\n",
+    "    context.setParameter(\"solute_lj_scale\", solute_lj_scale)\n",
+    "    context.setParameter(\"solvent_coulomb_scale\", solvent_coulomb_scale)\n",
+    "    context.setParameter(\"solvent_lj_scale\", solvent_lj_scale)\n",
+    "    return context.getState(getEnergy=True, groups={0}).getPotentialEnergy()\n",
+    "\n",
+    "total_coulomb = energy(1, 0, 1, 0)\n",
+    "solute_coulomb = energy(1, 0, 0, 0)\n",
+    "solvent_coulomb = energy(0, 0, 1, 0)\n",
+    "total_lj = energy(0, 1, 0, 1)\n",
+    "solute_lj = energy(0, 1, 0, 0)\n",
+    "solvent_lj = energy(0, 0, 0, 1)\n",
+    "print('Coulomb interaction energy:', total_coulomb - solute_coulomb - solvent_coulomb)\n",
+    "print('LJ interaction energy:', total_lj - solute_lj - solvent_lj)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

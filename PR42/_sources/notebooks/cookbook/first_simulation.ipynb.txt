@@ -1,0 +1,96 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "e174828a",
+   "metadata": {},
+   "source": [
+    "## First Simulation\n",
+    "\n",
+    "This is a good starting point for learning how to use OpenMM.\n",
+    "\n",
+    "It loads a PDB file `villin.pdb`, which is the [villin headpiece protein](https://en.wikipedia.org/wiki/Villin-1) in a box of water. In then parameterizes it using the Amber14 forcefield and TIP3P-FB water model, energy minimizes it, and simulates it for 1000 steps with a langevin intergator.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3592a17b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm.app import *\n",
+    "from openmm import *\n",
+    "from openmm.unit import *\n",
+    "from sys import stdout\n",
+    "\n",
+    "# Load in the PDB strucure\n",
+    "pdb = PDBFile('villin.pdb')\n",
+    "\n",
+    "# Specifiy the forcefield \n",
+    "forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')\n",
+    "\n",
+    "\n",
+    "# Combine the molecular topology and the forcefield\n",
+    "system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,\n",
+    "        nonbondedCutoff=1*nanometer, constraints=HBonds)\n",
+    "\n",
+    "# Create the integrator to use for advacing the equations of motion.\n",
+    "# It specifies a Langevin integrator.\n",
+    "# The paramters set are temperature, friction coefficient, and timestep.\n",
+    "integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, 0.004*picoseconds)\n",
+    "\n",
+    "# Combines the molecular topology, system, and integrator \n",
+    "# to begin a new simulation.\n",
+    "simulation = Simulation(pdb.topology, system, integrator)\n",
+    "simulation.context.setPositions(pdb.positions)\n",
+    "\n",
+    "# Perform local energy minimization\n",
+    "print(\"Minimizing energy...\")\n",
+    "simulation.minimizeEnergy(maxIterations=100)\n",
+    "\n",
+    "# Write the trajectory to a file called \"output.pdb\"\n",
+    "simulation.reporters.append(PDBReporter('output.pdb', 1000))\n",
+    "\n",
+    "# Report infomation to the screen as the simulation runs\n",
+    "simulation.reporters.append(StateDataReporter(stdout, 100, step=True,\n",
+    "        potentialEnergy=True, temperature=True))\n",
+    "\n",
+    "#Run the simulation for 1000 timsteps\n",
+    "print(\"Running simulation...\")\n",
+    "simulation.step(1000)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.6 (default, Sep 26 2022, 11:37:49) \n[Clang 14.0.0 (clang-1400.0.29.202)]"
+  },
+  "tags": [
+   "barostat",
+   "thermostat",
+   "application layer"
+  ],
+  "vscode": {
+   "interpreter": {
+    "hash": "31f2aee4e71d21fbe5cf8b01ff0e069b9275f58929596ceb00d14d90e3e16cd6"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
