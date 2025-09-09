@@ -231,7 +231,6 @@ div.sphinxsidebarwrapper .extra-nav-links {
 /* Flexbox for tag index */
 
 .cookbook-tags>ul {
-    column-width: 10em;
     width: 100%;
 }
 
@@ -244,12 +243,14 @@ div.sphinxsidebarwrapper .extra-nav-links {
     break-inside: avoid;
 }
 
-
 .cookbook-tags>ul>li li {
     margin-left: 0;
 }
 
-
 .cookbook-tags>ul>li dd {
     margin-left: 0;
+}
+
+.bold-link a {
+    font-weight: bold;
 }
