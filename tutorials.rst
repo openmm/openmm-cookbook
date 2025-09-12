@@ -1,22 +1,29 @@
 The OpenMM Tutorials
 ====================
 
-Basic Tutorials
+Getting Started
 ---------------
 
-.. nbgallery::
-    notebooks/tutorials/protein_in_water
-
-Coarse-Graining
----------------
+These tutorials will take you through the basics of using OpenMM to set up and
+run molecular dynamics simulations.  If you are completely new to using OpenMM,
+working through these tutorials in order is the best place to start.
 
 .. nbgallery::
-    notebooks/tutorials/coarse_grained_polymer
+    notebooks/tutorials/getting_started
+
+..
+    notebooks/tutorials/input_and_output
+    notebooks/tutorials/system_from_scratch
 
 Advanced Tutorials
 ------------------
 
+Once you have familiarized yourself with the basics, consult these tutorials for
+examples of using OpenMM to perform more complex simulation tasks.
+
 .. nbgallery::
+    notebooks/tutorials/protein_in_water
+    notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/Alchemical_free_energy_calculations
     notebooks/tutorials/Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM
     notebooks/tutorials/HSP90_with_ADPMg2_simulation
