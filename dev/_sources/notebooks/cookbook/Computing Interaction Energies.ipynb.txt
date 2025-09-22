@@ -73,6 +73,7 @@
     "for force in system.getForces():\n",
     "    if isinstance(force, NonbondedForce):\n",
     "        force.setForceGroup(0)\n",
+    "        force.setUseDispersionCorrection(False)\n",
     "        force.addGlobalParameter(\"solute_scale\", 1)\n",
     "        force.addGlobalParameter(\"solvent_scale\", 1)\n",
     "        for i in range(force.getNumParticles()):\n",
@@ -87,6 +88,7 @@
     "            force.setExceptionParameters(i, p1, p2, 0, 0, 0)\n",
     "    elif isinstance(force, CustomNonbondedForce):\n",
     "        force.setForceGroup(1)\n",
+    "        force.setUseLongRangeCorrection(False)\n",
     "        force.addInteractionGroup(protein, solvent)\n",
     "    else:\n",
     "        force.setForceGroup(2)"
@@ -130,7 +132,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "-6345.739608764648 kJ/mol\n"
+      "-6342.859264373779 kJ/mol\n"
      ]
     }
    ],
@@ -164,7 +166,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "-472.0870351791382 kJ/mol\n"
+      "-473.5253734588623 kJ/mol\n"
      ]
     }
    ],
@@ -194,6 +196,7 @@
     "for force in system.getForces():\n",
     "    if isinstance(force, NonbondedForce):\n",
     "        force.setForceGroup(0)\n",
+    "        force.setUseDispersionCorrection(False)\n",
     "        force.addGlobalParameter(\"solute_coulomb_scale\", 1)\n",
     "        force.addGlobalParameter(\"solute_lj_scale\", 1)\n",
     "        force.addGlobalParameter(\"solvent_coulomb_scale\", 1)\n",
@@ -232,8 +235,8 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Coulomb interaction energy: -5638.60320864596 kJ/mol\n",
-      "LJ interaction energy: 220.66263641439218 kJ/mol\n"
+      "Coulomb interaction energy: -6249.024299621582 kJ/mol\n",
+      "LJ interaction energy: -392.6332290172577 kJ/mol\n"
      ]
     }
    ],
@@ -276,7 +279,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.9.9"
+   "version": "3.13.3"
   }
  },
  "nbformat": 4,
