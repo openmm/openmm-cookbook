@@ -46,7 +46,6 @@ cookbook_default_pypi_deps = ["openmm[cuda12]"]
 cookbook_required_files_base_uri = (
     "https://raw.githubusercontent.com/openmm/openmm-cookbook/main"
 )
-cookbook_default_required_files = []
 
 ### nbsphinx config ###
 
