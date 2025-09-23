@@ -2,6 +2,7 @@ name: openmm-cookbook
 channels:
   - conda-forge
 dependencies:
+ - alabaster>=1.0.0
  - matplotlib
  - nbsphinx
  - nbval

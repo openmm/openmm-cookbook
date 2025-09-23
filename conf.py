@@ -42,10 +42,11 @@ intersphinx_mapping = {
     "devguide": ("https://docs.openmm.org/latest/developerguide/", None),
 }
 
-cookbook_default_pypi_deps = ["openmm"]
+cookbook_default_pypi_deps = ["openmm[cuda12]"]
 cookbook_required_files_base_uri = (
     "https://raw.githubusercontent.com/openmm/openmm-cookbook/main"
 )
+cookbook_default_required_files = []
 
 ### nbsphinx config ###
 
@@ -66,10 +67,6 @@ nbsphinx_prolog = """
     </div>
 
 """
-
-nbsphinx_thumbnails = {
-    "notebooks/*/*": "_static/logo.png"
-}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["sphinx/_templates"]
@@ -100,7 +97,7 @@ html_theme_options = {
     "github_user": "openmm",
     "github_repo": "openmm-cookbook",
     "logo_name": True,
-    "logo": "logo.png",
+    "logo": "logo.svg",
     "extra_nav_links": [
         {
             "title": "OpenMM.org",
