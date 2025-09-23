@@ -42,7 +42,7 @@ intersphinx_mapping = {
     "devguide": ("https://docs.openmm.org/latest/developerguide/", None),
 }
 
-cookbook_default_pypi_deps = ["openmm[cuda12]"]
+cookbook_default_pypi_deps = ["openmm"]
 cookbook_required_files_base_uri = (
     "https://raw.githubusercontent.com/openmm/openmm-cookbook/main"
 )
