@@ -4,19 +4,25 @@ The OpenMM Tutorials
 Basic Tutorials
 ---------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/tutorials/protein_in_water
 
 Coarse-Graining
 ---------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/tutorials/coarse_grained_polymer
 
 Advanced Tutorials
 ------------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/tutorials/Alchemical_free_energy_calculations
     notebooks/tutorials/Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM
     notebooks/tutorials/HSP90_with_ADPMg2_simulation

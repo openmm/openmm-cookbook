@@ -418,6 +418,7 @@
   }
  ],
  "metadata": {
+  "required_files": ["notebooks/tutorials/deca-ala.pdb"],
   "kernelspec": {
    "display_name": "cookbook3",
    "language": "python",

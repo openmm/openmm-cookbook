@@ -4,13 +4,17 @@ The OpenMM Cookbook
 Getting Started
 ---------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/cookbook/first_simulation.ipynb
 
 Simulation Protocols
 --------------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/cookbook/Changing Temperature and Pressure
     notebooks/cookbook/Saving Systems to XML Files
     notebooks/cookbook/Merging Molecules
@@ -19,7 +23,9 @@ Simulation Protocols
 Restraints, Constraints, and External Forces
 --------------------------------------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/cookbook/Applying a Constant External Force
     notebooks/cookbook/Constraining Atom Positions
     notebooks/cookbook/Restraining Atom Positions
@@ -28,7 +34,9 @@ Restraints, Constraints, and External Forces
 Analysis and System Inspection
 ------------------------------
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/cookbook/Analyzing Energy Contributions
     notebooks/cookbook/Computing Interaction Energies
     notebooks/cookbook/Querying and Modifying Charges and Other Parameters

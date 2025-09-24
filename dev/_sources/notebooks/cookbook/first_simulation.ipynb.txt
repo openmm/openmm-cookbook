@@ -63,6 +63,7 @@
   }
  ],
  "metadata": {
+  "required_files": ["notebooks/cookbook/villin.pdb"],
   "kernelspec": {
    "display_name": "Python 3",
    "language": "python",
