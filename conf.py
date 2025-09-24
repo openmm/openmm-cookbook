@@ -130,6 +130,9 @@ html_theme_options = {
         },
     ],
     "show_relbar_bottom": True,
+    "font_family": "Roboto, sans-serif",
+    "head_font_family": "Roboto, sans-serif",
+    "caption_font_family": "Roboto, sans-serif",
 }
 html_sidebars = {
     "**": [
