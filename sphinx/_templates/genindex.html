@@ -12,30 +12,23 @@
 
 {% block body %}
 
-<h1 id="tags">{{ _('Notebooks by Tag') }}</h1>
+<h1>{{ _('Notebooks by Tag') }}</h1>
 
 <div class="cookbook-tags">
   <ul>
-    {%- for alpha, alpha_tags in genindexentries -%}
-      {%- for tag, (links, _subitems, _) in alpha_tags -%}
-        <li><dl>
-          <dt>{{tag}}</dt>
-          <dd>
-            <ul>
-              {%- for _ismain, uri in links -%}
-                {%- set _path, _, fn_with_hash = uri.rpartition("/") -%}
-                {%- set fn, _, _anchor = fn_with_hash.partition("#") -%}
-                {%- set name, _, _extension = fn_with_hash.rpartition(".") -%}
-                {%- set title = name.replace("%20", " ") -%}
-                <li><a href="{{uri}}"> {{title}} </a></li>
-              {% endfor %}
-            </ul>
-          </dd>
-        </dl></li>
-      {% endfor %}
+    {%- for tag, entries in indexdata -%}
+      <li><dl>
+        <dt>{{tag}}</dt>
+        <dd>
+          <ul>
+            {%- for title, uri in entries -%}
+              <li><a href="{{uri}}"> {{title}} </a></li>
+            {% endfor %}
+          </ul>
+        </dd>
+      </dl></li>
     {% endfor %}
   </ul>
 </div>
-
 
 {% endblock %}

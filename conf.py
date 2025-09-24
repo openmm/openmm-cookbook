@@ -67,10 +67,6 @@ nbsphinx_prolog = """
 
 """
 
-nbsphinx_thumbnails = {
-    "notebooks/*/*": "_static/logo.png"
-}
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["sphinx/_templates"]
 
@@ -100,7 +96,7 @@ html_theme_options = {
     "github_user": "openmm",
     "github_repo": "openmm-cookbook",
     "logo_name": True,
-    "logo": "logo.png",
+    "logo": "logo.svg",
     "extra_nav_links": [
         {
             "title": "OpenMM.org",
@@ -134,6 +130,9 @@ html_theme_options = {
         },
     ],
     "show_relbar_bottom": True,
+    "font_family": "Roboto, sans-serif",
+    "head_font_family": "Roboto, sans-serif",
+    "caption_font_family": "Roboto, sans-serif",
 }
 html_sidebars = {
     "**": [

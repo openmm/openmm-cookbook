@@ -1,8 +1,9 @@
 import json
-from pathlib import Path
-from typing import List, Optional, Any, TypeVar
-from uuid import uuid4
 from copy import deepcopy
+from docutils.nodes import document
+from pathlib import Path
+from typing import List, Optional, Any
+from uuid import uuid4
 
 from sphinx.application import Sphinx as Application
 from sphinx.config import Config
@@ -164,6 +165,25 @@ def remove_colab_notebook(app: Application, env: BuildEnvironment, docname: str)
         colab_path.unlink()
 
 
+def construct_index(app: Application, pagename: str, templatename: str, context: dict[str, Any], doctree: Optional[document]):
+    if pagename != "genindex":
+        return
+
+    index_data = {}
+
+    for docname, entries in app.env.domains.index_domain.entries.items():
+        for _, tag, _, _, _ in entries:
+            index_data.setdefault(tag, set()).add(docname)
+
+    def get_title_url(docname):
+        if docname in app.env.titles:
+            title = app.env.titles[docname].astext()
+        else:
+            title = docname.split("/")[-1]
+        return title, app.builder.get_relative_uri("genindex", docname)
+
+    context["indexdata"] = [(tag, sorted(get_title_url(docname) for docname in docnames)) for tag, docnames in sorted(index_data.items())]
+
 def setup(app: Application):
     app.add_config_value(
         "cookbook_default_pypi_deps",
@@ -183,6 +203,7 @@ def setup(app: Application):
 
     app.connect("env-purge-doc", remove_colab_notebook)
     app.connect("source-read", process_notebook)
+    app.connect("html-page-context", construct_index)
 
     return {
         "parallel_read_safe": True,
