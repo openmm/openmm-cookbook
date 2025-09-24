@@ -8,20 +8,24 @@ These tutorials will take you through the basics of using OpenMM to set up and
 run molecular dynamics simulations.  If you are completely new to using OpenMM,
 working through these tutorials in order is the best place to start.
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/tutorials/getting_started
 
 ..
     notebooks/tutorials/input_and_output
     notebooks/tutorials/system_from_scratch
 
-Advanced Tutorials
-------------------
+Beyond the Basics
+-----------------
 
 Once you have familiarized yourself with the basics, consult these tutorials for
 examples of using OpenMM to perform more complex simulation tasks.
 
-.. nbgallery::
+.. toctree::
+    :maxdepth: 1
+
     notebooks/tutorials/protein_in_water
     notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/Alchemical_free_energy_calculations
