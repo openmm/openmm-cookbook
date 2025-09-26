@@ -12,9 +12,9 @@ working through these tutorials in order is the best place to start.
     :maxdepth: 1
 
     notebooks/tutorials/getting_started
+    notebooks/tutorials/loading_and_reporting
 
 ..
-    notebooks/tutorials/input_and_output
     notebooks/tutorials/system_from_scratch
 
 Beyond the Basics
