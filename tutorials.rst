@@ -13,9 +13,7 @@ working through these tutorials in order is the best place to start.
 
     notebooks/tutorials/getting_started
     notebooks/tutorials/loading_and_reporting
-
-..
-    notebooks/tutorials/system_from_scratch
+    notebooks/tutorials/building_systems
 
 Beyond the Basics
 -----------------
