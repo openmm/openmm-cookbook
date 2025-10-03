@@ -10,8 +10,9 @@ how to perform various common simulation-related tasks in OpenMM.
 
 * :doc:`The OpenMM Cookbook <cookbook>` contains short code examples for common
   tasks you can perform in OpenMM.
-* :doc:`The OpenMM Tutorials <tutorials>` are longer examples that walk you
-  through specific simulation methods.
+* :doc:`The OpenMM Tutorials <tutorials>` include a series of introductory
+  tutorials useful for getting started with OpenMM, as well as various in-depth
+  examples that walk you through specific simulation methods.
 * In addition to these categories, you can also :ref:`browse a list of examples
   by tag <genindex>`.
 
