@@ -1,28 +1,30 @@
 The OpenMM Tutorials
 ====================
 
-Basic Tutorials
+Getting Started
 ---------------
+
+These tutorials will take you through the basics of using OpenMM to set up and
+run molecular dynamics simulations.  If you are completely new to using OpenMM,
+working through these tutorials in order is the best place to start.
 
 .. toctree::
     :maxdepth: 1
 
-    notebooks/tutorials/protein_in_water
+    notebooks/tutorials/getting_started
+    notebooks/tutorials/loading_and_reporting
+    notebooks/tutorials/building_systems
 
-Coarse-Graining
----------------
+Beyond the Basics
+-----------------
+
+Once you have familiarized yourself with the basics, consult these tutorials for
+examples of using OpenMM to perform more complex simulation tasks.
 
 .. toctree::
     :maxdepth: 1
 
     notebooks/tutorials/coarse_grained_polymer
-
-Advanced Tutorials
-------------------
-
-.. toctree::
-    :maxdepth: 1
-
     notebooks/tutorials/Alchemical_free_energy_calculations
     notebooks/tutorials/Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM
     notebooks/tutorials/HSP90_with_ADPMg2_simulation
