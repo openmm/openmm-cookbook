@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Building Systems from Scratch &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Coarse-Grained Polymer" href="coarse_grained_polymer.html" />
+    <link rel="prev" title="Loading Input Files and Reporting Results" href="loading_and_reporting.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="building_systems.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/building_systems.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/building_systems.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Building-Systems-from-Scratch">
+<h1>Building Systems from Scratch<a class="headerlink" href="#Building-Systems-from-Scratch" title="Link to this heading">¶</a></h1>
+<section id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">¶</a></h2>
+<p>The previous two tutorials in this series showed how to use OpenMM to set up simulations using existing inputs: either molecular structures along with predefined force fields, or parameterized input files for other molecular dynamics engines like Amber or CHARMM. We also saw how to use the OpenMM Setup tool to automatically generate Python scripts to run OpenMM for cases like these. This way of using OpenMM is most useful for setting up simulations of biomolecules, for example, and uses OpenMM’s
+convenient <a class="reference external" href="https://docs.openmm.org/latest/api-python/app.html">application layer</a> for assigning parameters to complex topologies. However, for simpler systems, <em>e.g.</em>, Lennard-Jones fluid mixtures, model colloidal crystals, bead-spring polymers, or other simple coarse-grained models, you might not need the complexity of this layer, and may also prefer more control over how your simulation is set up. Alternatively, you might want to inspect or modify the OpenMM System objects created by one
+of the methods discussed in the previous tutorials, or write your own library for building simulations. For these use cases, you can work directly with OpenMM’s <a class="reference external" href="https://docs.openmm.org/latest/api-python/library.html">library layer</a>.</p>
+<p>This tutorial shows how to use the library layer to build <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> objects. Since OpenMM Setup is geared towards generating scripts using predefined structures or force fields, we will not use it here. Instead, we will show how to write a script from scratch to set up and run a simulation of a binary Lennard-Jones fluid mixture. In particular, we will simulate a mixture of particles of two types, “A” and “B”, with
+pairwise interactions governed by the Lennard-Jones potential,</p>
+<div class="math notranslate nohighlight">
+\[u_{ij}(r)=4\epsilon_{ij}\left(\frac{\sigma_{ij}^{12}}{r^{12}}-\frac{\sigma_{ij}^6}{r^6}\right),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma_{ij}\)</span> and <span class="math notranslate nohighlight">\(\epsilon_{ij}\)</span> for a pair of particle types are given from parameters <span class="math notranslate nohighlight">\(\sigma_i\)</span> and <span class="math notranslate nohighlight">\(\epsilon_i\)</span> for each particle type by the Lorentz-Berthelot mixing rules <span class="math notranslate nohighlight">\(\sigma_{ij}=(\sigma_i+\sigma_j)/2\)</span> and <span class="math notranslate nohighlight">\(\epsilon_{ij}=\sqrt{\epsilon_i\epsilon_j}\)</span>.</p>
+</section>
+<section id="Writing-the-Script">
+<h2>Writing the Script<a class="headerlink" href="#Writing-the-Script" title="Link to this heading">¶</a></h2>
+<p>To get started, we will import OpenMM:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">openmm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.app</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.unit</span>
+</pre></div>
+</div>
+</div>
+<p>For this tutorial, we will use classes within their packages rather than importing all of them into the global scope like the OpenMM Setup-generated scripts do.</p>
+<p>We will also import some other packages that are not strictly necessary for interacting with OpenMM but will be useful for the tutorial:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</pre></div>
+</div>
+</div>
+<section id="Dimensionless-Units">
+<h3>Dimensionless Units<a class="headerlink" href="#Dimensionless-Units" title="Link to this heading">¶</a></h3>
+<p>We have seen in the previous tutorials that OpenMM uses a <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/01_introduction.html#units">default unit system</a> with <span class="math notranslate nohighlight">\(\mathrm{nm}\)</span> for length, <span class="math notranslate nohighlight">\(\mathrm{kJ/mol}\)</span> for energy, <span class="math notranslate nohighlight">\(\mathrm{ps}\)</span> for time, <em>etc.</em>, but also provides a <a class="reference external" href="https://docs.openmm.org/latest/api-python/app.html#units">units API</a> for <a class="reference external" href="https://docs.openmm.org/latest/userguide/library/05_languages_not_cpp.html#units-and-dimensional-analysis">manipulating and converting
+between</a> units. On the other hand, it is common in theoretical work, as well as simulation studies of simple model systems like Lennard-Jones fluids, to specify values of parameters relative to some fixed scales, <em>e.g.</em>, a length scale <span class="math notranslate nohighlight">\(\sigma\)</span>, an energy scale <span class="math notranslate nohighlight">\(\epsilon\)</span>, a time scale <span class="math notranslate nohighlight">\(\tau\)</span>, <em>etc.</em>, rather than concrete units. It is often convenient to omit these
+scales entirely and write, <em>e.g.</em>, a parameter like a density <span class="math notranslate nohighlight">\(\rho=0.6\sigma^{-3}\)</span> in dimensionless form <span class="math notranslate nohighlight">\(\rho^*=0.6\)</span>. As long as a self-consistent set of reference scales is chosen, dimensionless values can be used throughout a calculation.</p>
+<p>Some care must be taken in order to do this in OpenMM. Passing unitless values to OpenMM when it expects quantities with units causes them to be interpreted in its default unit system, whose length, energy, time, and mass (<span class="math notranslate nohighlight">\(\mathrm{g/mol}\)</span>) scales are all consistent with each other, but whose temperature (<span class="math notranslate nohighlight">\(\mathrm{K}\)</span>) and pressure (<span class="math notranslate nohighlight">\(\mathrm{bar}\)</span>) scales are not. Thus, it is better to still use OpenMM’s units API, and explicitly define the scale factors needed to obtain a
+consistent set of units. For length, mass, energy, and time, we can use the default units:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">length_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">nanometer</span>
+<span class="n">mass_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
+<span class="n">energy_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
+<span class="n">time_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">picosecond</span>
+</pre></div>
+</div>
+</div>
+<p>(One may note that these cannot all be independent, but it turns out that <span class="math notranslate nohighlight">\(1\ \mathrm{kJ/mol}=1\ (\mathrm{g/mol})(\mathrm{nm}^2/\mathrm{ps}^2)\)</span>, so this set of units works.) For pressure, we want an energy per volume, but if we try this with our current set of scales, OpenMM will not let the result be converted to other pressure units:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">energy_scale</span> <span class="o">/</span> <span class="n">length_scale</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">in_units_of</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">TypeError</span>                                 Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[4]</span><span class="ansi-green-fg">, line 1</span>
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> <span class="ansi-yellow-bg">(</span><span class="ansi-green-fg ansi-yellow-bg">1.0</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">*</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">energy_scale</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">/</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">length_scale</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">*</span><span class="ansi-yellow-bg">*</span><span class="ansi-yellow-bg"> </span><span class="ansi-green-fg ansi-yellow-bg">3</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">.</span><span class="ansi-yellow-bg">in_units_of</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">openmm</span><span class="ansi-yellow-bg">.</span><span class="ansi-yellow-bg">unit</span><span class="ansi-yellow-bg">.</span><span class="ansi-yellow-bg">bar</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/miniforge3/envs/ommcookbook/lib/python3.13/site-packages/openmm/unit/quantity.py:661</span>, in <span class="ansi-cyan-fg">Quantity.in_units_of</span><span class="ansi-blue-fg">(self, other_unit)</span>
+<span class="ansi-green-fg">    650</span> <span class="ansi-yellow-fg">&#34;&#34;&#34;</span>
+<span class="ansi-green-fg">    651</span> <span class="ansi-yellow-fg">Returns an equal Quantity expressed in different units.</span>
+<span class="ansi-green-fg">    652</span>
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    658</span> <span class="ansi-yellow-fg">  and  result = value * factor when post_multiply is True</span>
+<span class="ansi-green-fg">    659</span> <span class="ansi-yellow-fg">&#34;&#34;&#34;</span>
+<span class="ansi-green-fg">    660</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span style="color: rgb(0,135,0)">self</span>.unit.is_compatible(other_unit):
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">661</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">TypeError</span>(<span class="ansi-yellow-fg">&#39;</span><span class="ansi-yellow-fg">Unit </span><span class="ansi-yellow-fg">&#34;</span><span class="ansi-bold" style="color: rgb(175,95,135)">%s</span><span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg"> is not compatible with Unit </span><span class="ansi-yellow-fg">&#34;</span><span class="ansi-bold" style="color: rgb(175,95,135)">%s</span><span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">.</span><span class="ansi-yellow-fg">&#39;</span> % (<span style="color: rgb(0,135,0)">self</span>.unit, other_unit))
+<span class="ansi-green-fg">    662</span> f = <span style="color: rgb(0,135,0)">self</span>.unit.conversion_factor_to(other_unit)
+<span class="ansi-green-fg">    663</span> <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span>._change_units_with_factor(other_unit, f)
+
+<span class="ansi-red-fg">TypeError</span>: Unit &#34;kilojoule/(nanometer**3*mole)&#34; is not compatible with Unit &#34;bar&#34;.
+</pre></div></div>
+</div>
+<p>The problem is the factor of <span class="math notranslate nohighlight">\(\mathrm{1/mol}\)</span> in the energy scale, which OpenMM will not automatically eliminate. Since a mole is just a fixed quantity of something, we can divide by the constant <code class="docutils literal notranslate"><span class="pre">AVOGADRO_CONSTANT_NA</span></code> that OpenMM provides to remove this factor and obtain a pressure scale consistent with the other scales we have defined.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">press_scale</span> <span class="o">=</span> <span class="n">energy_scale</span> <span class="o">/</span> <span class="p">(</span><span class="n">length_scale</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This quantity can now be converted to <span class="math notranslate nohighlight">\(\mathrm{bar}\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">press_scale</span><span class="o">.</span><span class="n">in_units_of</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+16.60539067173847 bar
+</pre></div></div>
+</div>
+<p>Similarly, from an energy scale, we can get a temperature scale by dividing by Boltzmann’s constant, which OpenMM provides as <code class="docutils literal notranslate"><span class="pre">BOLTZMANN_CONSTANT_kB</span></code>. We must again also divide by the Avogadro constant to remove a factor of <span class="math notranslate nohighlight">\(\mathrm{1/mol}\)</span> from the energy scale:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">temp_scale</span> <span class="o">=</span> <span class="n">energy_scale</span> <span class="o">/</span> <span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">BOLTZMANN_CONSTANT_kB</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In <span class="math notranslate nohighlight">\(\mathrm{K}\)</span>, this is:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">temp_scale</span><span class="o">.</span><span class="n">in_units_of</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+120.27235504272605 K
+</pre></div></div>
+</div>
+</section>
+<section id="Simulation-Parameters">
+<h3>Simulation Parameters<a class="headerlink" href="#Simulation-Parameters" title="Link to this heading">¶</a></h3>
+<p>With all of these scale factors in place, we can now define the actual parameters for our simulation. First, we set values for the number of particles of each type, a starting number density for the system, and particle masses:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_A</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">N_B</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">0.6</span> <span class="o">/</span> <span class="n">length_scale</span> <span class="o">**</span> <span class="mi">3</span>
+
+<span class="n">m_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">mass_scale</span>
+<span class="n">m_B</span> <span class="o">=</span> <span class="mf">1.1</span> <span class="o">*</span> <span class="n">mass_scale</span>
+</pre></div>
+</div>
+</div>
+<p>These are all ordinary variables; OpenMM will not do anything special with them until we explicitly provide them, as we will show below.</p>
+<p>Next, we set some Lennard-Jones potential parameters. We also define a cutoff distance <span class="math notranslate nohighlight">\(r_{\mathrm{cut}}\)</span> beyond which the potential will not be evaluated.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">r_cut</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">length_scale</span>
+
+<span class="n">sigma_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">length_scale</span>
+<span class="n">sigma_B</span> <span class="o">=</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">length_scale</span>
+
+<span class="n">epsilon_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">energy_scale</span>
+<span class="n">epsilon_B</span> <span class="o">=</span> <span class="mf">1.3</span> <span class="o">*</span> <span class="n">energy_scale</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we define a pressure and temperature for the system, and thermostat parameters that will be used later:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">press</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">press_scale</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">temp_scale</span>
+<span class="n">friction</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">time_scale</span>
+<span class="n">step</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="o">*</span> <span class="n">time_scale</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-System">
+<h3>Creating the System<a class="headerlink" href="#Creating-the-System" title="Link to this heading">¶</a></h3>
+<p>We are now ready to set up the simulation proper. In OpenMM, this begins with a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>, which instead of generating from a ForceField or other input data as was done in the previous tutorials, we now create directly:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">System</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>A System object stores basic information about particles in a system, such as their masses, any rigid constraints between particles, and any definitions of <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/05_other_features.html#virtual-sites">virtual sites</a> (particles whose positions are computed based on positions of other particles, rather than integrated normally). Details of the <em>interactions</em> between the particles are not stored directly in the System, but instead, inside of
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/library.html#forces">Forces</a> added to the System.</p>
+<p>We begin by setting the default size of the periodic box on the System with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html#openmm.openmm.System.setDefaultPeriodicBoxVectors">System.setDefaultPeriodicBoxVectors()</a>. We will later add a barostat to control the pressure, so the box will be scaled during simulation, but as discussed in <a class="reference internal" href="loading_and_reporting.html#Input-Files"><span class="std std-ref">the previous tutorial</span></a>, OpenMM needs default vectors to set up a Context. Here, we
+create a cubic box giving the specified initial number density <code class="docutils literal notranslate"><span class="pre">rho</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_box</span> <span class="o">=</span> <span class="p">((</span><span class="n">N_A</span> <span class="o">+</span> <span class="n">N_B</span><span class="p">)</span> <span class="o">/</span> <span class="n">rho</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">setDefaultPeriodicBoxVectors</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">L_box</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L_box</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">L_box</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Note here that we use OpenMM’s built-in <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.vec3.Vec3.html">Vec3</a> class, which represents 3-dimensional vectors and can perform basic mathematical operations on them. However, OpenMM functions that accept Vec3 instances can also accept other sequences like lists, tuples, or NumPy arrays.</p>
+<p>We now add particles to the System one by one with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html#openmm.openmm.System.addParticle">System.addParticle()</a>. An OpenMM System has no direct concept of “particle types”. Instead, you can create the particles in any order you want, as long as you ensure that particle parameters set in Forces are ordered in the same way. Here, we will treat the first <code class="docutils literal notranslate"><span class="pre">N_A</span></code> particles in the System as type A, and the next <code class="docutils literal notranslate"><span class="pre">N_B</span></code>
+particles as type B.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">m_A</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">m_B</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>addParticle() returns the index of the particle just added to the System, so if you wanted to add particles in a less obvious order, and keep track of the indices of particles of each type, for instance, OpenMM makes it easy to do so.</p>
+<p>Now we need to define the interactions between particles. We want to apply a Lennard-Jones potential between particle pairs, with Lorentz-Berthelot mixing rules. We could use any function of interparticle distances as a pair potential, since OpenMM provides a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html">CustomNonbondedForce</a> that accepts arbitrary mathematical expressions as strings and compiles them into optimized kernels for computation.
+However, the potential we want here is so common in simulations that OpenMM provides a built-in class, <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>, to handle it:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>By default, newly created NonbondedForce objects are set to NoCutoff mode, which means that they ignore periodic boundary conditions and compute the potential for every pair of particles in a simulation. To only compute interactions within a fixed cutoff, using the minimum image convention to apply periodic boundary conditions, use the <code class="docutils literal notranslate"><span class="pre">CutoffPeriodic</span></code> option to
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce.setNonbondedMethod">NonbondedForce.setNonbondedMethod()</a>, and call <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce.setCutoffDistance">NonbondedForce.setCutoffDistance()</a> to set the cutoff distance.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">setNonbondedMethod</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">)</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">r_cut</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#lennard-jones-interaction">theory section of the user guide</a> discusses a number of other options for computing these as well as Coulomb interactions with NonbondedForce.</p>
+<p>Next, we register particle parameters with the NonbondedForce. We must call <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce.addParticle">NonbondedForce.addParticle()</a> for each particle in the System that we want to add the NonbondedForce to; each subsequent call sets parameters for each particle in the System in order. Consistent with the order we added the particles to the System, then, we set Lennard-Jones parameters for
+every A particle first, followed by every B particle:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma_A</span><span class="p">,</span> <span class="n">epsilon_A</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma_B</span><span class="p">,</span> <span class="n">epsilon_B</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The first parameter to addParticle() is the electric charge. If all charges are set to zero, as above, no Coulomb interactions will be computed by the NonbondedForce.</p>
+<p>Finally, to actually use our newly created NonbondedForce, we must add it to the System with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html#openmm.openmm.System.addForce">System.addForce()</a>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">lj</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<p>As in previous tutorials, we add a MonteCarloBarostat to the System for pressure control, and use a LangevinMiddleIntegrator for integration and temperature control:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="n">press</span><span class="p">,</span> <span class="n">temp</span><span class="p">))</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">friction</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-Simulation">
+<h3>Creating the Simulation<a class="headerlink" href="#Creating-the-Simulation" title="Link to this heading">¶</a></h3>
+<p>We have now prepared a System and an Integrator for our simulation. Recall that in previous tutorials, we created a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html">Simulation</a> object from a System and an Integrator, but also provided a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html">Topology</a> that was loaded from our input files. Since we have already set all of the parameters for our simulation in the
+System, OpenMM does not need a Topology to assign parameters from a ForceField, but some of the <a class="reference external" href="https://docs.openmm.org/latest/api-python/app.html#reporting-output">reporter classes</a> still require a Topology for output, so we will demonstrate how to build one from scratch. This process starts with creating an empty Topology:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">topology</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Topology</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The information in a Topology is structured hierarchically, with each Topology containing a list of <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Chain.html">Chain</a> objects, each Chain a list of <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Residue.html">Residue</a> objects, and each Residue a list of <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Atom.html">Atom</a> objects. For simulations of biopolymers, the
+elements of this hierarchy map naturally onto the standard meanings of their terms in biochemistry. For other kinds of simulations like this one, there may not be a natural correspondence, and so there is some flexibility in how we construct the Topology. Note that once a System is fully built, OpenMM only uses the Topology for reporting outputs like PDB files using OpenMM’s standard reporters. Thus, defining a Topology with the same number of atoms in a custom-built System, but with a
+nonsensical hierarchy or connectivity, will actually make no difference when running the simulation.</p>
+<p>For example, if we had a mixture of polyatomic molecules, we could create a Chain for each molecule, and either add all of the atoms in the molecule to one Residue in the Chain, or divide the atoms across several Residues if desired. Alternatively, since there is no requirement that a Chain consist of a single connected molecule, we could assign one Residue per molecule and group molecules of each type into the a Chain for convenience. We will take this latter approach here, and create Chain
+objects for each type of particle with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html#openmm.app.topology.Topology.addChain">Topology.addChain()</a>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
+<span class="n">chain_B</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>We can add a Residue to an already created Chain with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html#openmm.app.topology.Topology.addResidue">Topology.addResidue()</a>, providing a name to identify the Residue (which need not be unique). Since this simulation uses single particles rather than polyatomic molecules, we add a single Atom to each Residue with
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html#openmm.app.topology.Topology.addAtom">Topology.addAtom()</a>. In general, the name of each Atom should be unique within a Residue. The Atoms should be added to the Topology in the same order that particles were added to the System.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">chain_A</span><span class="p">)</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">chain_B</span><span class="p">)</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The parameter to addAtom() set to <code class="docutils literal notranslate"><span class="pre">None</span></code> above specifies an optional chemical element for the Atom. Since this is a model system, we do not set elements for the Atoms here, but OpenMM provides the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.element.Element.html">Element</a> class for use when appropriate.</p>
+<p>Now that we have a Topology, we can create a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html">Simulation</a> object, just as in the previous tutorials.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>When we set up a simulation from a PDB file, input coordinates were already available. When building a System and a Topology from scratch, you will need to provide your own initial coordinates. You can read them from any file format of your choice or generate them <em>via</em> any method of your choice, before passing them to <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.Context.html#openmm.openmm.Context.setPositions">Context.setPositions()</a>. In this example, we will generate a
+simple <a class="reference external" href="https://www.atomic-scale-physics.de/lattice/struk/b1.html">rock salt (B1) lattice</a> for the initial positions of our particles:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">grid_a</span><span class="p">,</span> <span class="n">grid_b</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i_x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i_y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">grid_a</span><span class="p">,</span> <span class="n">grid_b</span><span class="p">)[(</span><span class="n">i_x</span> <span class="o">+</span> <span class="n">i_y</span> <span class="o">+</span> <span class="n">i_z</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">i_x</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="n">i_y</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="n">i_z</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="n">L_box</span><span class="p">)</span>
+
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">grid_a</span> <span class="o">+</span> <span class="n">grid_b</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can then minimize the energy of the initial configuration and set velocities:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Running-Dynamics">
+<h3>Running Dynamics<a class="headerlink" href="#Running-Dynamics" title="Link to this heading">¶</a></h3>
+<p>We are now ready to run simulation steps, just as we have done in the previous tutorials.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>All of OpenMM’s builtin reporters can be added to the Simulation as desired, as well as any custom reporters. Here, we will instead calculate the radial distribution function (RDF) for each of the pairs of components in the mixture. The details of the calculation are not germane to this tutorial, and the implementation here is not optimized. As such, using an external library for such analysis is usually better, but the following illustrates a simple way to do this with NumPy alone.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the edges of the bins on which to evaluate the RDFs.</span>
+<span class="n">rdf_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mi">401</span><span class="p">)</span>
+
+<span class="c1"># Make arrays in which to accumulate the RDFs.</span>
+<span class="n">rdf_aa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">rdf_bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">rdf_ab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Track the number of accumulations we have done so far.</span>
+<span class="n">rdf_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_rdf</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">rdf_aa</span><span class="p">,</span> <span class="n">rdf_bb</span><span class="p">,</span> <span class="n">rdf_ab</span><span class="p">,</span> <span class="n">rdf_count</span>
+
+    <span class="c1"># Extract the positions and box vectors from a State.</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">getPositions</span><span class="p">(</span><span class="n">asNumpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">length_scale</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">getPeriodicBoxVectors</span><span class="p">()</span> <span class="o">/</span> <span class="n">length_scale</span><span class="p">)</span>
+
+    <span class="c1"># Apply the minimum image convention.  WARNING: This implementation ONLY works for orthorhombic periodic boxes!</span>
+    <span class="c1"># MonteCarloBarostat will not deform the periodic box, and it starts as a cube, so it works for this case.</span>
+    <span class="n">dr_ij</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">positions</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">dr_ij</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dr_ij</span> <span class="o">/</span> <span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">lengths</span>
+    <span class="n">r_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dr_ij</span> <span class="o">*</span> <span class="n">dr_ij</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Get the distances between A-A, B-B, and A-B pairs.</span>
+    <span class="n">r_aa</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[:</span><span class="n">N_A</span><span class="p">,</span> <span class="p">:</span><span class="n">N_A</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">N_A</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">r_bb</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[</span><span class="n">N_A</span><span class="p">:,</span> <span class="n">N_A</span><span class="p">:][</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">N_B</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">r_ab</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[:</span><span class="n">N_A</span><span class="p">,</span> <span class="n">N_A</span><span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="c1"># Accumulate the RDFs.</span>
+    <span class="n">rdf_aa</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_aa</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_aa</span> <span class="o">*</span> <span class="n">r_aa</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_aa</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_bb</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_bb</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_bb</span> <span class="o">*</span> <span class="n">r_bb</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_bb</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_ab</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_ab</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_ab</span> <span class="o">*</span> <span class="n">r_ab</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_ab</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<p>We can then run some more simulation steps and measure the RDFs:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">calculate_rdf</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">positions</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+<span class="c1"># Average and normalize the RDFs so g(r) -&gt; 1 as r -&gt; infinity.</span>
+<span class="n">rdf_scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">rdf_count</span> <span class="o">*</span> <span class="p">(</span><span class="n">rdf_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">rdf_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">rdf_aa</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+<span class="n">rdf_bb</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+<span class="n">rdf_ab</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+</pre></div>
+</div>
+</div>
+<p>Plotting the results shows the peaks we might expect for a simple fluid. Unsurprisingly, the peak of the A-B RDF for the first coordination shell falls halfway between those for the A-A and B-B RDFs, as might be expected since the mixing rule for <span class="math notranslate nohighlight">\(\sigma_{ij}\)</span> is the arithmetic mean:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">)</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">rdf_bins_center</span> <span class="o">=</span> <span class="p">(</span><span class="n">rdf_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">rdf_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mf">2.0</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_aa</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{AA}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_bb</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{BB}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_ab</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{AB}</span><span class="s2">$&quot;</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">rdf_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rdf_bins</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$r$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$g(r)$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_building_systems_59_0.png" src="../../_images/notebooks_tutorials_building_systems_59_0.png" />
+</div>
+</div>
+</section>
+<section id="Working-Without-a-Simulation-Object">
+<h3>Working Without a Simulation Object<a class="headerlink" href="#Working-Without-a-Simulation-Object" title="Link to this heading">¶</a></h3>
+<p>You may notice that the System and all of the Forces we used are members of the <code class="docutils literal notranslate"><span class="pre">openmm</span></code> package, <em>i.e.</em>, the library layer of OpenMM, while the Topology and Simulation are still part of the <code class="docutils literal notranslate"><span class="pre">openmm.app</span></code> package, that is, the application layer. It is actually possible to use the library layer of OpenMM exclusively, never touching <code class="docutils literal notranslate"><span class="pre">openmm.app</span></code> at all. To do this, once we have our System and Integrator, we can just <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.Context.html#openmm.openmm.Context.__init__">create a Context
+directly</a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">context</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then access the Context as <code class="docutils literal notranslate"><span class="pre">context</span></code> rather than <code class="docutils literal notranslate"><span class="pre">simulation.context</span></code>. In place of <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html#openmm.app.simulation.Simulation.step">Simulation.step()</a>, we could use <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.Integrator.html#openmm.openmm.Integrator.step">Integrator.step()</a>, and in place of
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html#openmm.app.simulation.Simulation.minimizeEnergy">Simulation.minimizeEnergy()</a>, we could use OpenMM’s <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.LocalEnergyMinimizer.html">LocalEnergyMinimizer</a>.</p>
+<p>With this method, it is unnecessary to create a Topology for our System. However, we lose the ability to use OpenMM’s builtin reporters, and also lose some convenience features such as <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html#openmm.app.simulation.Simulation.runForClockTime">Simulation.runForClockTime()</a>. Generally, using the Simulation class from the library layer is most convenient, but you could create and manage Context objects directly
+if, <em>e.g.</em>, you wanted to replace the OpenMM application layer’s output reporting system with a completely custom framework for saving simulation results.</p>
+</section>
+<section id="The-Completed-Script">
+<h3>The Completed Script<a class="headerlink" href="#The-Completed-Script" title="Link to this heading">¶</a></h3>
+<p>In case you want to experiment with modifying the Python commands in this tutorial as a standalone Python script rather than as Jupyter notebook cells, they are given all together as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">openmm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.app</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmm.unit</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Define dimensionless units.</span>
+
+<span class="n">length_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">nanometer</span>
+<span class="n">mass_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
+<span class="n">energy_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
+<span class="n">time_scale</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">picosecond</span>
+
+<span class="n">press_scale</span> <span class="o">=</span> <span class="n">energy_scale</span> <span class="o">/</span> <span class="p">(</span><span class="n">length_scale</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span><span class="p">)</span>
+<span class="n">temp_scale</span> <span class="o">=</span> <span class="n">energy_scale</span> <span class="o">/</span> <span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">BOLTZMANN_CONSTANT_kB</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span><span class="p">)</span>
+
+<span class="c1"># Set simulation parameters.</span>
+
+<span class="n">N_A</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">N_B</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">0.6</span> <span class="o">/</span> <span class="n">length_scale</span> <span class="o">**</span> <span class="mi">3</span>
+
+<span class="n">m_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">mass_scale</span>
+<span class="n">m_B</span> <span class="o">=</span> <span class="mf">1.1</span> <span class="o">*</span> <span class="n">mass_scale</span>
+
+<span class="n">r_cut</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">length_scale</span>
+
+<span class="n">sigma_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">length_scale</span>
+<span class="n">sigma_B</span> <span class="o">=</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">length_scale</span>
+
+<span class="n">epsilon_A</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">energy_scale</span>
+<span class="n">epsilon_B</span> <span class="o">=</span> <span class="mf">1.3</span> <span class="o">*</span> <span class="n">energy_scale</span>
+
+<span class="n">press</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">press_scale</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">temp_scale</span>
+<span class="n">friction</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">time_scale</span>
+<span class="n">step</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="o">*</span> <span class="n">time_scale</span>
+
+<span class="c1"># Create the System.</span>
+
+<span class="n">system</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">System</span><span class="p">()</span>
+
+<span class="n">L_box</span> <span class="o">=</span> <span class="p">((</span><span class="n">N_A</span> <span class="o">+</span> <span class="n">N_B</span><span class="p">)</span> <span class="o">/</span> <span class="n">rho</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">setDefaultPeriodicBoxVectors</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">L_box</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L_box</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">L_box</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">m_A</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">m_B</span><span class="p">)</span>
+
+<span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="p">()</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">setNonbondedMethod</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">)</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">r_cut</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma_A</span><span class="p">,</span> <span class="n">epsilon_A</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma_B</span><span class="p">,</span> <span class="n">epsilon_B</span><span class="p">)</span>
+
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">lj</span><span class="p">)</span>
+
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">MonteCarloBarostat</span><span class="p">(</span><span class="n">press</span><span class="p">,</span> <span class="n">temp</span><span class="p">))</span>
+
+<span class="c1"># Create the Integrator.</span>
+
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">friction</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+<span class="c1"># Create the Topology.</span>
+
+<span class="n">topology</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Topology</span><span class="p">()</span>
+
+<span class="n">chain_A</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
+<span class="n">chain_B</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">i_A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_A</span><span class="p">):</span>
+    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">chain_A</span><span class="p">)</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_B</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_B</span><span class="p">):</span>
+    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">chain_B</span><span class="p">)</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
+
+<span class="c1"># Create the Simulation, and prepare initial positions and velocities.</span>
+
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+
+<span class="n">grid_a</span><span class="p">,</span> <span class="n">grid_b</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i_x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i_y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">grid_a</span><span class="p">,</span> <span class="n">grid_b</span><span class="p">)[(</span><span class="n">i_x</span> <span class="o">+</span> <span class="n">i_y</span> <span class="o">+</span> <span class="n">i_z</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">i_x</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="n">i_y</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="n">i_z</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="n">L_box</span><span class="p">)</span>
+
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">grid_a</span> <span class="o">+</span> <span class="n">grid_b</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+
+<span class="c1"># Run dynamics steps for equilibration.</span>
+
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+
+<span class="c1"># Set up RDF reporting as an example.</span>
+
+<span class="c1"># Define the edges of the bins on which to evaluate the RDFs.</span>
+<span class="n">rdf_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mi">401</span><span class="p">)</span>
+
+<span class="c1"># Make arrays in which to accumulate the RDFs.</span>
+<span class="n">rdf_aa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">rdf_bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">rdf_ab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdf_bins</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Track the number of accumulations we have done so far.</span>
+<span class="n">rdf_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_rdf</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">rdf_aa</span><span class="p">,</span> <span class="n">rdf_bb</span><span class="p">,</span> <span class="n">rdf_ab</span><span class="p">,</span> <span class="n">rdf_count</span>
+
+    <span class="c1"># Extract the positions and box vectors from a State.</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">getPositions</span><span class="p">(</span><span class="n">asNumpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">length_scale</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">getPeriodicBoxVectors</span><span class="p">()</span> <span class="o">/</span> <span class="n">length_scale</span><span class="p">)</span>
+
+    <span class="c1"># Apply the minimum image convention.  WARNING: This implementation ONLY works for orthorhombic periodic boxes!</span>
+    <span class="c1"># MonteCarloBarostat will not deform the periodic box, and it starts as a cube, so it works for this case.</span>
+    <span class="n">dr_ij</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">positions</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">dr_ij</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dr_ij</span> <span class="o">/</span> <span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">lengths</span>
+    <span class="n">r_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dr_ij</span> <span class="o">*</span> <span class="n">dr_ij</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Get the distances between A-A, B-B, and A-B pairs.</span>
+    <span class="n">r_aa</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[:</span><span class="n">N_A</span><span class="p">,</span> <span class="p">:</span><span class="n">N_A</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">N_A</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">r_bb</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[</span><span class="n">N_A</span><span class="p">:,</span> <span class="n">N_A</span><span class="p">:][</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">N_B</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">r_ab</span> <span class="o">=</span> <span class="n">r_ij</span><span class="p">[:</span><span class="n">N_A</span><span class="p">,</span> <span class="n">N_A</span><span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="c1"># Accumulate the RDFs.</span>
+    <span class="n">rdf_aa</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_aa</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_aa</span> <span class="o">*</span> <span class="n">r_aa</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_aa</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_bb</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_bb</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_bb</span> <span class="o">*</span> <span class="n">r_bb</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_bb</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_ab</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">r_ab</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">rdf_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_ab</span> <span class="o">*</span> <span class="n">r_ab</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r_ab</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">rdf_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="c1"># Run dynamics steps for production.</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">calculate_rdf</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">positions</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+<span class="c1"># Average and normalize the RDFs.</span>
+
+<span class="n">rdf_scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">rdf_count</span> <span class="o">*</span> <span class="p">(</span><span class="n">rdf_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">rdf_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">rdf_aa</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+<span class="n">rdf_bb</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+<span class="n">rdf_ab</span> <span class="o">*=</span> <span class="n">rdf_scale</span>
+
+<span class="c1"># Plot the results.</span>
+
+<span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">)</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">rdf_bins_center</span> <span class="o">=</span> <span class="p">(</span><span class="n">rdf_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">rdf_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mf">2.0</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_aa</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{AA}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_bb</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{BB}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rdf_bins_center</span><span class="p">,</span> <span class="n">rdf_ab</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$g_</span><span class="si">{AB}</span><span class="s2">$&quot;</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">rdf_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rdf_bins</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$r$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$g(r)$&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="Summary-and-Further-Reading">
+<h2>Summary and Further Reading<a class="headerlink" href="#Summary-and-Further-Reading" title="Link to this heading">¶</a></h2>
+<p>After following this tutorial, you should be able to:</p>
+<ul class="simple">
+<li><p>Build an OpenMM System from scratch for a Lennard-Jones fluid mixture</p></li>
+<li><p>Build a Topology from scratch and use it with a System to create a Simulation</p></li>
+<li><p>Work with dimensionless units in OpenMM</p></li>
+</ul>
+<p>This tutorial only covered the basics of setting up a System from scratch in OpenMM. OpenMM’s library layer comes with a <a class="reference external" href="https://docs.openmm.org/latest/api-python/library.html#forces">large number of Forces</a> implementing all kinds of bonded and non-bonded interactions. OpenMM provides standard interactions found in many classical molecular mechanics force fields, such as <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicBondForce.html">HarmonicBondForce</a> and
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.PeriodicTorsionForce.html">PeriodicTorsionForce</a>. However, it also provides a large number of <em>custom forces</em>, which allow you to define interactions from arbitrary expressions. This flexibility enables you to use many kinds of potential functions in OpenMM without needing to write any additional C++ or even Python code. The theory section of the user guide details most of the
+<a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html">standard</a> and <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/03_custom_forces.html">custom</a> forces listed in the API documentation.</p>
+<p>These introductory tutorials have now covered the basics of using OpenMM to load and parameterize existing molecular structures, read input files for other molecular dynamics engines, and build custom molecular systems from the ground up. From here, you should be equipped to understand the details of the <a class="reference internal" href="../../tutorials.html#beyond-the-basics"><span class="std std-ref">more advanced tutorials</span></a>, which describe how to set up specific kinds of simulations or implement specific methods with OpenMM. Unlike this
+introductory series, designed to be followed in order, the other tutorials are mostly standalone units: when this is not the case, links will be provided to any prerequisites. You may also want to consult the <a class="reference internal" href="../../cookbook.html"><span class="doc">OpenMM Cookbook</span></a> for shorter examples of how to accomplish particular tasks in OpenMM.</p>
+</section>
+<section id="Links">
+<h2>Links<a class="headerlink" href="#Links" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Relevant sections of the <a class="reference external" href="https://docs.openmm.org/latest/api-python/">User Guide</a>:</p>
+<ul>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/userguide/library/05_languages_not_cpp.html#units-and-dimensional-analysis">Units and dimensional analysis</a> in the Python API</p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/01_introduction.html#units">Units</a> and <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/01_introduction.html#physical-constants">physical constants</a> used by default in OpenMM</p></li>
+<li><p>Theory behind <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html">Standard Forces</a></p></li>
+<li><p>Theory behind <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/03_custom_forces.html">Custom Forces</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/">Python API documentation</a> pages for:</p>
+<ul>
+<li><p>Common standard forces (not exhaustive):</p>
+<ul>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicBondForce.html">HarmonicBondForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicAngleForce.html">HarmonicAngleForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.PeriodicTorsionForce.html">PeriodicTorsionForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CMAPTorsionForce.html">CMAPTorsionForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a></p></li>
+</ul>
+</li>
+<li><p>Common custom forces (not exhaustive):</p>
+<ul>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomBondForce.html">CustomBondForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomAngleForce.html">CustomAngleForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomTorsionForce.html">CustomTorsionForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomExternalForce.html">CustomExternalForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomCompoundBondForce.html">CustomCompoundBondForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html">CustomNonbondedForce</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomManyParticleForce.html">CustomManyParticleForce</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="loading_and_reporting.html" title="Previous document">Loading Input Files and Reporting Results</a>
+        </li>
+        <li>
+          <a href="coarse_grained_polymer.html" title="Next document">Coarse-Grained Polymer</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="getting_started.html">Getting Started with OpenMM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="loading_and_reporting.html">Loading Input Files and Reporting Results</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Building Systems from Scratch</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Writing-the-Script">Writing the Script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Summary-and-Further-Reading">Summary and Further Reading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Links">Links</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/tutorials/building_systems.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

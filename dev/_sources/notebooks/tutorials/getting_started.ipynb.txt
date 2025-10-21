@@ -1,0 +1,687 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "5c51b663-7c4c-4f49-b5ef-dbac9b6c4dcb",
+   "metadata": {},
+   "source": [
+    "# Getting Started with OpenMM\n",
+    "\n",
+    "## Introduction\n",
+    "\n",
+    "OpenMM is a high-performance toolkit for molecular dynamics simulations.  This series of tutorials is designed to walk you through the basic steps of using OpenMM to set up and run simulations.  Once you have familiarized yourself with these basics, you can consult the [list of more advanced tutorials](../../tutorials.rst#beyond-the-basics) to learn how to accomplish more specific simulation tasks.\n",
+    "\n",
+    "Before beginning, it is useful to understand a bit about the architecture of OpenMM.  The core OpenMM library is written in C++, and the [OpenMM C++ API](https://docs.openmm.org/latest/api-c++/) can be used directly to invoke OpenMM from C++ programs.  However, OpenMM provides wrappers for other languages as well, such as the [OpenMM Python API](https://docs.openmm.org/latest/api-python/).  These tutorials demonstrate how to use OpenMM from its Python API, not only for the convenience of working with OpenMM *via* Python, but also because some features are only available from Python.  In particular, the Python API consists of both:\n",
+    "\n",
+    "* A lower-level [\"library layer\"](https://docs.openmm.org/latest/api-python/library.html) that directly wraps OpenMM's C++ interface and provides tools for building customized molecular simulation scripts, libraries, and applications from scratch, and\n",
+    "* A higher-level [\"application layer\"](https://docs.openmm.org/latest/api-python/app.html) that provides various tools for loading and applying commonly used molecular force fields, reading and writing common trajectory and topology file formats, and reporting properties during simulation runs.\n",
+    "\n",
+    "In general, there are three primary methods of using OpenMM to set up and run molecular simulations:\n",
+    "\n",
+    "1. Load in the structure of a molecule or set of molecules, use OpenMM to modify it as needed, parameterize it with a force field, and simulate it.  This is the simplest method to perform straightforward simulations of biomolecules in OpenMM.  For example, if you have a PDB file with the structure of a particular protein, and you want to solvate it and simulate it with a standard Amber or CHARMM force field, this is the easiest method to do so.  This method uses OpenMM's application layer.\n",
+    "2. Use some external programs or tools (*e.g.*, LEaP from [AmberTools](https://ambermd.org/AmberTools.php), or [CHARMM-GUI](https://www.charmm-gui.org/)), to do your modeling and parameterization, and load the resulting input files into OpenMM for simulation.  This method can be convenient if your desired modeling workflow is more complex than what OpenMM currently supports, or you wish to use a force field that hasn't been ported to OpenMM's native format.  It also uses OpenMM's application layer.\n",
+    "3. Use OpenMM's library layer to build a molecular system from scratch.  This is the most general and flexible way to use OpenMM, but requires you to explicitly define all of the necessary potential energy terms and parameters for the atoms, bonds, angles, torsions, *etc.* in your simulation, unlike the other methods that handle this setup automatically given a topology and a predefined force field.  This approach can be useful to build more complex systems when complete control over system setup is required.  However, it is also especially helpful for setting up simulations of simple model systems like Lennard-Jones fluid mixtures, bead-spring polymers, or simple coarse-grained models.\n",
+    "\n",
+    "These approaches are not completely exclusive: for instance, it is possible to use OpenMM's application layer to set up a simulation, and then use the library layer to make manual modifications before running it.  However, understanding the basics of these methods is useful for understanding how to build more complex simulation workflows with OpenMM, so these introductory tutorials will walk through each of them in turn.  This first tutorial covers the first method.  In particular, we will see how to load a protein structure into OpenMM, clean up and prepare the structure for simulation, specify a force field, and run a simulation.\n",
+    "\n",
+    "The tutorials will not describe in extensive detail the use of external programs, such as Amber and CHARMM, for system setup.  When they discuss how to use OpenMM to run simulations that have been set up using other tools, links to relevant documentation for these tools will be given.  Furthermore, they will not describe in detail the basic theory behind molecular simulations, or discuss how to perform more advanced analysis of simulation results beyond extracting basic thermodynamic properties.  For links to resources on related topics not covered directly in these tutorials, refer to the [Summary and Further Reading](#Summary-and-Further-Reading) and [Links](#Links) sections of this and other tutorial notebooks."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b2e6351a-1e57-441d-8b3b-d837b6de4c3b",
+   "metadata": {},
+   "source": [
+    "## Installing OpenMM and Running OpenMM Setup\n",
+    "\n",
+    "One of the easiest ways to get OpenMM is by installing its [conda-forge package](https://anaconda.org/conda-forge/openmm).  If you are using `conda`, which can be installed through, for example, the [Miniforge installer](https://conda-forge.org/download/), then\n",
+    "```shell\n",
+    "conda install -c conda-forge openmm\n",
+    "```\n",
+    "is all you need to get started.  More detailed instructions and a more comprehensive list of installation options can be found [in the OpenMM user manual](https://docs.openmm.org/latest/userguide/application/01_getting_started.html#installing-openmm).  (If you are running this notebook in Google Colab, then a cell has been inserted at the top of the notebook with commands to automatically install OpenMM into the Colab environment.)\n",
+    "\n",
+    "Unlike some other molecular dynamics packages (*e.g.*, LAMMPS), an installation of OpenMM does not include a standalone executable that reads input files with parameters and commands, runs simulations, and writes results.  Instead, OpenMM simply includes a Python package `openmm` providing access to its API.  This allows you to write \"input scripts\" for OpenMM in Python by importing its package and using the classes and functions it provides, while also enabling the use of OpenMM as a library inside more complex Python packages and programs.\n",
+    "\n",
+    "For this tutorial, where we load a protein structure and set up a straightforward molecular dynamics simulation, we will only need to write a simple script.  OpenMM provides a helpful utility, called [OpenMM Setup](https://github.com/openmm/openmm-setup), to automate writing the necessary Python scripts for simulation tasks like this.  It can be installed as an additional conda-forge package:\n",
+    "```shell\n",
+    "conda install -c conda-forge openmm-setup\n",
+    "```\n",
+    "(If you haven't already installed the `openmm` package, the `openmm-setup` package will automatically install it as a dependency.)  OpenMM Setup can be started by running the command\n",
+    "```shell\n",
+    "openmm-setup\n",
+    "```\n",
+    "in a shell, which should open its graphical user interface in a web browser.  If this does not occur automatically, you can open a browser of your choice and navigate to the link printed in your terminal by OpenMM Setup.  (It is recommended to run OpenMM Setup locally if possible; you may encounter problems trying to launch it on a remote machine *via* an SSH connection, for instance.)\n",
+    "\n",
+    "<img src=\"getting_started_1.png\" width=\"800\" style=\"border: 1px solid black;\" />\n",
+    "\n",
+    "In this example, we will use a structure of hen egg white lysozyme from the Protein Data Bank with [PDB ID 1AKI](https://www.rcsb.org/structure/1AKI).  The structure can be downloaded in PDBx/mmCIF format as [1AKI.cif](https://files.rcsb.org/download/1AKI.cif) from the linked PDB entry.  If you are following along with this tutorial yourself, you should save this file, start OpenMM Setup, select the default option to load a PDB or PDBx/mmCIF file, then choose the file you just downloaded.\n",
+    "\n",
+    "<img src=\"getting_started_2.png\" width=\"800\" style=\"border: 1px solid black;\" />\n",
+    "\n",
+    "To actually perform any kind of simulation from a molecular structure, we need to specify a *force field* that defines parameters for bonded and non-bonded interactions between its atoms, thereby allowing OpenMM to compute energies and forces from atomic positions.\n",
+    "OpenMM provides several commonly used force fields for biomolecular simulations; these are [described in the user guide](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#force-fields).  Choosing an appropriate force field for your research problem is outside of the scope of this tutorial, but you should be aware of the behavior of the force field you choose and any limitations it has that might be applicable to your system.  The default force field that we will use here, which OpenMM refers to as [\"Amber19\"](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#amber19), includes Amber [ff19SB](https://ambermd.org/AmberModels_proteins.php) force field parameters for proteins, among others.  For this tutorial, we will use the default TIP3P-FB model for water; the water models distributed with the force fields built into OpenMM also contain compatible parameters for ions.\n",
+    "\n",
+    "Protein structures downloaded directly from the Protein Data Bank are often not immediately suitable for running simulations.  They may be missing hydrogen atoms, and they may contain additional atoms, *e.g.*, oxygens at positions where water molecules are found in the crystal structures.  OpenMM Setup comes with a builtin interface to the [PDBFixer](https://github.com/openmm/pdbfixer) tool that can help clean up and prepare files for simulation.  Selecting the option to do this (the \"Yes.  Let's clean it up now.\" option depicted above) leads to a visualization window where we can inspect the structure and choose actions to take:\n",
+    "\n",
+    "<img src=\"getting_started_3.png\" width=\"800\" style=\"border: 1px solid black;\" />\n",
+    "\n",
+    "A PDB or PDBx/mmCIF file contains a hierarchical representation of a molecular structure, with atoms grouped into residues and residues grouped into chains.  Chains can correspond to single polymeric molecules consisting of a sequence of residues, but more generally, a chain may just group related residues together.  For the file we are using in this tutorial, the protein is present in chain A and all of the crystallographic water molecules are in chain B, so we can exclude the latter to remove the water molecules.  Alternatively, you can use the \"delete heterogens\" dropdown to remove water as well as other non-standard species from the structure.\n",
+    "\n",
+    "After removing the water present in the crystal structure, we can instruct OpenMM Setup to add hydrogen atoms to the remaining protein, and add water back (along with $\\ce{Na+}$ and $\\ce{Cl-}$ ions) in the form of a solvent box surrounding it.  Here we have kept the default options except for increasing the ionic strength to 0.1 M:\n",
+    "\n",
+    "<img src=\"getting_started_4.png\" width=\"800\" style=\"border: 1px solid black;\" />\n",
+    "\n",
+    "At last, OpenMM Setup will generate a Python script along with a PDBx/mmCIF file containing our preprocessed and solvated protein structure.  You can use OpenMM Setup to run OpenMM and monitor the simulation output directly from your web browser.  You can also save the generated Python script to a file and run it with a command like, for example,\n",
+    "```shell\n",
+    "python run_openmm_simulation.py\n",
+    "```\n",
+    "In this notebook, however, we will work through the contents of the script line by line.  For this tutorial, we will keep the default options from OpenMM Setup, except for:\n",
+    "\n",
+    "* Decreasing the value of the \"Simulation Length (steps)\" field in the Simulation tab to 20000 (to keep the simulation short for the tutorial).\n",
+    "* Deselecting the \"Save trajectory to a file\" and \"Save checkpoints to a file\" options in the Output tab.  The next tutorial will cover simulation output from OpenMM in more detail; in this tutorial, we will just instruct OpenMM to write some basic statistics to a text file.\n",
+    "* Decreasing the value of the \"Data Output Interval (steps)\" field in the Output tab to 100.  Since we have selected a shorter simulation length, we can save simulation properties more frequently for convenience.\n",
+    "* Selecting \"Density\" under \"Data to Write\" in the Output tab.  Since the default is to run a simulation at constant pressure, this will allow us to monitor changes in the volume of the system.\n",
+    "\n",
+    "If you are following along with OpenMM Setup, you should select \"Save All Files\" to save the generated Python script and preprocessed structure `1AKI-processed.cif`.  If you are running this tutorial as a Jupyter notebook locally in Google Colab, the necessary PDBx/mmCIF file is already provided.  The Python script generated by OpenMM Setup with the options described above set should look like:"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3970b260-d7b1-4bf3-bea1-cdeb6c875fff",
+   "metadata": {},
+   "source": [
+    "```python\n",
+    "# This script was generated by OpenMM-Setup on 2025-09-19.\n",
+    "\n",
+    "from openmm import *\n",
+    "from openmm.app import *\n",
+    "from openmm.unit import *\n",
+    "\n",
+    "# Input Files\n",
+    "\n",
+    "pdbx = PDBxFile('1AKI-processed.cif')\n",
+    "forcefield = ForceField('amber19-all.xml', 'amber19/tip3pfb.xml')\n",
+    "\n",
+    "# System Configuration\n",
+    "\n",
+    "nonbondedMethod = PME\n",
+    "nonbondedCutoff = 1.0*nanometers\n",
+    "ewaldErrorTolerance = 0.0005\n",
+    "constraints = HBonds\n",
+    "rigidWater = True\n",
+    "constraintTolerance = 0.000001\n",
+    "hydrogenMass = 1.5*amu\n",
+    "\n",
+    "# Integration Options\n",
+    "\n",
+    "dt = 0.004*picoseconds\n",
+    "temperature = 300*kelvin\n",
+    "friction = 1.0/picosecond\n",
+    "pressure = 1.0*atmospheres\n",
+    "barostatInterval = 25\n",
+    "\n",
+    "# Simulation Options\n",
+    "\n",
+    "steps = 20000\n",
+    "equilibrationSteps = 1000\n",
+    "dataReporter = StateDataReporter('log.txt', 100, totalSteps=steps,\n",
+    "    step=True, speed=True, progress=True, potentialEnergy=True, temperature=True, density=True, separator='\\t')\n",
+    "\n",
+    "# Prepare the Simulation\n",
+    "\n",
+    "print('Building system...')\n",
+    "topology = pdbx.topology\n",
+    "positions = pdbx.positions\n",
+    "system = forcefield.createSystem(topology, nonbondedMethod=nonbondedMethod, nonbondedCutoff=nonbondedCutoff,\n",
+    "    constraints=constraints, rigidWater=rigidWater, ewaldErrorTolerance=ewaldErrorTolerance, hydrogenMass=hydrogenMass)\n",
+    "system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval))\n",
+    "integrator = LangevinMiddleIntegrator(temperature, friction, dt)\n",
+    "integrator.setConstraintTolerance(constraintTolerance)\n",
+    "simulation = Simulation(topology, system, integrator)\n",
+    "simulation.context.setPositions(positions)\n",
+    "\n",
+    "# Minimize and Equilibrate\n",
+    "\n",
+    "print('Performing energy minimization...')\n",
+    "simulation.minimizeEnergy()\n",
+    "print('Equilibrating...')\n",
+    "simulation.context.setVelocitiesToTemperature(temperature)\n",
+    "simulation.step(equilibrationSteps)\n",
+    "\n",
+    "# Simulate\n",
+    "\n",
+    "print('Simulating...')\n",
+    "simulation.reporters.append(dataReporter)\n",
+    "simulation.currentStep = 0\n",
+    "simulation.step(steps)\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "21442d60-9f98-472e-8e01-141c762dde9f",
+   "metadata": {},
+   "source": [
+    "## Running a Simulation\n",
+    "\n",
+    "We will now examine the Python script generated by OpenMM Setup in detail.  First, we import OpenMM:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "7ab7a05d-d1dd-41b1-9a64-591ed1e4884d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm import *"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e6f3a0fc-cbee-475b-a1b2-3a5317d4b30e",
+   "metadata": {},
+   "source": [
+    "Importing the top-level module only gives access to the [library layer](https://docs.openmm.org/latest/api-python/library.html) of the Python API.  To access the [application layer](https://docs.openmm.org/latest/api-python/app.html) that we will primarily be using in this tutorial, and OpenMM's units API that we will discuss later, we can use:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "5363c043-1928-45c0-b649-5b6262675193",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from openmm.app import *\n",
+    "from openmm.unit import *"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f65127c8-1675-4491-bbf2-ee7001d05a3c",
+   "metadata": {},
+   "source": [
+    "(When using OpenMM as part of a more complex workflow, you may want to import just the names you need, or just these packages, instead of using `from ... import *`, but the latter is convenient for simple scripts like this.)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "462073bf-d82d-49b6-8b07-dcb97d3419ac",
+   "metadata": {},
+   "source": [
+    "### Input Files\n",
+    "\n",
+    "Now we can load the PDBx/mmCIF file generated by OpenMM Setup using the [PDBxFile](https://docs.openmm.org/latest/api-python/generated/openmm.app.pdbxfile.PDBxFile.html) class:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "a0420be3-d785-47c3-a58d-14ce924fd402",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pdbx = PDBxFile('1AKI-processed.cif')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d0c197d1-46c8-4f70-a3bb-810df4751215",
+   "metadata": {},
+   "source": [
+    "OpenMM supports loading [several other kinds](https://docs.openmm.org/latest/api-python/app.html#loaders-and-setup) of commonly used file formats, including, for example, files in the legacy (but ubiquitous) PDB format using [PDBFile](https://docs.openmm.org/latest/api-python/generated/openmm.app.pdbfile.PDBFile.html).\n",
+    "\n",
+    "We also need to load the force field we have chosen into OpenMM.  To do this, we can create a [ForceField](https://docs.openmm.org/latest/api-python/generated/openmm.app.forcefield.ForceField.html) object with paths to XML files that define the templates and parameters for the force field:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "5629dd4c-08bd-43e3-8e91-a69ae8ba3646",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "forcefield = ForceField('amber19-all.xml', 'amber19/tip3pfb.xml')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8b3ab7e5-feda-4da0-a67d-55db4a42fcc2",
+   "metadata": {},
+   "source": [
+    "We do not need to find and place these files in the current working directory to load them.  OpenMM tries to look up the force field files using the paths provided first, and if they cannot be found, looks in its data directories for them.  Since we are using force fields that are [distributed with OpenMM](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#force-fields), they are loaded from the data directory that can be found at `openmm/app/data` wherever the OpenMM Python API has been installed.  (If you are using a version of OpenMM older than 8.3, the Amber19 force field files will not be available; in this case, you can go back to OpenMM Setup and select Amber14 instead when you are generating the input script.)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a6135650-ac39-453a-97ec-63dd5a57da8f",
+   "metadata": {},
+   "source": [
+    "### Simulation Parameters\n",
+    "\n",
+    "The script generated by OpenMM Setup now defines several constants specifying simulation parameters.  We will discuss each of these in more detail as they are used.  OpenMM Setup allows you to adjust all of their values, although the defaults it generates should usually be appropriate for biomolecular simulations."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "f24e6c75-9ef0-4e40-91ff-74917931c9e1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# System Configuration\n",
+    "\n",
+    "nonbondedMethod = PME\n",
+    "nonbondedCutoff = 1.0*nanometers\n",
+    "ewaldErrorTolerance = 0.0005\n",
+    "constraints = HBonds\n",
+    "rigidWater = True\n",
+    "constraintTolerance = 0.000001\n",
+    "hydrogenMass = 1.5*amu\n",
+    "\n",
+    "# Integration Options\n",
+    "\n",
+    "dt = 0.004*picoseconds\n",
+    "temperature = 300*kelvin\n",
+    "friction = 1.0/picosecond\n",
+    "pressure = 1.0*atmospheres\n",
+    "barostatInterval = 25\n",
+    "\n",
+    "# Simulation Options\n",
+    "\n",
+    "steps = 20000\n",
+    "equilibrationSteps = 1000"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eaab49c1-c891-42a3-b46c-9eab3da637b1",
+   "metadata": {},
+   "source": [
+    "You may notice that some of these parameters are quantities with units.  OpenMM's Python API supports automatic unit conversions and dimension checking through the [openmm.unit](https://docs.openmm.org/latest/api-python/app.html#units) package.  If raw values without units are provided to OpenMM, it will assume that they are appropriately dimensioned quantities in OpenMM's [default unit system](https://docs.openmm.org/latest/userguide/theory/01_introduction.html#units).  However, always using the units API can help prevent unit conversion mistakes.  More information can be found [in the user guide](https://docs.openmm.org/latest/userguide/library/05_languages_not_cpp.html#units-and-dimensional-analysis)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4cf3e268-0aba-465c-b7f9-345a20aaafd4",
+   "metadata": {},
+   "source": [
+    "Now we can create a [StateDataReporter](https://docs.openmm.org/latest/api-python/generated/openmm.app.statedatareporter.StateDataReporter.html) that will print some basic information about the state of our simulation to a file as it runs.  As already mentioned, we will explore options for output in more detail in the next tutorial."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "7a8d7fc7-885e-4c2e-bd73-49827d1e3162",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataReporter = StateDataReporter('log.txt', 100, totalSteps=steps,\n",
+    "    step=True, speed=True, progress=True, potentialEnergy=True, temperature=True, density=True, separator='\\t')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "13fa649b-f13e-4b1c-ac2e-6e29476d1384",
+   "metadata": {},
+   "source": [
+    "### Preparing the Simulation\n",
+    "\n",
+    "The PDBxFile object produced by loading the file above has a `topology` attribute containing an OpenMM [Topology](https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html) object, and a `positions` attribute, holding the actual coordinates contained in the file."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "f504f85b-94cf-4f5e-80c4-cdc895497472",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "topology = pdbx.topology\n",
+    "positions = pdbx.positions"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f1c2ae82-9d0b-428c-9ec8-36b009f0edc4",
+   "metadata": {},
+   "source": [
+    "Topology objects contain information about the identity and connectivity of the particles in a molecular system.  They arrange this information hierarchically, with each Topology containing a list of chains, each chain a list of residues, and each residue a list of atoms.  For biopolymers such as proteins, OpenMM's concepts of chains and residues generally map onto their standard meanings in this context.  In a later tutorial, we will look at this structure in more detail and see how to build a Topology manually.\n",
+    "\n",
+    "For now, we will use the Topology as is with the [ForceField.createSystem()](https://docs.openmm.org/latest/api-python/generated/openmm.app.forcefield.ForceField.html#openmm.app.forcefield.ForceField.createSystem) method to create an OpenMM [System](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html).  In contrast to a ForceField, which defines the rules for assigning parameters to arbitrary molecular systems, a System object contains the parameters for our actual system of interest.  OpenMM looks at the residues in the Topology, matches them to definitions in the ForceField, and assigns parameters to create the final System."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "30ee2c02-c726-4b65-ac0b-01a3665159fe",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "system = forcefield.createSystem(topology, nonbondedMethod=nonbondedMethod, nonbondedCutoff=nonbondedCutoff,\n",
+    "    constraints=constraints, rigidWater=rigidWater, ewaldErrorTolerance=ewaldErrorTolerance, hydrogenMass=hydrogenMass)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bda2ffb8-3273-48fe-a525-3a90367aadef",
+   "metadata": {},
+   "source": [
+    "In addition to the Topology, OpenMM Setup passes several options to createSystem():\n",
+    "\n",
+    "* `nonbondedMethod`: Specifies [how OpenMM should compute nonbonded interactions](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#nonbonded-interactions).  `PME` is the particle mesh Ewald method, which is usually preferable when the system you are simulating has charges and uses periodic boundary conditions.\n",
+    "* `nonbondedCutoff`: Specifies a cutoff distance for Lennard-Jones interactions, and controls the splitting between Coulomb interactions computed in direct *vs.* reciprocal space.  More information about the theory used by OpenMM to compute these interactions can be found in the [user guide](https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#nonbondedforce).\n",
+    "* `constraints`: Controls which interparticle distances in a simulation OpenMM will apply rigid constraints to.  The `HBonds` option selects all bonds to hydrogen atoms, which generate high-frequency motion as the hydrogen atoms are much lighter than other atoms.  Constraining them to fixed distances allows the simulation to use a larger timestep while still remaining stable.\n",
+    "* `rigidWater`: Controls application of rigid constraints specifically to water molecules in the simulation.\n",
+    "* `ewaldErrorTolerance`: Controls the relative error in computing forces due to electrostatics with the Ewald method.  The value of 0.0005 selected by OpenMM Setup is the default used by OpenMM if none is specified.\n",
+    "* `hydrogenMass`: Controls the mass of hydrogen atoms used for [hydrogen mass repartitioning](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#heavy-hydrogens), which can permit a further increase in the simulation timestep.\n",
+    "\n",
+    "For simulations in the NPT ensemble, we need to control both the pressure and the temperature.  For pressure control, OpenMM offers the [MonteCarloBarostat](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.MonteCarloBarostat.html), which attempts to uniformly scale the size of the simulation's periodic box vectors every `barostatInterval` steps.  (Other, anisotropic barostats are also available.)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "bbf7d6fe-f613-4f29-99ab-6c31544d7414",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval));"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3f7658a5-f73c-4e5b-a5cb-53aaa72964a4",
+   "metadata": {},
+   "source": [
+    "Note that in addition to the desired `pressure`, we must also pass the system `temperature` to the barostat so that it can calculate the correct probability that a volume adjustment Monte Carlo move should be accepted.  This barostat does not also control the temperature, but instead must be used in conjunction with a thermostat.\n",
+    "\n",
+    "To perform molecular dynamics simulations, we need to select an integration algorithm.  In OpenMM, we do so by creating an [Integrator](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.Integrator.html) object.  Subclasses of Integrator define specific integration algorithms.  Here, we will use the [LangevinMiddleIntegrator](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.LangevinMiddleIntegrator.html), which uses Langevin dynamics to integrate positions and velocities over time and maintain temperature at a fixed setpoint:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "b9b95bcd-b0d0-4d62-8097-38df47c12f62",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "integrator = LangevinMiddleIntegrator(temperature, friction, dt)\n",
+    "integrator.setConstraintTolerance(constraintTolerance)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "da950b8b-fa9c-4afe-bb1f-c69e5c76f1cd",
+   "metadata": {},
+   "source": [
+    "We also set the `friction` coefficient for the integrator, and specify the simulation timestep `dt`.  The `constraintTolerance` controls the error in satisfying any rigid distance constraints in the System.  Choosing appropriate integration parameters is beyond the scope of this tutorial, but the values selected by OpenMM Setup should be reasonable for biomolecular simulations.\n",
+    "\n",
+    "We now have all of the pieces in place needed to run a simulation, and can create an OpenMM [Simulation](https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html) object that will manage the simulation for us:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "b2aad35f-016d-4922-a0fc-51edc0aee509",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "simulation = Simulation(topology, system, integrator)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "60ca3cbe-be07-48c6-86b9-b241cdb1bafb",
+   "metadata": {},
+   "source": [
+    "The simulation holds a `context` attribute containing an OpenMM [Context](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.Context.html).  Unlike a System, which just defines information about particles and the interactions between them, a Context stores all of the information about the state of a simulation, including particle positions and velocities.  A System object acts somewhat like a template for creating Context objects, and one System could be used to create more than one Context if desired.  The interaction parameters, and other properties, stored in a Context are dependent on the parameters set in the System when the Context was created.  If changes are made to a System after a Context has been created from it, the Context will not automatically reflect these changes (although in certain cases, it is possible to update a Context with new parameters from a System).\n",
+    "\n",
+    "You may have noticed that we only used the `topology` from our PDBxFile, and not its `positions`, when creating the System.  Now that we have a Context, we can initialize it with the positions from the PDBxFile."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "1d6542ac-7729-4838-9dce-7506dd9c4a6c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "simulation.context.setPositions(positions)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b172926c-8cb2-4147-a31a-9b97ecb148df",
+   "metadata": {},
+   "source": [
+    "Although there should not be severe problems like overlapping particles in our initial positions, it is a good idea to run a local energy minimization before starting a simulation.  The distances between protein atoms from the PDB structure might differ from their equilibrium values defined by the force field, and the solvent molecules added by OpenMM Setup might not have optimal orientations.  Minimizing the energy can prevent large initial forces that could otherwise destabilize a simulation.  OpenMM makes this easy to do:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "b895d702-af49-4619-8f08-6ad93ccd1f28",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "simulation.minimizeEnergy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "68009cdf-580d-4bc9-a00f-51517e214449",
+   "metadata": {},
+   "source": [
+    "With good initial positions determined, we can now set initial velocities by having OpenMM draw from the appropriate random distribution:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "736aee3e-63db-42a4-8c57-045521dfd620",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "simulation.context.setVelocitiesToTemperature(temperature)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "df3d18fb-7791-465e-be95-3991b89e53e7",
+   "metadata": {},
+   "source": [
+    "### Running Steps\n",
+    "\n",
+    "At last, we can run some simulation steps.  OpenMM Setup generates code to run the simulation for an equilibration period first, then start recording data, then reset the step counter to zero (so that it appears correctly in the log file) before finally running for the desired number of steps:\n",
+    "```python\n",
+    "simulation.step(equilibrationSteps)\n",
+    "simulation.reporters.append(dataReporter)\n",
+    "simulation.currentStep = 0\n",
+    "simulation.step(steps)\n",
+    "```\n",
+    "For this tutorial, we will skip the equilibration step so that we can monitor the approach of the simulation to equilibrium from its initial conditions.  Once we attach the StateDataReporter we previously created to the Simulation, any steps we run will result in periodic output to a file `log.txt`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "68abc617-78ad-4660-92d2-88207ba1e267",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "simulation.reporters.append(dataReporter)\n",
+    "simulation.step(steps)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "19b34460-e499-4982-95e5-92eaffbe7c52",
+   "metadata": {},
+   "source": [
+    "(Running this cell may take a few seconds on a machine with an OpenMM-supported GPU, or a few minutes if only CPUs are available.  The latter will be the case if you are using the default configuration of Google Colab.)\n",
+    "\n",
+    "The format of the data file written by the StateDataReporter is very simple:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "48c1096e-c90f-4882-8115-a50285c5f68f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "#\"Progress (%)\"\t\"Step\"\t\"Potential Energy (kJ/mole)\"\t\"Temperature (K)\"\t\"Density (g/mL)\"\t\"Speed (ns/day)\"\n",
+      "0.5%\t100\t-392462.6368432469\t202.41050428129032\t0.9859193452846482\t0\n",
+      "1.0%\t200\t-386278.02286094567\t232.04498589064949\t0.9875140629022262\t418\n",
+      "1.5%\t300\t-381742.878788444\t254.54980861708538\t0.988528668861509\t450\n",
+      "2.0%\t400\t-378766.69167399127\t271.14206329882074\t0.9921266975468912\t461\n",
+      "2.5%\t500\t-375375.20729899127\t281.0102679988956\t0.9921266975468912\t468\n",
+      "3.0%\t600\t-374339.1186906365\t289.80232805861664\t0.9941722112845691\t470\n",
+      "3.5%\t700\t-372789.6300845407\t293.59554235479175\t0.9989834998441671\t473\n",
+      "4.0%\t800\t-372372.03231144836\t297.0320126200911\t0.9989660870350875\t473\n",
+      "4.5%\t900\t-371645.90473443875\t297.40984676966184\t1.0010599609976667\t475\n"
+     ]
+    }
+   ],
+   "source": [
+    "!head log.txt"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ba62637b-f58e-4bd1-82a4-09341065c844",
+   "metadata": {},
+   "source": [
+    "We can plot the results to qualitatively assess how these parameters change with time:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "2bf1ce26-810a-49f8-bda4-4729a8e8e8f0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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p9vXaG5uBgA4Ojp2eWzixIkmFwpGRUWhsrISBoMB06dPR0BAAIYPH45nn30W+/fvR1NTk8nzNRoNAHQpJ6KumO9EysY+QBl4gT0NKmq12uR3lUrVbZnRaAQAGI1GREREYP/+/V325eXl1e1reHp6Arg1NdxTne5otVp88cUXOH78OI4ePYp169YhIyMDp0+fhqurKwDg22+/7fW1ieg25juRsrEPUAbOrJCijR07FpWVlfD29sYPfvADk02n03X7nKCgILi4uODixYtdHjt58mSX34ODg2FrawsAsLOzw7Rp07BlyxaUl5ejuroaBQUFUv3z589jyJAhUudIRObDfCdSNvYB8sTBCina008/DU9PTyQkJODEiROoqqpCYWEhVqxYgcuXL3f7HBsbG0ybNg3FxcVdHqutrUVaWhoqKiqQk5ODt99+GytWrAAA/OUvf8H27dvx5Zdf4quvvsKHH34Io9GIkSNHSs8/ceIE4uLiHs7BEikc851I2dgHyBMHK6RojzzyCIqKijB06FDMnTsXISEhWLhwIZqbm3u9SdMLL7yA3NxcaWq503PPPYfm5maMHz8ey5Ytw/Lly6U73rq6uiIvLw+PP/44QkJC8N577yEnJwejR48GALS0tOCTTz7B4sWLH94BEykY851I2dgHyBPvYE/UD0IITJw4EampqZg/fz6AW2uuh4eHY9u2bf3a5zvvvINDhw7h6NGjZoyUiB4U851I2dgHWBZnVoj6QaVSYefOnejo6DDbPtVqNd5++22z7Y+IzIP5TqRs7AMsi6uBEfXTmDFjMGbMGLPtr3PqmIisD/OdSNnYB1gOTwMjIiIiIiKrxNPAiIiIiIjIKnGwQkREREREVomDFSIiIiIiskocrBARERERkVXiYIWIiIiIiKwSBytERERERGSVOFghIiIiIiKrxMEKERERERFZpf8BCjiDZKyGbBQAAAAASUVORK5CYII=",
+      "text/plain": [
+       "<Figure size 800x250 with 3 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "step, pe, temp, rho = np.loadtxt(\"log.txt\", delimiter=\"\\t\", usecols=(1, 2, 3, 4)).T\n",
+    "time = step * dt.value_in_unit(picosecond)\n",
+    "\n",
+    "figure = plt.figure(figsize=(8, 2.5), layout=\"constrained\")\n",
+    "\n",
+    "axes_pe = figure.add_subplot(1, 3, 1)\n",
+    "axes_pe.plot(time, pe)\n",
+    "axes_pe.set_xlabel(\"Time (ps)\")\n",
+    "axes_pe.set_ylabel(\"Potential energy (kJ/mol)\")\n",
+    "\n",
+    "axes_temp = figure.add_subplot(1, 3, 2)\n",
+    "axes_temp.plot(time, temp)\n",
+    "axes_temp.set_xlabel(\"Time (ps)\")\n",
+    "axes_temp.set_ylabel(\"Temperature (K)\")\n",
+    "\n",
+    "axes_rho = figure.add_subplot(1, 3, 3)\n",
+    "axes_rho.plot(time, rho)\n",
+    "axes_rho.set_xlabel(\"Time (ps)\")\n",
+    "axes_rho.set_ylabel(\"Density (g/mL)\")\n",
+    "\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cfefa80a-097b-4d5f-a7a4-d16b6d2b3f89",
+   "metadata": {},
+   "source": [
+    "(If `matplotlib.pyplot` can't be imported, you'll need to install [Matplotlib](https://matplotlib.org/), which can be done with\n",
+    "```shell\n",
+    "conda install -c conda-forge matplotlib\n",
+    "```\n",
+    "if you are using `conda`.  This is not a required dependency for using OpenMM, but it is used in these tutorials for plotting results.)\n",
+    "\n",
+    "The potential energy and temperature approach their equilibrium values quickly, while the density takes slightly longer to stabilize.  For a production simulation, more quantitative analysis could be done to understand whether or not the structure of the protein is changing over a longer period of time.  The simulation is intentionally kept short for this tutorial, and structural analysis of simulation results is out of its scope."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fc917b0c-8673-4d15-8fdc-50bff05e2b48",
+   "metadata": {},
+   "source": [
+    "## Summary and Further Reading\n",
+    "\n",
+    "After following this tutorial, you should now be able to:\n",
+    "\n",
+    "* Perform basic structure preparation tasks, like adding hydrogen atoms and a solvent box, in OpenMM Setup.\n",
+    "* Load a PDBx/mmCIF file into OpenMM, set up a simulation at constant temperature and pressure, and run an energy minimization.\n",
+    "* Run molecular dynamics steps and set up OpenMM to write basic thermodynamic properties to an output file.\n",
+    "\n",
+    "We used OpenMM Setup to prepare our input structure as well as generate an input script.  If you want to do this programmatically from within Python, rather than through the OpenMM Setup graphical user interface, you may be able to use OpenMM's [Modeller](https://docs.openmm.org/latest/api-python/generated/openmm.app.modeller.Modeller.html) class: see the [user guide](https://docs.openmm.org/latest/userguide/application/03_model_building_editing.html) for examples.  In addition, the [PDBFixer](https://github.com/openmm/pdbfixer) tool, used internally by OpenMM Setup, offers various options for fixing common problems in structures from the Protein Data Bank.\n",
+    "\n",
+    "If you are having issues getting OpenMM to run, there are a few resources that may be useful to consult.  If you cannot even `import openmm` from Python, make sure that you have followed the [installation instructions](https://docs.openmm.org/latest/userguide/application/01_getting_started.html#installing-openmm) carefully.   If you can import OpenMM in Python, but are encountering problems running simulations, the OpenMM [Frequently Asked Questions](https://github.com/openmm/openmm/wiki/Frequently-Asked-Questions) discusses some common errors and how to resolve them.  If the documentation does not address the problem you are having, feel free to ask for help on the OpenMM [discussion board](https://github.com/openmm/openmm/discussions).\n",
+    "\n",
+    "In the next tutorial, we will discuss various ways of getting data in and out of OpenMM.  We will cover how to read input files in formats designed for other molecular dynamics engines like Amber, and how to get various kinds of data, including simulation trajectories, out of OpenMM while running a simulation."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "14678677-1517-46b3-9228-12fcfde3b356",
+   "metadata": {},
+   "source": [
+    "## Links\n",
+    "\n",
+    "* Relevant sections of the [User Guide](https://docs.openmm.org/latest/api-python/):\n",
+    "  * [Running Simulations](https://docs.openmm.org/latest/userguide/application/02_running_sims.html)\n",
+    "    * [A First Example](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#a-first-example)\n",
+    "    * [The OpenMM-Setup Application](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#the-openmm-setup-application)\n",
+    "    * [Simulation Parameters](https://docs.openmm.org/latest/userguide/application/02_running_sims.html#simulation-parameters)\n",
+    "  * [Python API](https://docs.openmm.org/latest/userguide/library/05_languages_not_cpp.html#python-api)\n",
+    "* [Python API documentation](https://docs.openmm.org/latest/api-python/) pages for classes used in this tutorial:\n",
+    "  * [ForceField](https://docs.openmm.org/latest/api-python/generated/openmm.app.forcefield.ForceField.html)\n",
+    "  * [LangevinMiddleIntegrator](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.LangevinMiddleIntegrator.html)\n",
+    "  * [MonteCarloBarostat](https://docs.openmm.org/latest/api-python/generated/openmm.openmm.MonteCarloBarostat.html)\n",
+    "  * [PDBxFile](https://docs.openmm.org/latest/api-python/generated/openmm.app.pdbxfile.PDBxFile.html)\n",
+    "  * [Simulation](https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html)\n",
+    "  * [StateDataReporter](https://docs.openmm.org/latest/api-python/generated/openmm.app.statedatareporter.StateDataReporter.html)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.7"
+  },
+  "required_files": [
+   "notebooks/tutorials/1AKI-processed.cif"
+  ]
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
