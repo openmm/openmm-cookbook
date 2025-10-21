@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Selecting Values for Simulation Parameters &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Coarse-Grained Polymer" href="coarse_grained_polymer.html" />
+    <link rel="prev" title="Building Systems from Scratch" href="building_systems.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="simulation_parameters.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/simulation_parameters.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/simulation_parameters.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Selecting-Values-for-Simulation-Parameters">
+<h1>Selecting Values for Simulation Parameters<a class="headerlink" href="#Selecting-Values-for-Simulation-Parameters" title="Link to this heading">¶</a></h1>
+<p>When running a simulation, there are lots of parameters to choose values for. In the tutorials so far, we have mostly used the default values selected by OpenMM Setup. These values are chosen to be appropriate for most biomolecular simulations. Usually they will give good results, but not always. In this tutorial we will discuss the significance of some of them, and how to choose values for your own simulations.</p>
+<section id="Speed-vs.-Accuracy">
+<h2>Speed vs. Accuracy<a class="headerlink" href="#Speed-vs.-Accuracy" title="Link to this heading">¶</a></h2>
+<p>Most parameters involve some kind of tradeoff between speed and accuracy. You can make the simulation run faster, or you can make the results more accurate. The best value depends on your particular needs: what quantities you want to calculate, how accurate they need to be, how much computer time you have.</p>
+<p>Accuracy can mean two different things. First there is <strong>physical accuracy</strong>. How well does your mathematical model match the physical system you want to study? Depending on your needs you might select a coarse grained model, an all atom force field, or a high level quantum chemistry method. Even within the category of all atom force fields there are many choices. Do you need a polarizable force field, or is a non-polarizable one accurate enough? Will you use implicit or explicit solvent? These
+questions are mostly outside the scope of this tutorial.</p>
+<p>Second there is <strong>numerical accuracy</strong>. How accurately are you computing the forces? How accurately are you integrating the equations of motion? These are the questions we will focus on.</p>
+</section>
+<section id="Integrator-Step-Size">
+<h2>Integrator Step Size<a class="headerlink" href="#Integrator-Step-Size" title="Link to this heading">¶</a></h2>
+<p>The very most important parameter controlling integration accuracy is the step size. The larger each step is, the fewer steps you need to cover the same amount of simulation time, but the less accurate your trajectory is. If the step size is just a little bit too large, your simulation may seem to run normally, but your results will be inaccurate. If it is much too large, the simulation will probably blow up and the particles will fly off to infinity.</p>
+<p>The step size is important in itself, but it also interacts with many other settings. You can’t choose it in isolation. It depends on what other choices you make.</p>
+<p>Generally speaking, the integration step size is determined by the fastest motion present in the system. Here is a good rule of thumb: whatever the highest frequency motion in the system is, the step size should be about 1/10 to 1/5 of its period. That reflects the number of steps needed to accurately integrate sinusoidal motion.</p>
+<p><img alt="title" src="../../_images/sine.svg" /></p>
+<p>If you remove the fastest motions, you can make the step size larger without increasing integration error. In most biomolecular systems, the fastest motions are the bond length oscillations for bonds involving hydrogen. The forces to maintain the lengths of covalent bonds are among the strongest in the system, and hydrogen is much lighter than other elements. That is why <code class="docutils literal notranslate"><span class="pre">constraints=HBonds</span></code> is a common choice, and the default in OpenMM Setup. Constraining the lengths of those bonds, you can
+often double the step size.</p>
+<p>You can increase the step size more if you constrain more degrees of freedom: <code class="docutils literal notranslate"><span class="pre">constraints=AllBonds</span></code> (constrain all bond lengths) or <code class="docutils literal notranslate"><span class="pre">constraints=HAngles</span></code> (constrain all bond lengths, plus angles involving hydrogen), but this should be done with care. The more constraints you add, the more rigid the model becomes. This is a case of trading physical accuracy for speed. Most often people stop at <code class="docutils literal notranslate"><span class="pre">HBonds</span></code>, which gives much of the benefit while only slightly affecting rigidity.</p>
+<p>Another option is to slow down the fastest motions, for example by increasing the masses of hydrogens. But you don’t want to <em>just</em> increase the hydrogen mass; that would make the molecule heavier, causing all motions to slow down. Instead you repartition the mass, increasing the masses of hydrogens while decreasing the masses of the atoms they are bonded to so the total mass is unchanged. A small amount of hydrogen mass repartitioning can be an effective way to increase the time step while
+having minimal effect on dynamics. The default value in OpenMM Setup is <code class="docutils literal notranslate"><span class="pre">hydrogenMass=1.5*amu</span></code>, which is generally a good choice.</p>
+<p>For an analysis of the typical time scales found in biomolecular simulations, see <a class="reference external" href="https://doi.org/10.1002/(SICI)1096-987X(199906)20:8%3C786::AID-JCC5%3E3.0.CO;2-B">https://doi.org/10.1002/(SICI)1096-987X(199906)20:8%3C786::AID-JCC5%3E3.0.CO;2-B</a>.</p>
+</section>
+<section id="Constant-Temperature-or-Constant-Energy?">
+<h2>Constant Temperature or Constant Energy?<a class="headerlink" href="#Constant-Temperature-or-Constant-Energy?" title="Link to this heading">¶</a></h2>
+<p>Since our goal is to use the largest possible step size that produces acceptable accuracy, we need to answer an obvious question: how accurate does the simulation need to be? The answer depends critically on whether you are simulating a system at constant temperature or constant energy.</p>
+<p>In a constant energy simulation, you expect the energy to truly be constant. Any error in integration will cause it to drift with time. Even if the drift is slow, eventually it will add up to a large change from the initial energy, and you will no longer be simulating what you intended to simulate.</p>
+<p>In a constant temperature simulation, energy drift over long periods is impossible. The system constantly exchanges energy with a heat bath, which forces it to maintain the correct energy distribution. Every thermostat has a characteristic time scale <span class="math notranslate nohighlight">\(\tau\)</span> over which it exchanges energy between the system and heat bath. For a Langevin thermostat, the time scale is given by <span class="math notranslate nohighlight">\(\tau = 1/\gamma\)</span>, where <span class="math notranslate nohighlight">\(\gamma\)</span> is the friction coefficient. The default setting in OpenMM Setup is
+<span class="math notranslate nohighlight">\(\tau\)</span> = 1 ps.</p>
+<p>This leads to the following conclusions.</p>
+<ul class="simple">
+<li><p>In a constant temperature simulation, energy drift must be negligible over the time constant of the thermostat.</p></li>
+<li><p>In a constant energy simulation, energy drift must be negligible over the entire length of the simulation.</p></li>
+</ul>
+<p>The latter tends to be many orders of magnitude larger than the former, which means that constant energy simulations usually need a much smaller time step than constant temperature ones. The default step size in OpenMM Setup is 4 fs, which works well for constant temperature with <code class="docutils literal notranslate"><span class="pre">HBonds</span></code> constraints and hydrogen mass repartitioning. In constant energy simulations, the step size is usually only 1 to 2 fs, sometimes even less.</p>
+</section>
+<section id="Other-Settings-for-Integration-Accuracy">
+<h2>Other Settings for Integration Accuracy<a class="headerlink" href="#Other-Settings-for-Integration-Accuracy" title="Link to this heading">¶</a></h2>
+<p>If your simulation involves constraints, you need to consider how accurately the constraints will be enforced. Some constraints (for rigid water molecules) are computed exactly to machine precision. Others are computed approximately with an iterative algorithm. The more accurate they need to be, the more iterations are required, causing the simulation to slow down.</p>
+<p>The default setting in OpenMM Setup is <code class="docutils literal notranslate"><span class="pre">constraintTolerance=0.000001</span></code>. This value works well in most situations, and there is rarely a need to change it. If you are running a constant temperature simulation, and you want to make it as fast as possible, it usually is acceptable to increase the tolerance to <code class="docutils literal notranslate"><span class="pre">0.00001</span></code>. This has a small speed benefit, and the accuracy is still usually acceptable. Do not do this in constant energy simulations, though, because the energy drift will be
+unacceptable.</p>
+<p>When running a simulation on a GPU with the CUDA, OpenCL, or HIP platform, an important setting is the numerical precision. Many GPUs are very slow at double precision math. We therefore want to use single precision whenever possible.</p>
+<p>The GPU platforms have a <code class="docutils literal notranslate"><span class="pre">'Precision'</span></code> property for selecting between three modes. The default in OpenMM Setup is <code class="docutils literal notranslate"><span class="pre">'single'</span></code>, which does all calculations in single precision. It is the fastest choice, and the accuracy is usually good enough for constant temperature simulations.</p>
+<p>For constant energy simulations it is better to use <code class="docutils literal notranslate"><span class="pre">'mixed'</span></code> mode, which computes forces in single precision but performs integration in double precision. This significantly reduces energy drift without slowing down the simulation too much. You can specify the precision mode with the <code class="docutils literal notranslate"><span class="pre">platformProperties</span></code> argument when creating a Simulation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;Precision&#39;</span><span class="p">:</span><span class="s1">&#39;mixed&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>There also is a <code class="docutils literal notranslate"><span class="pre">'double'</span></code> mode, which performs all calculations in double precision. This is only needed in unusual situations, and can be very slow on some GPUs.</p>
+</section>
+<section id="Measuring-Energy-Drift">
+<h2>Measuring Energy Drift<a class="headerlink" href="#Measuring-Energy-Drift" title="Link to this heading">¶</a></h2>
+<p>Given how many things influence energy drift, it is important to have a way to measure it. This turns out to be a little more complicated than you might expect. Here we will demonstrate how to do it. Let’s begin by importing the packages we will use. We also load a PDB file with the molecule we will simulate (a deca-alanine peptide) and the force field we will use to model it, and create a System with constraints and hydrogen mass repartitioning.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;deca-ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">,</span> <span class="n">hydrogenMass</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>To measure energy drift, we first need a way to compute energy. Can’t we just call <code class="docutils literal notranslate"><span class="pre">getPotentialEnergy()</span></code> and <code class="docutils literal notranslate"><span class="pre">getKineticEnergy()</span></code> on a State object, then add them together? Yes you can, but the result will not be very accurate. While the Verlet integration algorithm involves both positions and velocities, they are not on an equal footing with each other. The positions are accurate to third order in the step size, the intrinsic accuracy of the algorithm, while the velocities are only
+accurate to first order. In fact, it is best not to think of the “velocities” as really being velocities at all. They are an internal parameter of the algorithm that happens to be a low order approximation to the velocities.</p>
+<p>A much better way to compute kinetic energy is to compute a higher order velocity from the positions at multiple times. A <a class="reference external" href="https://en.wikipedia.org/wiki/Five-point_stencil">five point stencil</a> gives velocities accurate to third order in the step size, the same as the positions. The following function takes five steps and computes a high accuracy energy at the middle step.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">computeEnergy</span><span class="p">(</span><span class="n">simulation</span><span class="p">):</span>
+    <span class="n">states</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">states</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">state</span><span class="o">.</span><span class="n">getPositions</span><span class="p">(</span><span class="n">asNumpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStepSize</span><span class="p">()</span>
+    <span class="n">velocities</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">positions</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="mi">8</span><span class="o">*</span><span class="n">positions</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="mi">8</span><span class="o">*</span><span class="n">positions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">12</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">kinetic</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="mf">0.5</span><span class="o">*</span><span class="n">simulation</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">getParticleMass</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">norm</span><span class="p">(</span><span class="n">velocities</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">())])</span>
+    <span class="n">potential</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">getPotentialEnergy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">kinetic</span><span class="o">+</span><span class="n">potential</span>
+</pre></div>
+</div>
+</div>
+<p>Now we can measure energy drift. The following function runs a simulation for 100 ps, recording the total energy every 1 ps (keeping in mind that the call to <code class="docutils literal notranslate"><span class="pre">computeEnergy()</span></code> will take five steps).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">measureDrift</span><span class="p">(</span><span class="n">simulation</span><span class="p">):</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">)</span>
+    <span class="n">e0</span> <span class="o">=</span> <span class="n">computeEnergy</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">picosecond</span><span class="o">/</span><span class="n">simulation</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStepSize</span><span class="p">()</span> <span class="o">-</span> <span class="mi">5</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">simulation</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">computeEnergy</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span><span class="o">-</span><span class="n">e0</span><span class="p">)</span><span class="o">.</span><span class="n">value_in_unit</span><span class="p">(</span><span class="n">kilojoules_per_mole</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">energy</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s try simulating our peptide and see how the drift varies with step size.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="n">integrator</span> <span class="o">=</span> <span class="n">VerletIntegrator</span><span class="p">(</span><span class="n">dt</span><span class="o">*</span><span class="n">femtosecond</span><span class="p">)</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setConstraintTolerance</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
+    <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">Platform</span><span class="o">.</span><span class="n">getPlatform</span><span class="p">(</span><span class="s1">&#39;Reference&#39;</span><span class="p">))</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">measureDrift</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s1"> fs&#39;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time (ps)&#39;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;energy (kJ/mol)&#39;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_simulation_parameters_8_0.png" src="../../_images/notebooks_tutorials_simulation_parameters_8_0.png" />
+</div>
+</div>
+<p>With a 1 fs time step, there is very little drift over the simulation. With a 2 fs time step there is more, and much more with 4 fs.</p>
+<p>In addition to the increased drift, the random fluctuations in the energy grow with the step size, but don’t pay much attention to that. Remember, we are calculating the velocities with a finite difference approximation whose error scales with <span class="math notranslate nohighlight">\(dt^4\)</span>. If you double the step size, the error in the velocities is multiplied by 16, but that has nothing to do with the accuracy of the simulation. Just focus on the long term drift.</p>
+</section>
+<section id="How-Accurate-Does-Energy-Drift-Need-to-Be?">
+<h2>How Accurate Does Energy Drift Need to Be?<a class="headerlink" href="#How-Accurate-Does-Energy-Drift-Need-to-Be?" title="Link to this heading">¶</a></h2>
+<p>Now that we can measure the energy drift we need to select simulation parameters based on it. There is no universal way to do that. It depends on your specific application: the system you are simulating, your simulation protocol, and the quantities you want to calculate.</p>
+<p>Look at the graph comparing different step sizes. Even at the largest step size, the drift is only about 1 kJ/mol over the simulation. In most applications, an error that small is acceptable. Then again, most simulations are longer than 100 ps. In a longer simulation the error would soon grow to an unacceptable level. Also, we are only simulating a small peptide. With a larger system, the drift would probably be larger. You need to understand what level of accuracy is necessary to compute the
+quantities you care about from your simulations.</p>
+<p>Of course, this is a constant energy simulation. If your production simulations will use constant temperature, you only care about the drift over the time constant of the thermostat, not over the whole simulation.</p>
+<p>Beware of interpreting energy drift in overly simplistic ways. For example, people will sometimes fit a straight line to the graph of energy vs. time and report only the slope of the line—even though energy drift often is not linear in time, making a linear fit meaningless! They also sometimes divide the result by temperature and system size, reporting the energy drift per time per Kelvin per degree of freedom. Energy drift is not generally linear either in temperature or system size, making
+this an entirely meaningless quantity. For more information about these issues see <a class="reference external" href="https://www.biorxiv.org/content/10.1101/083055v1">https://www.biorxiv.org/content/10.1101/083055v1</a>.</p>
+</section>
+<section id="Computing-Nonbonded-Interactions">
+<h2>Computing Nonbonded Interactions<a class="headerlink" href="#Computing-Nonbonded-Interactions" title="Link to this heading">¶</a></h2>
+<p>Another very important set of options are the ones related to nonbonded interactions (Coulomb and Lennard-Jones, and possibly implicit solvent). The exact choices available depend on whether your system is periodic or non-periodic.</p>
+<p>For a non-periodic system, the main choice is whether to apply a cutoff. The most accurate method is to compute all interactions regardless of distance (<code class="docutils literal notranslate"><span class="pre">nonbondedMethod=NoCutoff</span></code>), but this can be very slow for large systems. Applying a cutoff with <code class="docutils literal notranslate"><span class="pre">nonbondedMethod=CutoffNonPeriodic</span></code> is faster but less accurate.</p>
+<p>For simulations with implicit solvent, a 2 nm cutoff usually produces acceptable accuracy. Dielectric screening from the implicit solvent reduces the strength of long-range Coulomb interactions. The error from ignoring them is usually not too great. For vacuum simulations, cutoffs are more problematic. Unless you are sure you know what you are doing, it is best to avoid cutoffs in vacuum simulations.</p>
+<p>When simulating periodic systems there are three common options for the nonbonded method: <code class="docutils literal notranslate"><span class="pre">CutoffPeriodic</span></code>, <code class="docutils literal notranslate"><span class="pre">PME</span></code>, and <code class="docutils literal notranslate"><span class="pre">LJPME</span></code>. All of them include a setting for the cutoff distance, but the exact meaning of that setting is different for each method.</p>
+<ul>
+<li><p><strong>CutoffPeriodic</strong>: When using this method, all interactions beyond the cutoff distance are ignored. The energy is smoothly reduced to zero at the cutoff with the reaction field method. This is a physical approximation based on two assumptions. 1) Everything beyond the cutoff distance is filled with water. 2) Bulk water can be modeled as a uniform dielectric. For small globular proteins in water, this approximation can be extremely accurate. A cutoff of 1.2 nm tends to give good results. For
+larger solutes, and especially for systems that do not primarily consist of solvent, it is better to use one of the other methods.</p></li>
+<li><p><strong>PME</strong>: This option uses Particle Mesh Ewald to compute the full set of long-range Coulomb interactions in a periodic system. The cutoff distance determines how work is divided between the direct space and reciprocal space parts of the calculation. That means it does not affect the accuracy of the result (as far as the Coulomb interaction is concerned), but does affect the speed of computing it. You can therefore treat it as a free parameter that is adjusted to optimize speed.</p>
+<p>The cutoff distance does still affect the accuracy of the Lennard-Jones interaction, which places a lower limit on the value. Depending on your accuracy requirements, a cutoff of 0.8 to 0.9 nm is generally about the lowest you should use.</p>
+<p>Although individual Lennard-Jones interactions beyond this distance are usually negligible, the sum of all neglected interactions can still add up to a significant energy, and this can affect the volume distribution in constant pressure simulations. Fortunately, this effect can often be accurately approximated with a simple isotropic correction, avoiding the need for a more expensive method.</p>
+</li>
+<li><p><strong>LJPME</strong>: This option uses Particle Mesh Ewald for the attractive part of the Lennard-Jones interaction as well as the Coulomb interaction. This is the most accurate method and also the most expensive. It is mainly used for constant pressure simulations of highly anisotropic systems, where the isotropic approximation may not be accurate enough. For example, it is often used for membrane simulations, since the sum of long-range dispersion interactions may be different in directions parallel
+and perpendicular to the membrane.</p></li>
+</ul>
+<p>When using either <code class="docutils literal notranslate"><span class="pre">PME</span></code> or <code class="docutils literal notranslate"><span class="pre">LJPME</span></code>, you can set its accuracy with the <code class="docutils literal notranslate"><span class="pre">ewaldErrorTolerance</span></code> option. This option adjusts the values of internal parameters in the PME algorithm to control the fractional error in the total forces on atoms. The default value in OpenMM Setup is 0.0005, which works well for most simulations. In cases where you have higher accuracy requirements, such as constant energy simulations, you can reduce it to improve accuracy at the cost of speed. It should not
+generally be smaller than about 0.00001, since values less than that can actually cause the error to increase, especially in single precision mode.</p>
+<p>Another option to consider is whether to apply a switching function to the Lennard-Jones interaction so that its energy smoothly goes to zero at the cutoff distance. In constant energy simulations, the small discontinuity can lead to increased energy drift. You can enable it with the <code class="docutils literal notranslate"><span class="pre">switchDistance</span></code> argument to <code class="docutils literal notranslate"><span class="pre">createSystem()</span></code>. It leads to reduced energy drift at the cost of a little speed. In constant temperature simulations, the effect of the discontinuity is usually negligible and a
+switching function is not needed.</p>
+<p>More details on all of these options can be found in <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#nonbondedforce">the User Guide</a>.</p>
+</section>
+<section id="What-About-Other-Types-of-Simulations?">
+<h2>What About Other Types of Simulations?<a class="headerlink" href="#What-About-Other-Types-of-Simulations?" title="Link to this heading">¶</a></h2>
+<p>In this tutorial we have mostly focused on all atom biomolecular simulations. For other types of simulations, the general principles are the same but the details may differ.</p>
+<p>For example, we have assumed the motion of hydrogen atoms is the main factor limiting the step size. If you are simulating a system with no hydrogen (such as a silicon crystal) you can probably use a much larger step size, simply because the atoms are much heavier and therefore slower.</p>
+<p>Coarse grained models also often allow a much larger step size. Consider a model that groups several atoms together and represents them as a single particle. The groups are heavier than any single atom, and the bonds connecting them tend to be softer than the ones between atoms in an all atom model. Both of these differences tend to reduce the frequencies of motions, allowing for a larger step size.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="building_systems.html" title="Previous document">Building Systems from Scratch</a>
+        </li>
+        <li>
+          <a href="coarse_grained_polymer.html" title="Next document">Coarse-Grained Polymer</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Selecting Values for Simulation Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Speed-vs.-Accuracy">Speed vs. Accuracy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Integrator-Step-Size">Integrator Step Size</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Constant-Temperature-or-Constant-Energy?">Constant Temperature or Constant Energy?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Other-Settings-for-Integration-Accuracy">Other Settings for Integration Accuracy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Measuring-Energy-Drift">Measuring Energy Drift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#How-Accurate-Does-Energy-Drift-Need-to-Be?">How Accurate Does Energy Drift Need to Be?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Computing-Nonbonded-Interactions">Computing Nonbonded Interactions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#What-About-Other-Types-of-Simulations?">What About Other Types of Simulations?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Coarse-Grained Polymer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical free energy calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Run a REST simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/tutorials/simulation_parameters.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
