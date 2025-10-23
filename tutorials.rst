@@ -25,6 +25,7 @@ examples of using OpenMM to perform more complex simulation tasks.
     :maxdepth: 1
 
     notebooks/tutorials/simulation_parameters
+    notebooks/tutorials/constant_potential
     notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/Alchemical_free_energy_calculations
     notebooks/tutorials/Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM
