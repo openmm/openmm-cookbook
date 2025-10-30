@@ -33,3 +33,4 @@ examples of using OpenMM to perform more complex simulation tasks.
     notebooks/tutorials/Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions
     notebooks/tutorials/Running_a_REST_simulation
     notebooks/tutorials/umbrella_sampling
+    notebooks/tutorials/nuclear_quantum_effects
