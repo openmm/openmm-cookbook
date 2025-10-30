@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Reporting Minimization &#8212; OpenMM Cookbook &amp; Tutorials PR50 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=17490e58"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The OpenMM Tutorials" href="../../tutorials.html" />
+    <link rel="prev" title="Querying and Modifying Charges and Other Parameters" href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="report_minimization.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/report_minimization.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/PR50/colab/notebooks/cookbook/report_minimization.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Reporting-Minimization">
+<h1>Reporting Minimization<a class="headerlink" href="#Reporting-Minimization" title="Link to this heading">¶</a></h1>
+<p>You can report the status of <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html?#openmm.app.simulation.Simulation.minimizeEnergy">simulation.minimizeEnergy()</a> using a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.MinimizationReporter.html">MinimizationReporter</a>. Note that <code class="docutils literal notranslate"><span class="pre">MinimizationReporter</span></code> was introduced in OpenMM 8.1.</p>
+<p>The syntax for doing this is somewhat different to typical OpenMM functionality. You will need to define a subclass of <code class="docutils literal notranslate"><span class="pre">MinimizationReporter</span></code> that has a <code class="docutils literal notranslate"><span class="pre">report()</span></code> method. Within this report method you can write code to take any action you want. The report method is called every iteration of the minimizer. Read the <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.MinimizationReporter.html">API documentation</a> for more explanation.</p>
+<p>First we will create a test system then we will show an example.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">stdout</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
+        <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Below is an example which prints the current energy to the screen and saves the energy to an array for plotting. The comments explain each part.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># The class can have any name but it must subclass MinimizationReporter.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyMinimizationReporter</span><span class="p">(</span><span class="n">MinimizationReporter</span><span class="p">):</span>
+
+    <span class="c1"># within the class you can declare variables that persist throughout the</span>
+    <span class="c1"># minimization</span>
+
+    <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># array to record progress</span>
+
+    <span class="c1"># you must override the report method and it must have this signature.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        the report method is called every iteration of the minimization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            iteration (int): The index of the current iteration. This refers</span>
+<span class="sd">                             to the current call to the L-BFGS optimizer.</span>
+<span class="sd">                             Each time the minimizer increases the restraint strength,</span>
+<span class="sd">                             the iteration index is reset to 0.</span>
+
+<span class="sd">            x (array-like): The current particle positions in flattened order:</span>
+<span class="sd">                            the three coordinates of the first particle,</span>
+<span class="sd">                            then the three coordinates of the second particle, etc.</span>
+
+<span class="sd">            grad (array-like): The current gradient of the objective function</span>
+<span class="sd">                               (potential energy plus restraint energy) with</span>
+<span class="sd">                               respect to the particle coordinates, in flattened order.</span>
+
+<span class="sd">            args (dict): Additional statistics described above about the current state of minimization.</span>
+<span class="sd">                         In particular:</span>
+<span class="sd">                         “system energy”: the current potential energy of the system</span>
+<span class="sd">                         “restraint energy”: the energy of the harmonic restraints</span>
+<span class="sd">                         “restraint strength”: the force constant of the restraints (in kJ/mol/nm^2)</span>
+<span class="sd">                         “max constraint error”: the maximum relative error in the length of any constraint</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : Specify if minimization should be stopped.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># Within the report method you write the code you want to be executed at</span>
+        <span class="c1"># each iteration of the minimization.</span>
+        <span class="c1"># In this example we get the current energy, print it to the screen, and save it to an array.</span>
+
+        <span class="n">current_energy</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;system energy&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># only print to screen every 100 iterations for clarity of webpage display</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">current_energy</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_energy</span><span class="p">)</span>
+
+        <span class="c1"># The report method must return a bool specifying if minimization should be stopped.</span>
+        <span class="c1"># You can use this functionality for early termination.</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+<p>We now create an instance of the reporter and minimize the system with the reporter attached.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reporter</span> <span class="o">=</span> <span class="n">MyMinimizationReporter</span><span class="p">()</span>
+
+<span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">(</span><span class="n">reporter</span><span class="o">=</span><span class="n">reporter</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">reporter</span><span class="o">.</span><span class="n">energies</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;System energy (kJ/mol)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Minimization iteration&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-142752.48756321688
+-172484.8553258865
+-176409.55457020985
+-178148.15243668278
+-179026.79510093245
+-179492.09923251392
+-179813.6359549332
+-130436.52109927028
+-154000.0648018617
+-159064.36458575397
+-161231.72177654202
+-162928.5844762374
+-163759.22974661633
+-164487.17845985998
+-165082.9558702084
+-165537.44887874534
+-165925.74078330395
+-166354.8727498213
+-166634.74467120727
+-166845.71879298994
+-167071.10823308353
+-167234.91771559967
+-167360.4577162019
+-167494.79416045244
+-167572.62283236656
+-167693.34483152797
+-167793.68284988904
+-167872.90183883012
+-167929.6934194592
+-167986.32057715842
+-168044.90542370343
+-168095.72168669855
+-168161.1674329726
+-168210.71222721587
+-168254.28712460957
+-168294.28927790007
+-168325.3652110332
+-167397.61295414582
+-167059.7402965248
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_cookbook_report_minimization_6_1.png" src="../../_images/notebooks_cookbook_report_minimization_6_1.png" />
+</div>
+</div>
+<p>You will notice that the energy does not change continuously and does not always decrease. This is because the L-BFGS algorithm used by the minimizer does not support constraints. The minimizer therefore replaces all constraints with harmonic restraints, then performs unconstrained minimization of a combined objective function that is the sum of the system’s potential energy and the restraint energy. Once minimization completes, it checks whether all constraints are satisfied to an acceptable
+tolerance. It not, it increases the strength of the harmonic restraints and performs additional minimization. If the error in constrained distances is especially large, it may choose to throw out all work that has been done so far and start over with stronger restraints. This has several important consequences:</p>
+<ul class="simple">
+<li><p>The objective function being minimized not actually the same as the potential energy.</p></li>
+<li><p>The objective function and the potential energy can both increase between iterations.</p></li>
+<li><p>The total number of iterations performed could be larger than the number specified by the maxIterations argument, if that many iterations leaves unacceptable constraint errors.</p></li>
+<li><p>All work is provisional. It is possible for the minimizer to throw it out and start over.</p></li>
+</ul>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html" title="Previous document">Querying and Modifying Charges and Other Parameters</a>
+        </li>
+        <li>
+          <a href="../../tutorials.html" title="Next document">The OpenMM Tutorials</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#simulation-protocols">Simulation Protocols</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#restraints-constraints-and-external-forces">Restraints, Constraints, and External Forces</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../cookbook.html#analysis-and-system-inspection">Analysis and System Inspection</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Analyzing%20Energy%20Contributions.html">Analyzing Energy Contributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Computing%20Interaction%20Energies.html">Computing Interaction Energies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Querying%20and%20Modifying%20Charges%20and%20Other%20Parameters.html">Querying and Modifying Charges and Other Parameters</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Reporting Minimization</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a></li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/cookbook/report_minimization.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

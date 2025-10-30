@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Applying a Fixed External Force &#8212; OpenMM Cookbook &amp; Tutorials PR50 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=17490e58"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Constraining Atom Positions" href="Constraining%20Atom%20Positions.html" />
+    <link rel="prev" title="Adding Hydrogens to Nonstandard Molecules" href="Adding%20Hydrogens%20to%20Nonstandard%20Molecules.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="Applying a Constant External Force.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/Applying a Constant External Force.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/PR50/colab/notebooks/cookbook/Applying a Constant External Force.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Applying-a-Fixed-External-Force">
+<h1>Applying a Fixed External Force<a class="headerlink" href="#Applying-a-Fixed-External-Force" title="Link to this heading">¶</a></h1>
+<p>There are many situations where it is useful to apply an explicitly specified, external force to particles. For example,</p>
+<ul class="simple">
+<li><p>Applying opposite forces to two molecules to pull them apart</p></li>
+<li><p>Applying a force to ions to represent an electic field across a membrane</p></li>
+<li><p>Applying a time varying force that is calculated by a separate code, such as in QM/MM simulations</p></li>
+</ul>
+<p>This is easily done with a CustomExternalForce. Let’s start by loading a PDB file and creating a System from it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now we can create a CustomExternalForce. We want it to apply a specified force (fx, fy, fz) to each particle. Recall that when creating a custom force we specify the energy, and that the force is the negative gradient of the energy. We therefore want the potential energy as a function of the position (x, y, z) to be <code class="docutils literal notranslate"><span class="pre">-fx*x-fy*y-fz*z</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">external</span> <span class="o">=</span> <span class="n">CustomExternalForce</span><span class="p">(</span><span class="s1">&#39;-fx*x-fy*y-fz*z&#39;</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">external</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fx&#39;</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fy&#39;</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fz&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<p>You can apply whatever forces you want to whichever particles you want. For this example, let’s apply opposite forces to the two particles at the ends of the chain to stretch it out.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">external</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>Now we can run a simulation of it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Changing the forces at any time is easy. Just update the values of the per-particle parameters, then call <code class="docutils literal notranslate"><span class="pre">updateParametersInContext()</span></code> to copy the new values over to the running simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">external</span><span class="o">.</span><span class="n">setParticleParameters</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">kilojoules_per_mole</span><span class="o">/</span><span class="n">nanometer</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">updateParametersInContext</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="Adding%20Hydrogens%20to%20Nonstandard%20Molecules.html" title="Previous document">Adding Hydrogens to Nonstandard Molecules</a>
+        </li>
+        <li>
+          <a href="Constraining%20Atom%20Positions.html" title="Next document">Constraining Atom Positions</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#simulation-protocols">Simulation Protocols</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../cookbook.html#restraints-constraints-and-external-forces">Restraints, Constraints, and External Forces</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Applying a Fixed External Force</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Constraining%20Atom%20Positions.html">Constraining Atom Positions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Restraining%20Atom%20Positions.html">Restraining Atom Positions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Restraining%20Dihedrals.html">Restraining Dihedrals</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#analysis-and-system-inspection">Analysis and System Inspection</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a></li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/cookbook/Applying a Constant External Force.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

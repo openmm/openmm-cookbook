@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Saving Systems to XML Files &#8212; OpenMM Cookbook &amp; Tutorials PR50 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=17490e58"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Merging Molecules in a Topology" href="Merging%20Molecules.html" />
+    <link rel="prev" title="Changing Temperature and Pressure" href="Changing%20Temperature%20and%20Pressure.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="Saving Systems to XML Files.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/cookbook/Saving Systems to XML Files.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/PR50/colab/notebooks/cookbook/Saving Systems to XML Files.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Saving-Systems-to-XML-Files">
+<h1>Saving Systems to XML Files<a class="headerlink" href="#Saving-Systems-to-XML-Files" title="Link to this heading">¶</a></h1>
+<p>The XMLSerializer class can be used to save many kinds of objects to XML files: Systems, Integrators, States, and Forces. Saving and loading State objects is most easily done by calling <code class="docutils literal notranslate"><span class="pre">saveState()</span></code> and <code class="docutils literal notranslate"><span class="pre">loadState()</span></code> on the Simulation. For other objects, you need to invoke XMLSerializer directly.</p>
+<p>Here are some reasons you might want to save a System to a file.</p>
+<ul class="simple">
+<li><p>Creating it with a class such as ForceField or CharmmPsfFile might be slow. If you plan to run many simulations of the same System, writing it to a file and reloading it for future simulations will save time.</p></li>
+<li><p>Saving it to a file helps reproducibility. It preserves a record of exactly what you simulated. Otherwise, you might forget what arguments you passed to <code class="docutils literal notranslate"><span class="pre">createSystem()</span></code> and be unsure how to reproduce your earlier work.</p></li>
+<li><p>It can be used to communicate the exact system description. You might have one script that builds the System and a different one that simulates it. Or one person might be responsible for building it and a different person responsible for running the simulation.</p></li>
+<li><p>You can use Python tools like ForceField to build the System, then load it into a simulation code written in C++.</p></li>
+</ul>
+<p>Let’s start by creating a System.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The following lines save it to a file on disk.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;system.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">XmlSerializer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Reloading the file and creating a new System is just as easy.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;system.xml&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">input</span><span class="p">:</span>
+    <span class="n">system2</span> <span class="o">=</span> <span class="n">XmlSerializer</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>Loading a serialized System in C++ is very similar:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">ifstream</span><span class="w"> </span><span class="n">input</span><span class="p">(</span><span class="s">&quot;system.xml&quot;</span><span class="p">);</span>
+<span class="n">System</span><span class="o">*</span><span class="w"> </span><span class="n">system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">XmlSerializer</span><span class="o">::</span><span class="n">deserialize</span><span class="o">&lt;</span><span class="n">System</span><span class="o">&gt;</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="Changing%20Temperature%20and%20Pressure.html" title="Previous document">Changing Temperature and Pressure</a>
+        </li>
+        <li>
+          <a href="Merging%20Molecules.html" title="Next document">Merging Molecules in a Topology</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../cookbook.html#simulation-protocols">Simulation Protocols</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Changing%20Temperature%20and%20Pressure.html">Changing Temperature and Pressure</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Saving Systems to XML Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Merging%20Molecules.html">Merging Molecules in a Topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Adding%20Hydrogens%20to%20Nonstandard%20Molecules.html">Adding Hydrogens to Nonstandard Molecules</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#restraints-constraints-and-external-forces">Restraints, Constraints, and External Forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cookbook.html#analysis-and-system-inspection">Analysis and System Inspection</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a></li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/cookbook/Saving Systems to XML Files.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
