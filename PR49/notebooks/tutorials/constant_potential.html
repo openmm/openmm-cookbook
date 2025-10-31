@@ -19,8 +19,8 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Coarse-Grained Polymer" href="coarse_grained_polymer.html" />
-    <link rel="prev" title="Selecting Values for Simulation Parameters" href="simulation_parameters.html" />
+    <link rel="next" title="Umbrella Sampling" href="umbrella_sampling.html" />
+    <link rel="prev" title="Replica Exchange Solute Tempering (REST)" href="Running_a_REST_simulation.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -46,18 +46,18 @@
 <h1>Simulating Conductive Electrodes with the Constant Potential Method<a class="headerlink" href="#Simulating-Conductive-Electrodes-with-the-Constant-Potential-Method" title="Link to this heading">¶</a></h1>
 <p>The constant potential molecular dynamics method is an approach for simulating conductive materials with delocalized charges, and maintaining them at prescribed electric potentials. In constant potential simulations, the charges on a prescribed set of particles (those belonging to the conductive material, or the “electrode particles”) are allowed to fluctuate as they interact with other particles in the system. This is useful for studying various kinds of electrochemical systems, <em>e.g.</em>, the
 electrode-electrolyte interface in a parallel plate capacitor. In this tutorial, we will show how to set up a constant potential simulation using OpenMM’s implementation of this method. Specifically, we will use a capacitor system described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>, with an aqueous NaCl electrolyte sandwiched between two Au electrodes:</p>
-<p><img alt="76740a1d597140a5be1ce9fc60efba4b" class="no-scaled-link" src="../../_images/constant_potential_1.png" style="width: 800px;" /></p>
+<p><img alt="120bef27a94045bc8c183b4ffc65d95f" class="no-scaled-link" src="../../_images/constant_potential_1.png" style="width: 800px;" /></p>
 <section id="Theory">
 <h2>Theory<a class="headerlink" href="#Theory" title="Link to this heading">¶</a></h2>
 <p>A full exposition of the theory behind constant potential simulations is beyond the scope of this tutorial, but it is useful to be acquainted with the basics before getting started. In ordinary molecular simulations with fixed charges, we wish to sample configurations <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span> of <span class="math notranslate nohighlight">\(N\)</span> particles based on some potential energy function <span class="math notranslate nohighlight">\(U(\mathbf{r}^N)\)</span>. In the constant potential approach, some number <span class="math notranslate nohighlight">\(M\)</span> of particles are allowed to have varying charges, so that we
 have <span class="math notranslate nohighlight">\(U(\mathbf{r}^N,\mathbf{q}^M)\)</span>. The commonly used method implemented by OpenMM for constant potential simulations uses a Born-Oppenheimer-like approach in which <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span> is chosen at every step to minimize <span class="math notranslate nohighlight">\(U\)</span> for the given <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span>. Since electrostatic interactions can be treated with Coulomb’s law, <span class="math notranslate nohighlight">\(U\)</span> is quadratic in the <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span>, and minimizing it is equivalent to solving a linear system.</p>
 <p>Actually computing the coefficients of this system, which are functions of the particle positions, is more complex. For parallel plate capacitor geometries like the one shown above, the system effectively has periodic boundary conditions in the plane of the electrodes, but is non-periodic in the direction normal to their surfaces.</p>
-<p><img alt="ec0d18221c504cdfa12e33cbe9c64445" class="no-scaled-link" src="../../_images/constant_potential_2.png" style="width: 800px;" /></p>
+<p><img alt="77270cf12ba949508adeb28d0c96b555" class="no-scaled-link" src="../../_images/constant_potential_2.png" style="width: 800px;" /></p>
 <p>There are a few options for using periodic boundary conditions in all three dimensions so that standard tools for computing the electrostatic interactions, such as the particle mesh Ewald method, can be employed. Leaving empty space between periodic images introduces various complications, since this effectively creates a pair of dissimilar capacitors, one containing an electrolyte material of interest, and another containing vacuum. Another option is a double cell geometry, with each periodic
 image containing the capacitor system of interest and a reflected copy of it. This keeps the net potential difference across the simulation cell, and its net dipole moment, zero:</p>
-<p><img alt="e1753f3ffe254b859022660c56197947" class="no-scaled-link" src="../../_images/constant_potential_3.png" style="width: 800px;" /></p>
+<p><img alt="8ce619fdf8d84175974ab5d214278875" class="no-scaled-link" src="../../_images/constant_potential_3.png" style="width: 800px;" /></p>
 <p>The implementation in OpenMM supports such geometries, but they are more computationally expensive, requiring double the number of particles in the system of interest. In this tutorial, we show how to use the finite field method described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 2</span></a>, in which only a single copy of the system is needed, and an external electric field is applied to all charges in the system to maintain the desired electric potential difference across the periodic box:</p>
-<p><img alt="da0ff8ddc4de4be6a4a8b525e099122a" class="no-scaled-link" src="../../_images/constant_potential_4.png" style="width: 800px;" /></p>
+<p><img alt="ff7945f6e936477dba0a209a2eb2884c" class="no-scaled-link" src="../../_images/constant_potential_4.png" style="width: 800px;" /></p>
 <p>There are many more details that this tutorial will not explore, but the reader is referred to <a class="reference internal" href="#References"><span class="std std-ref">Refs. 1-3</span></a> for more information about the theory, as well as to the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">user guide</a> for the details of the specific implementation in OpenMM.</p>
 </section>
 <section id="Setting-Parameters">
@@ -532,10 +532,10 @@ the update interval for the barostat, dividing the desired potential difference 
     <ul>
         <li>
           &larr;
-          <a href="simulation_parameters.html" title="Previous document">Selecting Values for Simulation Parameters</a>
+          <a href="Running_a_REST_simulation.html" title="Previous document">Replica Exchange Solute Tempering (REST)</a>
         </li>
         <li>
-          <a href="coarse_grained_polymer.html" title="Next document">Coarse-Grained Polymer</a>
+          <a href="umbrella_sampling.html" title="Next document">Umbrella Sampling</a>
           &rarr;
         </li>
     </ul>
@@ -581,7 +581,10 @@ the update interval for the barostat, dividing the desired potential difference 
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="simulation_parameters.html">Selecting Values for Simulation Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Simulating Conductive Electrodes with the Constant Potential Method</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Theory">Theory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Setting-Parameters">Setting Parameters</a></li>
@@ -591,13 +594,6 @@ the update interval for the barostat, dividing the desired potential difference 
 <li class="toctree-l4"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Coarse-Grained Polymer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical free energy calculations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
-<li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Run a REST simulation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
 </ul>
 </li>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Nuclear Quantum Effects With RPMD and adQTB &#8212; OpenMM Cookbook &amp; Tutorials PR49 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=f46d690a"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Replica Exchange Solute Tempering (REST)" href="Running_a_REST_simulation.html" />
+    <link rel="prev" title="Implementing a Coarse-Grained Polymer Force Field" href="coarse_grained_polymer.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="nuclear_quantum_effects.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/nuclear_quantum_effects.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/PR49/colab/notebooks/tutorials/nuclear_quantum_effects.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Nuclear-Quantum-Effects-With-RPMD-and-adQTB">
+<h1>Nuclear Quantum Effects With RPMD and adQTB<a class="headerlink" href="#Nuclear-Quantum-Effects-With-RPMD-and-adQTB" title="Link to this heading">¶</a></h1>
+<p>Nuclear quantum effects (NQEs) play an important role in many molecular systems. This is especially true for low temperature simulations, but in some cases they can even be significant at room temperature. For example, they are important in systems like water where hydrogen bonding plays a major role (<a class="reference external" href="https://doi.org/10.1021/acs.chemrev.5b00674">https://doi.org/10.1021/acs.chemrev.5b00674</a>).</p>
+<p>OpenMM has two methods for simulating nuclear quantum effects: Ring Polymer Molecular Dynamics (RPMD) and Adaptive Quantum Thermal Bath (adQTB). This tutorial shows how to use both of them and compares the results.</p>
+<section id="Example:-Parahydrogen">
+<h2>Example: Parahydrogen<a class="headerlink" href="#Example:-Parahydrogen" title="Link to this heading">¶</a></h2>
+<p>Molecular hydrogen (<span class="math notranslate nohighlight">\(H_2\)</span>) can exist in two nuclear spin states. In orthohydrogen the nuclear spins are parallel to each other, and in parahydrogen they are antiparallel. Parahydrogen is the more common state at low temperature, while orthohydrogen is the more common state at high temperature.</p>
+<p><img alt="718d9fe7eca1415bb1bd9e7f98040f26" src="https://upload.wikimedia.org/wikipedia/commons/4/41/Spinisomers_of_molecular_hydrogen.png" /></p>
+<p>For this tutorial, we will simulate a box of parahydrogen molecules at 25 Kelvin. First let’s import the libraries we will be using.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
+</pre></div>
+</div>
+</div>
+<p>Now we build a system to represent the box of molecules. Each molecule is represented by a single particle. They interact with each other through an empirical pairwise potential (<a class="reference external" href="https://doi.org/10.1063/1.437103">https://doi.org/10.1063/1.437103</a>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">particles</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">box_size</span> <span class="o">=</span> <span class="mf">1.1896</span>
+<span class="n">temperature</span> <span class="o">=</span> <span class="mi">25</span><span class="o">*</span><span class="n">kelvin</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="p">()</span>
+<span class="n">system</span><span class="o">.</span><span class="n">setDefaultPeriodicBoxVectors</span><span class="p">(</span><span class="n">Vec3</span><span class="p">(</span><span class="n">box_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">box_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">box_size</span><span class="p">))</span>
+<span class="n">force</span> <span class="o">=</span> <span class="n">CustomNonbondedForce</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;2625.49963*(exp(1.713-1.5671*p-0.00993*p*p) -</span>
+<span class="sd">                   (12.14/p^6+215.2/p^8-143.1/p^9+4813.9/p^10)*(step(rc-p)*exp(-(rc/p-1)^2)+1-step(rc-p)));</span>
+<span class="sd">                   p=r/0.05291772108; rc=8.32&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">force</span><span class="o">.</span><span class="n">setNonbondedMethod</span><span class="p">(</span><span class="n">CustomNonbondedForce</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">)</span>
+<span class="n">force</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">box_size</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
+    <span class="n">force</span><span class="o">.</span><span class="n">addParticle</span><span class="p">()</span>
+<span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">box_size</span>
+</pre></div>
+</div>
+</div>
+<p>We are going to simulate this box of parahydrogen and record the pairwise radial distribution function (RDF). The following function runs the simulation and computes the RDF.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_rdf</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">iterations</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">bins</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        <span class="c1"># Run a few steps of dynamics.</span>
+
+        <span class="n">context</span><span class="o">.</span><span class="n">getIntegrator</span><span class="p">()</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="c1"># Count the number of distances in each bin.</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">positions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getPositions</span><span class="p">()</span><span class="o">.</span><span class="n">value_in_unit</span><span class="p">(</span><span class="n">nanometer</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">pos</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">delta</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">delta</span><span class="o">/</span><span class="n">box_size</span><span class="p">)</span><span class="o">*</span><span class="n">box_size</span> <span class="c1"># Apply periodic boundary conditions</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bins</span><span class="o">*</span><span class="n">dist</span><span class="o">/</span><span class="n">box_size</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Convert the histogram of distances to the RDF.</span>
+
+    <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="n">box_size</span><span class="o">*</span><span class="n">box_size</span><span class="o">*</span><span class="n">box_size</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">iterations</span><span class="o">*</span><span class="mf">0.5</span><span class="o">*</span><span class="n">particles</span><span class="o">*</span><span class="n">particles</span><span class="p">);</span>
+    <span class="n">rdf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bins</span><span class="o">//</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">box_size</span><span class="o">/</span><span class="n">bins</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">box_size</span><span class="o">/</span><span class="n">bins</span>
+        <span class="n">volume</span> <span class="o">=</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">r2</span><span class="o">*</span><span class="n">r2</span><span class="o">*</span><span class="n">r2</span><span class="o">-</span><span class="n">r1</span><span class="o">*</span><span class="n">r1</span><span class="o">*</span><span class="n">r1</span><span class="p">)</span>
+        <span class="n">rdf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">volume</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rdf</span>
+</pre></div>
+</div>
+</div>
+<p>Before we look at NQEs, first let’s run a simulation with a standard Langevin integrator. This gives us the classical distribution.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mi">1</span><span class="o">*</span><span class="n">femtosecond</span><span class="p">)</span>
+<span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">LocalEnergyMinimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+<span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="c1"># Equilibrate before collecting data</span>
+<span class="n">classical_rdf</span> <span class="o">=</span> <span class="n">compute_rdf</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here is a graph of the RDF, so we can see what it looks like.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">classical_rdf</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_nuclear_quantum_effects_10_0.png" src="../../_images/notebooks_tutorials_nuclear_quantum_effects_10_0.png" />
+</div>
+</div>
+</section>
+<section id="Ring-Polymer-Molecular-Dynamics">
+<h2>Ring Polymer Molecular Dynamics<a class="headerlink" href="#Ring-Polymer-Molecular-Dynamics" title="Link to this heading">¶</a></h2>
+<p>RPMD is based on the path integral formulation of quantum mechanics, which says that a quantum mechanical trajectory is equivalent to summing over all possible classical trajectories. As a faster approximation, we randomly sample from the set of possible trajectories by simulating many copies of the system at once. As the number of copies goes to infinity, the RPMD result converges to the exact quantum result.</p>
+<p>Running a simulation with RPMD is very similar to running an ordinary simulation, except that we must tell it how many copies to simulate. For parahydrogen we can get a reasonably well converged result with 12 copies. Other systems often require more, which can make them very expensive to simulate.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">copies</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">RPMDIntegrator</span><span class="p">(</span><span class="n">copies</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mi">1</span><span class="o">*</span><span class="n">femtosecond</span><span class="p">)</span>
+<span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">LocalEnergyMinimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+<span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="c1"># Equilibrate before collecting data</span>
+<span class="n">rpmd_rdf</span> <span class="o">=</span> <span class="n">compute_rdf</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rpmd_rdf</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_nuclear_quantum_effects_12_0.png" src="../../_images/notebooks_tutorials_nuclear_quantum_effects_12_0.png" />
+</div>
+</div>
+<p>We can see at a glance that the distribution is significantly different from the classical one with a lower, broader peak. The simulation takes much longer to run, since it must repeat all the calculations for every copy in each time step.</p>
+</section>
+<section id="Adaptive-Quantum-Thermal-Bath">
+<h2>Adaptive Quantum Thermal Bath<a class="headerlink" href="#Adaptive-Quantum-Thermal-Bath" title="Link to this heading">¶</a></h2>
+<p>adQTB is a much faster alternative based on a different approximation (<a class="reference external" href="https://doi.org/10.1021/acs.jctc.8b01164">https://doi.org/10.1021/acs.jctc.8b01164</a>). It uses a colored (i.e. frequency dependent) noise thermostat whose energy at each frequency matches the average energy of a quantum harmonic oscillator:</p>
+<p><span class="math notranslate nohighlight">\(\theta(\omega, T) = \hbar \omega \left( \frac{1}{2} + \frac{1}{e^{\hbar \omega / k_B T} - 1} \right)\)</span></p>
+<p>For harmonic degrees of freedom this produces the correct energy distribution. For non-harmonic ones it is an approximation, but still often a very good one.</p>
+<p>A problem that can happen with this approach is zero point energy leakage. The thermostat drives the system toward the desired quantum energy distribution, but the classical dynamics of the system causes it to continuously relax toward the classical distribution. The result is a distribution in between the quantum and classical ones with too much energy in the low frequency modes and too little energy in the high frequency modes.</p>
+<p>The adaptive version of the algorithm compensates for this by monitoring the energy distribution in the system and continuously adjusting the amount of noise at each frequency to bring the system closer to the intended distribution. In practice this works as follows.</p>
+<ol class="arabic simple">
+<li><p>Divide the trajectory into short segments, typically on the order of 1000 time steps.</p></li>
+<li><p>During each segment, monitor the distribution of energy across modes.</p></li>
+<li><p>At the end of each segment, adjust the amount of noise at each frequency accordingly.</p></li>
+</ol>
+<p>This procedure tends to be very effective, but it does make adQTB slightly more complicated to use. Let’s start by creating the integrator.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">QTBIntegrator</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="mf">20.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mi">1</span><span class="o">*</span><span class="n">femtosecond</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Notice that we are using a larger friction coefficient than we did for the other integrators. This is usually required for adQTB. If the friction is too low, it may be impossible to fully compensate for zero point energy leakage. Even reducing the noise magnitude to zero would leave too much energy in some modes. This can slow down motions and cause sampling to take longer, but it still ends up being much faster than RPMD.</p>
+<p>Next we tell it how long the individual segments of the trajectory should be. In this case we set them to 0.5 ps.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span><span class="o">.</span><span class="n">setSegmentLength</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">picosecond</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>By default, the adaptation algorithm keeps track of a different noise spectrum for every particle in the system and adapts each one separately. When multiple particles are expected to behave identically, you should tell it to use the same spectrum for all of them. This allows it to average the data from them, making the algorithm more stable and allowing adaptation to happen more quickly.</p>
+<p>To do this, we call <code class="docutils literal notranslate"><span class="pre">setParticleType()</span></code> to give every particle a type. If two particles have the same type, they share the same noise spectrum. Since every particle in our system is identical, we give them all the same type.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">setParticleType</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Finally we must tell it how quickly to adjust the noise spectrum. We do this by setting the adaptation rate. Larger values lead to faster adaptation, but too large a value can lead to noisy results or even prevent it from converging. There is no easy rule for picking the adaptation rate. Usually you need to select it through trial and error.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span><span class="o">.</span><span class="n">setDefaultAdaptationRate</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>It also is possible to set different adaptation rates for different particle types by calling <code class="docutils literal notranslate"><span class="pre">setTypeAdaptationRate()</span></code>. For example, if there are many more particles of one type than other, you might want a larger adaptation rate for the type with more particles. In most cases, though, it is fine to use the same adaptation rate for all types. Since our system only has a single particle type, this is not relevant to it anyway.</p>
+<p>Now that our integrator is set up, let’s create the Context. This part is exactly the same as for the other integrators.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">LocalEnergyMinimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now we need to equilibrate the system. In the earlier cases we just ran a short simulation to let the particle positions and velocities relax. For adQTB, equilibration serves another important function: it gives the adaptation algorithm time to select the noise spectra. This may require a much longer equilibration, and you should monitor the progress of it to make sure the result is truly converged before you start collecting data.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">20000</span><span class="p">)</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">integrator</span><span class="o">.</span><span class="n">getAdaptedFriction</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_nuclear_quantum_effects_25_0.png" src="../../_images/notebooks_tutorials_nuclear_quantum_effects_25_0.png" />
+</div>
+</div>
+<p>We can see the spectrum is well converged, so now we compute the RDF as before.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qtb_rdf</span> <span class="o">=</span> <span class="n">compute_rdf</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now that we have all three versions of the RDF, let’s compare them.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">classical_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Classical&quot;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rpmd_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;RPMD&quot;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">qtb_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;adQTB&quot;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_nuclear_quantum_effects_29_0.png" src="../../_images/notebooks_tutorials_nuclear_quantum_effects_29_0.png" />
+</div>
+</div>
+<p>The results from RPMD and adQTB are very similar, while the classical simulation produced a quite different distribution. That shows the importance of NQEs in this system.</p>
+</section>
+<section id="When-Should-You-Include-Nuclear-Quantum-Effects?">
+<h2>When Should You Include Nuclear Quantum Effects?<a class="headerlink" href="#When-Should-You-Include-Nuclear-Quantum-Effects?" title="Link to this heading">¶</a></h2>
+<p>You might be tempted to add nuclear quantum effects to all your simulations, especially given the relatively low cost of adQTB, but that would not be correct. Most force fields are parameterized at least partly based on experimental data. That means they already implicitly take NQEs into account. They are designed to match experiment <em>without</em> explicitly adding NQEs.</p>
+<p>On the other hand, quantum chemistry methods like Density Functional Theory treat nuclei classically, using quantum mechanics only for the electrons. QM/MM simulations can therefore benefit from adding explicit NQEs. The same is true of force fields and machine learning potentials that are parameterized solely from quantum chemistry data. The potential function reflects a purely classical model of the nuclei. Using RPMD or adQTB to add quantum effects increases the realism of the model.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="coarse_grained_polymer.html" title="Previous document">Implementing a Coarse-Grained Polymer Force Field</a>
+        </li>
+        <li>
+          <a href="Running_a_REST_simulation.html" title="Next document">Replica Exchange Solute Tempering (REST)</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Nuclear Quantum Effects With RPMD and adQTB</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Example:-Parahydrogen">Example: Parahydrogen</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Ring-Polymer-Molecular-Dynamics">Ring Polymer Molecular Dynamics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Adaptive-Quantum-Thermal-Bath">Adaptive Quantum Thermal Bath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#When-Should-You-Include-Nuclear-Quantum-Effects?">When Should You Include Nuclear Quantum Effects?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="constant_potential.html">Simulating Conductive Electrodes with the Constant Potential Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/tutorials/nuclear_quantum_effects.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
