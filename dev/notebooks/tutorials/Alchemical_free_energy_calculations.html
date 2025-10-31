@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Alchemical free energy calculations &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <title>Alchemical Free Energy Calculations &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
@@ -15,10 +15,12 @@
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html" />
-    <link rel="prev" title="Coarse-Grained Polymer" href="coarse_grained_polymer.html" />
+    <link rel="next" title="Implementing a Coarse-Grained Polymer Force Field" href="coarse_grained_polymer.html" />
+    <link rel="prev" title="Selecting Values for Simulation Parameters" href="simulation_parameters.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -40,43 +42,37 @@
     <a href="Alchemical_free_energy_calculations.ipynb">Download Notebook</a>
     <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/Alchemical_free_energy_calculations.ipynb">View in GitHub</a>
     <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/Alchemical_free_energy_calculations.ipynb">Open in Google Colab</a>
-</div><span class="target" id="index-0"></span><section id="Alchemical-free-energy-calculations">
-<h1>Alchemical free energy calculations<a class="headerlink" href="#Alchemical-free-energy-calculations" title="Link to this heading">¶</a></h1>
+</div><span class="target" id="index-0"></span><section id="Alchemical-Free-Energy-Calculations">
+<h1>Alchemical Free Energy Calculations<a class="headerlink" href="#Alchemical-Free-Energy-Calculations" title="Link to this heading">¶</a></h1>
 <p><em>Computing the free energy of inserting a Lennard-Jones particle in a Lennard-Jones fluid.</em></p>
 <p>This tutorial is described in <a class="reference external" href="http://dx.doi.org/10.1371/journal.pcbi.1005659">OpenMM 7 publication</a>.</p>
 <section id="Basic-concept">
 <h2>Basic concept<a class="headerlink" href="#Basic-concept" title="Link to this heading">¶</a></h2>
-<p>OpenMM’s custom forces—which allow the programmer to express a potential algebraically, potentially with multiple parameters that can be adjusted on the fly—allow a great deal of flexibility and simplicity in encoding potentials while still achieving high performance on GPUs. One common use of this facility is to convert standard interactions (such as Lennard-Jones potentials) into alchemically-modified potentials for the purposes of computing free energy differences. The alchemical free
-energy code <a class="reference external" href="http://github.com/choderalab/yank">YANK</a>, for example, uses a variety of custom forces to represent alchemically-modified potentials for <a class="reference external" href="http://dx.doi.org/10.1007/s10822-013-9689-8">protein-ligand alchemical binding free energy calculations</a>.</p>
+<p>OpenMM’s custom forces—which allow the programmer to express a potential algebraically, potentially with multiple parameters that can be adjusted on the fly—allow a great deal of flexibility and simplicity in encoding potentials while still achieving high performance on GPUs. One common use of this facility is to convert standard interactions (such as Lennard-Jones potentials) into alchemically-modified potentials for the purposes of computing free energy differences. The alchemical free energy
+code <a class="reference external" href="http://github.com/choderalab/yank">YANK</a>, for example, uses a variety of custom forces to represent alchemically-modified potentials for <a class="reference external" href="http://dx.doi.org/10.1007/s10822-013-9689-8">protein-ligand alchemical binding free energy calculations</a>.</p>
+<p>To run this tutorial, it is necessary to install the <a class="reference external" href="https://openmmtools.readthedocs.io/">OpenMMTools</a> package and the <a class="reference external" href="https://pymbar.readthedocs.io/">PyMBAR</a> package in addition to OpenMM. If you are using <code class="docutils literal notranslate"><span class="pre">conda</span></code>, these extra packages can be installed by running:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools<span class="w"> </span>pymbar
+</pre></div>
+</div>
+<p>For this tutorial, ensure that at PyMBAR 4 is installed, as it has been updated and will not work with PyMBAR 3 due to <a class="reference external" href="https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html">changes in the PyMBAR API</a>.</p>
 </section>
 <section id="Defining-alchemically-modified-potentials">
 <h2>Defining alchemically-modified potentials<a class="headerlink" href="#Defining-alchemically-modified-potentials" title="Link to this heading">¶</a></h2>
-<p>As a simple example of how this is facilitated by custom forces, consider computing the chemical potential of liquid argon by estimating the free energy of alchemically annihilating a Lennard-Jones particle. First, we create a simple Lennard-Jones fluid to represent liquid argon at 120 K and 80 atm, which can be conveniently done using the <code class="docutils literal notranslate"><span class="pre">testsystems</span></code> module of the conda-installable <a class="reference external" href="http://github.com/choderalab/openmmtools">openmmtools</a> package:</p>
+<p>As a simple example of how this is facilitated by custom forces, consider computing the chemical potential of liquid argon by estimating the free energy of alchemically annihilating a Lennard-Jones particle. First, we create a simple Lennard-Jones fluid to represent liquid argon at <span class="math notranslate nohighlight">\(120\ \mathrm{K}\)</span> and <span class="math notranslate nohighlight">\(80\ \mathrm{atm}\)</span>, which can be conveniently done using the <code class="docutils literal notranslate"><span class="pre">testsystems</span></code> module of the <a class="reference external" href="http://github.com/choderalab/openmmtools">openmmtools</a> package:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># openmmtools is also needed for this notebook</span>
-<span class="o">!</span>mamba<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>openmmtools
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmmtools.testsystems</span><span class="w"> </span><span class="kn">import</span> <span class="n">LennardJonesFluid</span>
-
 
 <span class="c1"># Simulation settings</span>
 <span class="n">pressure</span> <span class="o">=</span> <span class="mi">80</span><span class="o">*</span><span class="n">atmospheres</span>
 <span class="n">temperature</span> <span class="o">=</span> <span class="mi">120</span><span class="o">*</span><span class="n">kelvin</span>
 <span class="n">collision_rate</span> <span class="o">=</span> <span class="mi">5</span><span class="o">/</span><span class="n">picoseconds</span>
 <span class="n">timestep</span> <span class="o">=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">femtoseconds</span>
-
 
 <span class="c1"># Create a Lennard Jones test fluid</span>
 <span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.4</span><span class="o">*</span><span class="n">angstrom</span>
@@ -98,8 +94,7 @@ the rest of the system during the simulation. The Lennard-Jones parameters sigma
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Retrieve the NonbondedForce</span>
-<span class="n">forces</span> <span class="o">=</span> <span class="p">{</span> <span class="n">force</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="p">:</span> <span class="n">force</span> <span class="k">for</span> <span class="n">force</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="p">}</span>
-<span class="n">nbforce</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[</span><span class="s1">&#39;NonbondedForce&#39;</span><span class="p">]</span>
+<span class="p">(</span><span class="n">nbforce</span><span class="p">,)</span> <span class="o">=</span> <span class="p">(</span><span class="n">force</span> <span class="k">for</span> <span class="n">force</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">force</span><span class="p">,</span> <span class="n">NonbondedForce</span><span class="p">))</span>
 
 <span class="c1"># Add a CustomNonbondedForce to handle only alchemically-modified interactions</span>
 
@@ -107,7 +102,6 @@ the rest of the system during the simulation. The Lennard-Jones parameters sigma
 <span class="c1"># and the other which contains all the other particles.</span>
 <span class="n">alchemical_particles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">chemical_particles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()))</span> <span class="o">-</span> <span class="n">alchemical_particles</span>
-
 
 <span class="c1"># Define the energy function for the CustomNonbondedForce</span>
 <span class="c1"># when lambda is 1.0 it is a normal LJ potential, when lambda is 0.0 the interaction vanishes</span>
@@ -137,7 +131,7 @@ the rest of the system during the simulation. The Lennard-Jones parameters sigma
 <span class="c1"># Set the custom force to occur between just the alchemical particle and the other particles</span>
 <span class="n">custom_force</span><span class="o">.</span><span class="n">addInteractionGroup</span><span class="p">(</span><span class="n">alchemical_particles</span><span class="p">,</span> <span class="n">chemical_particles</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">custom_force</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 </section>
@@ -158,9 +152,7 @@ energies at the new alchemical state.</p>
 
 <span class="c1"># Minimize energy</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Minimizing energy...&#39;</span><span class="p">)</span>
-<span class="c1">#LocalEnergyMinimizer.minimize(context)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
-
 
 <span class="c1"># Collect data</span>
 
@@ -186,20 +178,18 @@ energies at the new alchemical state.</p>
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
             <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
             <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">iteration</span><span class="p">]</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getPotentialEnergy</span><span class="p">()</span> <span class="o">/</span> <span class="n">kT</span>
-<br/><br/></pre></div>
+</pre></div>
 </div>
 </div>
-</section>
 <section id="Analyzing-the-data-with-MBAR">
-<h2>Analyzing the data with MBAR<a class="headerlink" href="#Analyzing-the-data-with-MBAR" title="Link to this heading">¶</a></h2>
+<h3>Analyzing the data with MBAR<a class="headerlink" href="#Analyzing-the-data-with-MBAR" title="Link to this heading">¶</a></h3>
 <p>Finally, the <a class="reference external" href="https://dx.doi.org/10.1063%2F1.2978177">multistate Bennett acceptance ratio (MBAR)</a> is used to estimate the free energy of annihilating the particle using the conda-installable <a class="reference external" href="http://pymbar.org/">pymbar</a> package. In order to estimate how much data must be discarded to equilibration, we use a scheme for <a class="reference external" href="http://dx.doi.org/10.1021/acs.jctc.5b00784">automated equilibration detection</a> and subsequent extraction of decorrelated samples found in the
 <a class="reference external" href="http://github.com/choderalab/pymbar">pymbar.timeseries</a> module.</p>
-<p>Please note that we have updated this tutorial for pymbar version 4 <a class="reference external" href="https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html">https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># Estimate free energy of Lennard-Jones particle insertion</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate free energy of Lennard-Jones particle insertion</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pymbar</span><span class="w"> </span><span class="kn">import</span> <span class="n">MBAR</span><span class="p">,</span> <span class="n">timeseries</span>
 
 <span class="c1">## Subsample data to extract uncorrelated equilibrium timeseries</span>
@@ -219,9 +209,10 @@ energies at the new alchemical state.</p>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Free energy change to insert a particle = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;Delta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Statistical uncertainty = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;dDelta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
+</section>
 </section>
 </section>
 
@@ -233,10 +224,10 @@ energies at the new alchemical state.</p>
     <ul>
         <li>
           &larr;
-          <a href="coarse_grained_polymer.html" title="Previous document">Coarse-Grained Polymer</a>
+          <a href="simulation_parameters.html" title="Previous document">Selecting Values for Simulation Parameters</a>
         </li>
         <li>
-          <a href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html" title="Next document">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a>
+          <a href="coarse_grained_polymer.html" title="Next document">Implementing a Coarse-Grained Polymer Force Field</a>
           &rarr;
         </li>
     </ul>
@@ -282,22 +273,16 @@ energies at the new alchemical state.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="simulation_parameters.html">Selecting Values for Simulation Parameters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Coarse-Grained Polymer</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Alchemical free energy calculations</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Alchemical Free Energy Calculations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Basic-concept">Basic concept</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Defining-alchemically-modified-potentials">Defining alchemically-modified potentials</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Simulating-alchemically-modified-systems">Simulating alchemically-modified systems</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Analyzing-the-data-with-MBAR">Analyzing the data with MBAR</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
-<li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Run a REST simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
 </ul>
 </li>
 </ul>

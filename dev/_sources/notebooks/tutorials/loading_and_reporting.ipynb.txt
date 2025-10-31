@@ -837,7 +837,9 @@
     "system = top.createSystem(...) # Include options here\n",
     "```\n",
     "\n",
-    "OpenMM can also load [Tinker](https://dasher.wustl.edu/tinker/) and [Desmond](https://www.schrodinger.com/platform/products/desmond/) files through the [TinkerFiles](https://docs.openmm.org/latest/api-python/generated/openmm.app.tinkerfiles.TinkerFiles.html) (requires OpenMM 8.4 or later) and [DesmondDMSFile](https://docs.openmm.org/latest/api-python/generated/openmm.app.desmonddmsfile.DesmondDMSFile.html) APIs, respectively."
+    "OpenMM can also load [Tinker](https://dasher.wustl.edu/tinker/) and [Desmond](https://www.schrodinger.com/platform/products/desmond/) files through the [TinkerFiles](https://docs.openmm.org/latest/api-python/generated/openmm.app.tinkerfiles.TinkerFiles.html) (requires OpenMM 8.4 or later) and [DesmondDMSFile](https://docs.openmm.org/latest/api-python/generated/openmm.app.desmonddmsfile.DesmondDMSFile.html) APIs, respectively.\n",
+    "\n",
+    "Now that you have seen two ways to run an OpenMM simulation starting from an existing molecular structure using OpenMM Setup, the [next tutorial](building_systems.ipynb) will demonstrate how to use OpenMM to set up up a simulation of a molecular system entirely from scratch."
    ]
   },
   {

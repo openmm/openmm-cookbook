@@ -19,8 +19,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Nuclear Quantum Effects With RPMD and adQTB" href="nuclear_quantum_effects.html" />
-    <link rel="prev" title="Run a REST simulation" href="Running_a_REST_simulation.html" />
+    <link rel="prev" title="Replica Exchange Solute Tempering (REST)" href="Running_a_REST_simulation.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -52,27 +51,35 @@
 <h2>Theory<a class="headerlink" href="#Theory" title="Link to this heading">¶</a></h2>
 <p>This section explains more of the details behind umbrella sampling. Refer to [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>, <a class="reference internal" href="#References"><span class="std std-ref">2</span></a>] for full information. The text in this section is from [<a class="reference internal" href="#References"><span class="std std-ref">3</span></a>].</p>
 <p>The free energy of a system in the canonical ensemble is</p>
-<p><span class="math notranslate nohighlight">\(F=-k_B T \text{log}(Z),\)</span></p>
+<div class="math notranslate nohighlight">
+\[F=-k_B T \text{log}(Z),\]</div>
 <p>where <span class="math notranslate nohighlight">\(Z\)</span> is the canonical partition function. For all but the smallest systems <span class="math notranslate nohighlight">\(Z\)</span> is computationally intractable to calculate. However, often the most interesting information about a molecular system is given by the differences in the free energy across system states. A Collective Variable (CV; also called a reaction coordinate) can be defined which is a continuous variable that distinguishes different states. The simplest types of CVs are geometric distances (e.g. the distance
 between two molecules) but there are many other possibilities. The CV <span class="math notranslate nohighlight">\(x\)</span> is a function of the atomic coordinates, <span class="math notranslate nohighlight">\(x(r)\)</span>, and multiple different realizations of <span class="math notranslate nohighlight">\(r\)</span> can map to the same <span class="math notranslate nohighlight">\(x\)</span>. The probability distribution of the system can be written in terms of <span class="math notranslate nohighlight">\(x\)</span>:</p>
-<p><span class="math notranslate nohighlight">\(p(x) \propto \int{ e^{-\beta E(r)} \delta (x-x(r))dr},\)</span></p>
+<div class="math notranslate nohighlight">
+\[p(x) \propto \int{ e^{-\beta E(r)} \delta (x-x(r))dr},\]</div>
 <p>where we have integrated the Boltzmann distribution over all degrees of freedom for each value of <span class="math notranslate nohighlight">\(x\)</span>. The probability can be turned into a free energy:</p>
-<p><span class="math notranslate nohighlight">\(F(x) = -k_B T \text{log} (p(x)) + C,\)</span></p>
+<div class="math notranslate nohighlight">
+\[F(x) = -k_B T \text{log} (p(x)) + C,\]</div>
 <p>where <span class="math notranslate nohighlight">\(C\)</span> is a constant and unimportant as we are only interested in <span class="math notranslate nohighlight">\(∆F\)</span>. In theory, the free energy profile along <span class="math notranslate nohighlight">\(x\)</span> could be computed by sampling the system in equilibrium and recording the probability histogram of the values of <span class="math notranslate nohighlight">\(x\)</span> which occur. However, for any non-trivial potential energy surface it will take a very long time to achieve sufficient sampling to get an adequately converged histogram — the high energy states will not be sampled.</p>
 <p>To enhance the sampling umbrella sampling can be used. This adds additional biasing potentials <span class="math notranslate nohighlight">\(w(x)\)</span> to the system to restrain it at certain values of <span class="math notranslate nohighlight">\(x\)</span>. The form of <span class="math notranslate nohighlight">\(w\)</span> is usually a harmonic term:</p>
-<p><span class="math notranslate nohighlight">\(w(x) = \frac{1}{2} k (x-x_0)^2,\)</span></p>
+<div class="math notranslate nohighlight">
+\[w(x) = \frac{1}{2} k (x-x_0)^2,\]</div>
 <p>where <span class="math notranslate nohighlight">\(k\)</span> is a constant with units of energy per units of <span class="math notranslate nohighlight">\(x\)</span> squared. We then run multiple simulations, each restrained with a different <span class="math notranslate nohighlight">\(w\)</span>, and then combine them to generate a probability distribution that sufficiently samples the whole range of <span class="math notranslate nohighlight">\(x\)</span>. The process is illustrated in figure 1 and explained in more detail as follows.</p>
 <p><img alt="umbrella_sampling" src="../../_images/umbrella_sampling.svg" /></p>
 <p><strong>Figure 1. Umbrella sampling method to compute a free energy profile.</strong> (a) Multiple biasing potentials are placed across the collective variable <span class="math notranslate nohighlight">\(x\)</span>. The blue curve is the free energy of the system which we are trying to calculate. (b) Simulations are run for each window <span class="math notranslate nohighlight">\(w\)</span>. The resulting biased probability distributions <span class="math notranslate nohighlight">\(P'(x)\)</span> are plotted. (c) The unbiased free energies <span class="math notranslate nohighlight">\(F_i\)</span> from each window. They are each offset by a different <span class="math notranslate nohighlight">\(C_i\)</span>. (d) The Weighted
 Histogram Analysis Method (WHAM) is used to combine the windows and compute the free energy curve.</p>
 <p>With a biasing potential <span class="math notranslate nohighlight">\(w(x(r))\)</span> the potential energy of the system becomes</p>
-<p><span class="math notranslate nohighlight">\(E'(r) = E(r) + w((x(r)))\)</span></p>
+<div class="math notranslate nohighlight">
+\[E'(r) = E(r) + w((x(r)))\]</div>
 <p>which leads to a probability distribution (in the canonical ensemble) of</p>
-<p><span class="math notranslate nohighlight">\(p'(x) \propto \int e^{-\beta (E + w)} \delta (x - x(r)) dr \propto p(x) e^{-\beta w(x)},\)</span></p>
+<div class="math notranslate nohighlight">
+\[p'(x) \propto \int e^{-\beta (E + w)} \delta (x - x(r)) dr \propto p(x) e^{-\beta w(x)},\]</div>
 <p>and a free energy of</p>
-<p><span class="math notranslate nohighlight">\(F'(x) = -k_B T \text{log}(p(x)) + w(x) + C = F(x) + w(x) + C.\)</span></p>
+<div class="math notranslate nohighlight">
+\[F'(x) = -k_B T \text{log}(p(x)) + w(x) + C = F(x) + w(x) + C.\]</div>
 <p>Thus, the unbiased free energy <span class="math notranslate nohighlight">\(F\)</span> can be obtained by subtracting the biasing potential <span class="math notranslate nohighlight">\(w\)</span> from the biased free energy <span class="math notranslate nohighlight">\(F'\)</span>. However, when more than one biasing window is used the value of <span class="math notranslate nohighlight">\(C\)</span> cannot be neglected as it will be different for each window. For multiple biasing windows we have a set of unbiased (but offset by different <span class="math notranslate nohighlight">\(C_i\)</span>) free energies,</p>
-<p><span class="math notranslate nohighlight">\(F_i(x) = -k_B T \text{log}(p'_i) + w_i + C_i.\)</span></p>
+<div class="math notranslate nohighlight">
+\[F_i(x) = -k_B T \text{log}(p'_i) + w_i + C_i.\]</div>
 <p>To compute <span class="math notranslate nohighlight">\(F\)</span> over the full range of <span class="math notranslate nohighlight">\(x\)</span> the different <span class="math notranslate nohighlight">\(F_i(x)\)</span> need to be combined. This can be accomplished by the Weighted Histogram Analysis Method (WHAM) [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>]. The WHAM equations are shown in <a class="reference internal" href="#WHAM-equations"><span class="std std-ref">appendix section 2</span></a>. The free energy profile is also called the Potential of Mean Force (PMF); in this example we will assume they are equivalent and use them interchangeably.</p>
 </section>
 <section id="Umbrella-sampling-simulations">
@@ -87,20 +94,20 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </section>
 <section id="System">
 <h2>System<a class="headerlink" href="#System" title="Link to this heading">¶</a></h2>
-<p>This tutorial will use umbrella sampling to compute the free energy profile of the end-to-end distance (<span class="math notranslate nohighlight">\(r\)</span>) of deca-alanine in vacuum. Deca-alanine is commonly used as a toy system [<a class="reference internal" href="#References"><span class="std std-ref">4</span></a>]. Its equilibrium structure is a stable alpha-helix. Starting with the alpha-helix structure we will first perform a SMD simulation to pull it from a helix into a coil. Next, we will run 24 umbrella sampling windows in the range 1.3nm to 3.3nm. Finally, we will compute the PMF along
-<span class="math notranslate nohighlight">\(r\)</span>. Figure 2 shows the initial alpha-helix structure and the final extended coil structure.</p>
+<p>This tutorial will use umbrella sampling to compute the free energy profile of the end-to-end distance (<span class="math notranslate nohighlight">\(r\)</span>) of deca-alanine in vacuum. Deca-alanine is commonly used as a toy system [<a class="reference internal" href="#References"><span class="std std-ref">4</span></a>]. Its equilibrium structure is a stable alpha-helix. Starting with the alpha-helix structure we will first perform a SMD simulation to pull it from a helix into a coil. Next, we will run 24 umbrella sampling windows in the range <span class="math notranslate nohighlight">\(1.3\ \mathrm{nm}\)</span> to <span class="math notranslate nohighlight">\(3.3\ \mathrm{nm}\)</span>. Finally,
+we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</span>. Figure 2 shows the initial alpha-helix structure and the final extended coil structure.</p>
 <p><img alt="deca-alanine" src="../../_images/deca-alanine.png" /></p>
-<p><strong>Figure 2</strong> Structure of deca-alanine for end-to-end distance <span class="math notranslate nohighlight">\(r\)</span>=1.3 and <span class="math notranslate nohighlight">\(r\)</span>=3.3nm.</p>
+<p><strong>Figure 2</strong> Structure of deca-alanine for end-to-end distance <span class="math notranslate nohighlight">\(r=1.3\ \mathrm{nm}\)</span> and <span class="math notranslate nohighlight">\(r=3.3\ \mathrm{nm}\)</span>.</p>
 </section>
-<section id="Step-1---Setting-up-the-windows-with-SMD">
-<h2>Step 1 - Setting up the windows with SMD<a class="headerlink" href="#Step-1---Setting-up-the-windows-with-SMD" title="Link to this heading">¶</a></h2>
+<section id="Step-1-—-Setting-up-the-windows-with-SMD">
+<h2>Step 1 — Setting up the windows with SMD<a class="headerlink" href="#Step-1-—-Setting-up-the-windows-with-SMD" title="Link to this heading">¶</a></h2>
 <p>The script below does the following steps:</p>
 <ul class="simple">
 <li><p>Loads in a PDB file.</p></li>
 <li><p>Defines a collective variable between the first and last alpha-carbon.</p></li>
 <li><p>Adds a harmonic restraint to the CV.</p></li>
-<li><p>Runs a simulation where the location of the harmonic restraint is moved with constant velocity from 1.3nm to 3.3nm (This is called constant velocity steered MD).</p></li>
-<li><p>Saves a configuration for each of the 24 equally spaced windows between 1.3nm and 3.3nm.</p></li>
+<li><p>Runs a simulation where the location of the harmonic restraint is moved with constant velocity from <span class="math notranslate nohighlight">\(1.3\ \mathrm{nm}\)</span> to <span class="math notranslate nohighlight">\(3.3\ \mathrm{nm}\)</span> (This is called constant velocity steered MD).</p></li>
+<li><p>Saves a configuration for each of the 24 equally spaced windows between <span class="math notranslate nohighlight">\(1.3\ \mathrm{nm}\)</span> and <span class="math notranslate nohighlight">\(3.3\ \mathrm{nm}\)</span>.</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -195,11 +202,11 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </pre></div>
 </div>
 </div>
-<p>Once the script has completed running there will be 24 new pdb files called “window_n.pdb” where n is an integer from 0 to 23.</p>
+<p>Once the script has completed running there will be 24 new PDB files called “window_n.pdb” where n is an integer from 0 to 23.</p>
 <p>We now have the initial configurations for the umbrella sampling windows.</p>
 </section>
-<section id="Step-2---Running-the-windows">
-<h2>Step 2 - Running the windows<a class="headerlink" href="#Step-2---Running-the-windows" title="Link to this heading">¶</a></h2>
+<section id="Step-2-—-Running-the-windows">
+<h2>Step 2 — Running the windows<a class="headerlink" href="#Step-2-—-Running-the-windows" title="Link to this heading">¶</a></h2>
 <p>The script to run the windows is very similar to the script in step 1. The key differences are that we load in an initial structure that corresponds to each specific window and that the harmonic restraint on the CV does not move. The script below defines a function to run one window. It re-uses the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> we created in step 1.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -247,7 +254,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </pre></div>
 </div>
 </div>
-<p>We then run all 24 windows</p>
+<p>We then run all 24 windows:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -259,8 +266,8 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </div>
 <p>Once all the window simulations have completed you will have the CV timeseries files: “cv_values_window_n.txt”</p>
 </section>
-<section id="Step-3---Analysis---compute-the-PMF">
-<h2>Step 3 - Analysis - compute the PMF<a class="headerlink" href="#Step-3---Analysis---compute-the-PMF" title="Link to this heading">¶</a></h2>
+<section id="Step-3-—-Analysis-—-compute-the-PMF">
+<h2>Step 3 — Analysis — compute the PMF<a class="headerlink" href="#Step-3-—-Analysis-—-compute-the-PMF" title="Link to this heading">¶</a></h2>
 <p>The first thing to check is that the histograms of the CV timeseries have good overlap. Here is an example: <img alt="histogram" src="../../_images/hist.png" /></p>
 <p>You can plot yours with the script below (This script also produces the metadata file we will need for the next step).</p>
 <div class="nbinput nblast docutils container">
@@ -286,7 +293,7 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </pre></div>
 </div>
 </div>
-<p>To compute the PMF we can use WHAM [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>]. An easy to use and widely compatible implementation is the WHAM program by Alan Grossfield which can be downloaded here: <a class="reference external" href="http://membrane.urmc.rochester.edu/?page_id=126">http://membrane.urmc.rochester.edu/?page_id=126</a>. It is a C program so it will need to be compiled. The command below should work on Linux and Mac.</p>
+<p>To compute the PMF we can use WHAM [<a class="reference internal" href="#References"><span class="std std-ref">1</span></a>]. An easy to use and widely compatible implementation is the WHAM program by Alan Grossfield which can be downloaded <a class="reference external" href="http://membrane.urmc.rochester.edu/?page_id=126">here</a>. It is a C program so it will need to be compiled. The command below should work on Linux and Mac.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -298,8 +305,8 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 </div>
 </div>
 <p>To use <code class="docutils literal notranslate"><span class="pre">wham</span></code> we need a metadata file that lists the names of each CV timeseries file, the location of the harmonic restraints, and the value of the spring constant. We created this in the histogram plotting script earlier.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">wham</span></code> program is run using command line arguments. Read the documentation to find out more: <a class="reference external" href="http://membrane.urmc.rochester.edu/sites/default/files/wham/doc.pdf">http://membrane.urmc.rochester.edu/sites/default/files/wham/doc.pdf</a></p>
-<p>The command below will compute the PMF from our data. The command line arguments correspond to a range of 1.3nm to 3.3nm, 50 histogram bins, a tolerance of 1e-6, and a temperature of 300K.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">wham</span></code> program is run using command line arguments. Read the <a class="reference external" href="http://membrane.urmc.rochester.edu/sites/default/files/wham/doc.pdf">documentation</a> to find out more.</p>
+<p>The command below will compute the PMF from our data. The command line arguments correspond to a range of <span class="math notranslate nohighlight">\(1.3\ \mathrm{nm}\)</span> to <span class="math notranslate nohighlight">\(3.3\ \mathrm{nm}\)</span>, 50 histogram bins, a tolerance of <span class="math notranslate nohighlight">\(10^{-6}\)</span>, and a temperature of <span class="math notranslate nohighlight">\(300\ \mathrm{K}\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -352,15 +359,19 @@ Histogram Analysis Method (WHAM) is used to combine the windows and compute the 
 <section id="Steered-MD">
 <h3>Steered MD<a class="headerlink" href="#Steered-MD" title="Link to this heading">¶</a></h3>
 <p>Steered MD is a non-equilibrium method which means great care must be taken to ensure the results you get are meaningful. In this tutorial steered MD is just used in the setup phase and we do not calculate any properties with it. In constant velocity steered MD the biasing potential has the form</p>
-<p><span class="math notranslate nohighlight">\(w = \frac{1}{2} k (x-x_0(t))^2,
-x_0(t) = x_0(0)+vt,\)</span></p>
+<div class="math notranslate nohighlight">
+\[w = \frac{1}{2} k (x-x_0(t))^2,\]</div>
+<div class="math notranslate nohighlight">
+\[x_0(t) = x_0(0)+vt,\]</div>
 <p>which is just a moving version of the umbrella window bias potential.</p>
 </section>
 <section id="WHAM-equations">
 <h3>WHAM equations<a class="headerlink" href="#WHAM-equations" title="Link to this heading">¶</a></h3>
 <p>The WHAM equations [1] are:</p>
-<p><span class="math notranslate nohighlight">\(P(x_j) = \frac{\sum^{N_w}_i h_i(x_j)}{\sum^{N_w}_i n_i e^ {\beta(C_i - w_i(x_j))} },\)</span></p>
-<p><span class="math notranslate nohighlight">\(C_i = -k_B T \log\left( \sum_j P(x_j) e^{-\beta w_i(x_j)} \right).\)</span></p>
+<div class="math notranslate nohighlight">
+\[P(x_j) = \frac{\sum^{N_w}_i h_i(x_j)}{\sum^{N_w}_i n_i e^ {\beta(C_i - w_i(x_j))} },\]</div>
+<div class="math notranslate nohighlight">
+\[C_i = -k_B T \log\left( \sum_j P(x_j) e^{-\beta w_i(x_j)} \right).\]</div>
 <p>Where they have been written in a fully discretized form. <span class="math notranslate nohighlight">\(P(x_j)\)</span> is the resulting unbiased probability distribution where <span class="math notranslate nohighlight">\(j\)</span> is the index for the discrete set of <span class="math notranslate nohighlight">\(x_j\)</span> that <span class="math notranslate nohighlight">\(P\)</span> is computed over. <span class="math notranslate nohighlight">\(N_w\)</span> is the number of windows, <span class="math notranslate nohighlight">\(i\)</span> is the index of each window, <span class="math notranslate nohighlight">\(n_i\)</span> is the number of data points (realizations of <span class="math notranslate nohighlight">\(x\)</span>) in the <span class="math notranslate nohighlight">\(i\)</span>-th window trajectory, <span class="math notranslate nohighlight">\(h_i(x_j)\)</span> is the number of points in histogram bin <span class="math notranslate nohighlight">\(j\)</span> from trajectory
 <span class="math notranslate nohighlight">\(i\)</span>, and <span class="math notranslate nohighlight">\(w_i\)</span> are the biasing potentials. Both equations depend on each other so must be solved self-consistently. In practice this is solved iteratively: initial guesses of <span class="math notranslate nohighlight">\(C_i\)</span> are chosen, <span class="math notranslate nohighlight">\(P\)</span> is then calculated using the first equation, new values of <span class="math notranslate nohighlight">\(C_i\)</span> are then calculated using the second equation, and the process is iterated until the differences between successive values are sufficiently small.</p>
 </section>
@@ -375,11 +386,7 @@ x_0(t) = x_0(0)+vt,\)</span></p>
     <ul>
         <li>
           &larr;
-          <a href="Running_a_REST_simulation.html" title="Previous document">Run a REST simulation</a>
-        </li>
-        <li>
-          <a href="nuclear_quantum_effects.html" title="Next document">Nuclear Quantum Effects With RPMD and adQTB</a>
-          &rarr;
+          <a href="Running_a_REST_simulation.html" title="Previous document">Replica Exchange Solute Tempering (REST)</a>
         </li>
     </ul>
   </nav>
@@ -424,28 +431,23 @@ x_0(t) = x_0(0)+vt,\)</span></p>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="simulation_parameters.html">Selecting Values for Simulation Parameters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Coarse-Grained Polymer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical free energy calculations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
-<li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Run a REST simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Umbrella Sampling</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Introduction">Introduction</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Theory">Theory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Umbrella-sampling-simulations">Umbrella sampling simulations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#System">System</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Step-1---Setting-up-the-windows-with-SMD">Step 1 - Setting up the windows with SMD</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Step-2---Running-the-windows">Step 2 - Running the windows</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Step-3---Analysis---compute-the-PMF">Step 3 - Analysis - compute the PMF</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Step-1-—-Setting-up-the-windows-with-SMD">Step 1 — Setting up the windows with SMD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Step-2-—-Running-the-windows">Step 2 — Running the windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Step-3-—-Analysis-—-compute-the-PMF">Step 3 — Analysis — compute the PMF</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Next-steps">Next steps</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#References">References</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Appendix">Appendix</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
 </ul>
 </li>
 </ul>

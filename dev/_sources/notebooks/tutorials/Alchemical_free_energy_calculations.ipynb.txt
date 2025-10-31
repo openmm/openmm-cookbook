@@ -6,30 +6,25 @@
    "id": "6b971986",
    "metadata": {},
    "source": [
-    "## Alchemical free energy calculations\n",
+    "# Alchemical Free Energy Calculations\n",
     "\n",
     "*Computing the free energy of inserting a Lennard-Jones particle in a Lennard-Jones fluid.*\n",
     "\n",
     "This tutorial is described in [OpenMM 7 publication](http://dx.doi.org/10.1371/journal.pcbi.1005659).\n",
     "\n",
-    "### Basic concept\n",
+    "## Basic concept\n",
     "\n",
-    "OpenMM's custom forces---which allow the programmer to express a potential algebraically, potentially with multiple parameters that can be adjusted on the fly---allow a great deal of flexibility and simplicity in encoding potentials while still achieving high performance on GPUs. One common use of this facility is to convert standard interactions (such as Lennard-Jones potentials) into alchemically-modified potentials for the purposes of computing free energy differences. The alchemical free energy code [YANK](http://github.com/choderalab/yank), for example, uses a variety of custom forces to represent alchemically-modified potentials for [protein-ligand alchemical binding free energy calculations](http://dx.doi.org/10.1007/s10822-013-9689-8).\n",
+    "OpenMM's custom forces—which allow the programmer to express a potential algebraically, potentially with multiple parameters that can be adjusted on the fly—allow a great deal of flexibility and simplicity in encoding potentials while still achieving high performance on GPUs. One common use of this facility is to convert standard interactions (such as Lennard-Jones potentials) into alchemically-modified potentials for the purposes of computing free energy differences. The alchemical free energy code [YANK](http://github.com/choderalab/yank), for example, uses a variety of custom forces to represent alchemically-modified potentials for [protein-ligand alchemical binding free energy calculations](http://dx.doi.org/10.1007/s10822-013-9689-8).\n",
     "\n",
-    "### Defining alchemically-modified potentials\n",
+    "To run this tutorial, it is necessary to install the [OpenMMTools](https://openmmtools.readthedocs.io/) package and the [PyMBAR](https://pymbar.readthedocs.io/) package in addition to OpenMM.  If you are using `conda`, these extra packages can be installed by running:\n",
+    "```shell\n",
+    "conda install -c conda-forge openmmtools pymbar\n",
+    "```\n",
+    "For this tutorial, ensure that at PyMBAR 4 is installed, as it has been updated and will not work with PyMBAR 3 due to [changes in the PyMBAR API](https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html).\n",
     "\n",
-    "As a simple example of how this is facilitated by custom forces, consider computing the chemical potential of liquid argon by estimating the free energy of alchemically annihilating a Lennard-Jones particle. First, we create a simple Lennard-Jones fluid to represent liquid argon at 120 K and 80 atm, which can be conveniently done using the `testsystems` module of the conda-installable [openmmtools](http://github.com/choderalab/openmmtools) package:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "760b92bf",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# openmmtools is also needed for this notebook\n",
-    "!mamba install -y -c conda-forge openmmtools"
+    "## Defining alchemically-modified potentials\n",
+    "\n",
+    "As a simple example of how this is facilitated by custom forces, consider computing the chemical potential of liquid argon by estimating the free energy of alchemically annihilating a Lennard-Jones particle. First, we create a simple Lennard-Jones fluid to represent liquid argon at $120\\ \\mathrm{K}$ and $80\\ \\mathrm{atm}$, which can be conveniently done using the `testsystems` module of the [openmmtools](http://github.com/choderalab/openmmtools) package:"
    ]
   },
   {
@@ -39,19 +34,16 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "\n",
     "from openmm.app import *\n",
     "from openmm import *\n",
     "from openmm.unit import *\n",
     "from openmmtools.testsystems import LennardJonesFluid\n",
-    "\n",
     "\n",
     "# Simulation settings\n",
     "pressure = 80*atmospheres\n",
     "temperature = 120*kelvin\n",
     "collision_rate = 5/picoseconds\n",
     "timestep = 2.5*femtoseconds\n",
-    "\n",
     "\n",
     "# Create a Lennard Jones test fluid\n",
     "sigma = 3.4*angstrom\n",
@@ -81,8 +73,7 @@
    "outputs": [],
    "source": [
     "# Retrieve the NonbondedForce\n",
-    "forces = { force.__class__.__name__ : force for force in system.getForces() }\n",
-    "nbforce = forces['NonbondedForce']\n",
+    "(nbforce,) = (force for force in system.getForces() if isinstance(force, NonbondedForce))\n",
     "\n",
     "# Add a CustomNonbondedForce to handle only alchemically-modified interactions\n",
     "\n",
@@ -90,7 +81,6 @@
     "# and the other which contains all the other particles.\n",
     "alchemical_particles = set([0])\n",
     "chemical_particles = set(range(system.getNumParticles())) - alchemical_particles\n",
-    "\n",
     "\n",
     "# Define the energy function for the CustomNonbondedForce\n",
     "# when lambda is 1.0 it is a normal LJ potential, when lambda is 0.0 the interaction vanishes \n",
@@ -119,7 +109,7 @@
     "\n",
     "# Set the custom force to occur between just the alchemical particle and the other particles\n",
     "custom_force.addInteractionGroup(alchemical_particles, chemical_particles)\n",
-    "system.addForce(custom_force)\n"
+    "system.addForce(custom_force)"
    ]
   },
   {
@@ -128,7 +118,7 @@
    "id": "e1945939",
    "metadata": {},
    "source": [
-    "### Simulating alchemically-modified systems\n",
+    "## Simulating alchemically-modified systems\n",
     "\n",
     "We then create a `LangevinIntegrator` and `Simulation` to run the simulation, and run a series of simulations at different values of lambda by using `simulation.context.setParameter()` to update the alchemical parameter on the fly. For each configuration sample that is collected, we can easily scan through the energy at different lambda values by simply alternating between `simulation.context.setParameter()` to update lambda and `simulation.context.getState()` to retrieve potential energies at the new alchemical state."
    ]
@@ -149,9 +139,7 @@
     "\n",
     "# Minimize energy\n",
     "print('Minimizing energy...')\n",
-    "#LocalEnergyMinimizer.minimize(context)\n",
     "simulation.minimizeEnergy()\n",
-    "\n",
     "\n",
     "# Collect data\n",
     "\n",
@@ -176,8 +164,7 @@
     "        # Compute energies at all alchemical states\n",
     "        for l in range(nstates):\n",
     "            simulation.context.setParameter('lambda', lambdas[l])\n",
-    "            u_kln[k,l,iteration] = simulation.context.getState(getEnergy=True).getPotentialEnergy() / kT\n",
-    "\n"
+    "            u_kln[k,l,iteration] = simulation.context.getState(getEnergy=True).getPotentialEnergy() / kT"
    ]
   },
   {
@@ -188,9 +175,7 @@
    "source": [
     "### Analyzing the data with MBAR\n",
     "\n",
-    "Finally, the [multistate Bennett acceptance ratio (MBAR)](https://dx.doi.org/10.1063%2F1.2978177) is used to estimate the free energy of annihilating the particle using the conda-installable [pymbar](http://pymbar.org/) package. In order to estimate how much data must be discarded to equilibration, we use a scheme for [automated equilibration detection](http://dx.doi.org/10.1021/acs.jctc.5b00784) and subsequent extraction of decorrelated samples found in the [pymbar.timeseries](http://github.com/choderalab/pymbar) module.\n",
-    "\n",
-    "Please note that we have updated this tutorial for pymbar version 4 https://pymbar.readthedocs.io/en/master/moving_from_pymbar3.html."
+    "Finally, the [multistate Bennett acceptance ratio (MBAR)](https://dx.doi.org/10.1063%2F1.2978177) is used to estimate the free energy of annihilating the particle using the conda-installable [pymbar](http://pymbar.org/) package. In order to estimate how much data must be discarded to equilibration, we use a scheme for [automated equilibration detection](http://dx.doi.org/10.1021/acs.jctc.5b00784) and subsequent extraction of decorrelated samples found in the [pymbar.timeseries](http://github.com/choderalab/pymbar) module."
    ]
   },
   {
@@ -200,7 +185,6 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "\n",
     "# Estimate free energy of Lennard-Jones particle insertion\n",
     "from pymbar import MBAR, timeseries\n",
     "\n",
@@ -220,12 +204,11 @@
     "results = mbar.compute_free_energy_differences(compute_uncertainty=True)\n",
     "\n",
     "print(\"Free energy change to insert a particle = \", results['Delta_f'][nstates-1,0])\n",
-    "print(\"Statistical uncertainty = \", results['dDelta_f'][nstates-1,0])\n"
+    "print(\"Statistical uncertainty = \", results['dDelta_f'][nstates-1,0])"
    ]
   }
  ],
  "metadata": {
-  "required_files": [],
   "kernelspec": {
    "display_name": "Python 3 (ipykernel)",
    "language": "python",
@@ -241,11 +224,12 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.10.9"
+   "version": "3.13.7"
   },
   "nbsphinx": {
    "execute": "never"
   },
+  "required_files": [],
   "tags": [
    "tutorial"
   ],

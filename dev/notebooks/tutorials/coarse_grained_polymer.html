@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Coarse-Grained Polymer &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <title>Implementing a Coarse-Grained Polymer Force Field &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
@@ -15,10 +15,12 @@
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Alchemical free energy calculations" href="Alchemical_free_energy_calculations.html" />
-    <link rel="prev" title="Selecting Values for Simulation Parameters" href="simulation_parameters.html" />
+    <link rel="next" title="Nuclear Quantum Effects With RPMD and adQTB" href="nuclear_quantum_effects.html" />
+    <link rel="prev" title="Alchemical Free Energy Calculations" href="Alchemical_free_energy_calculations.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -40,24 +42,23 @@
     <a href="coarse_grained_polymer.ipynb">Download Notebook</a>
     <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/coarse_grained_polymer.ipynb">View in GitHub</a>
     <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/coarse_grained_polymer.ipynb">Open in Google Colab</a>
-</div><span class="target" id="index-0"></span><section id="Coarse-Grained-Polymer">
-<h1>Coarse-Grained Polymer<a class="headerlink" href="#Coarse-Grained-Polymer" title="Link to this heading">¶</a></h1>
-<p>This tutorial will give a basic example of creating a custom coarse-grained model in OpenMM. First it will demonstrate how to setup a molecular topology from scratch using the Python API. Next it will cover two methods for defining a custom forcefield:</p>
+</div><span class="target" id="index-0"></span><section id="Implementing-a-Coarse-Grained-Polymer-Force-Field">
+<h1>Implementing a Coarse-Grained Polymer Force Field<a class="headerlink" href="#Implementing-a-Coarse-Grained-Polymer-Force-Field" title="Link to this heading">¶</a></h1>
+<p>This tutorial will give a basic example of creating a custom coarse-grained model in OpenMM. First it will demonstrate how to setup a molecular topology from scratch using the Python API. Next it will cover two methods for defining a custom force field:</p>
 <ol class="arabic simple">
 <li><p>Using the Python API</p></li>
-<li><p>Creating a forcefield xml file.</p></li>
+<li><p>Creating a force field XML file.</p></li>
 </ol>
 <p>It assumes you are familiar with the concept of coarse-graining and want to learn how to implement your CG model in OpenMM.</p>
 <section id="Example-System">
 <h2>Example System<a class="headerlink" href="#Example-System" title="Link to this heading">¶</a></h2>
-<p>The example system in this tutorial is a Lennard-Jones bead-spring polymer model. We will demonstrate how to create a polymer melt of multiple chains. Note that we will set the bond lengths, particle mass, and Lennard-Jones interaction parameters to physical values that are typical of a residue level coarse-grained protein model (e.g. [1]).</p>
-</section>
-<section id="Creating-CG-Topology">
-<h2>Creating CG Topology<a class="headerlink" href="#Creating-CG-Topology" title="Link to this heading">¶</a></h2>
+<p>The example system in this tutorial is a Lennard-Jones bead-spring polymer model. We will demonstrate how to create a polymer melt of multiple chains. Note that we will set the bond lengths, particle mass, and Lennard-Jones interaction parameters to physical values that are typical of a residue level coarse-grained protein model (e.g. <a class="reference internal" href="#References"><span class="std std-ref">[1]</span></a>).</p>
+<section id="Creating-a-CG-Topology">
+<h3>Creating a CG Topology<a class="headerlink" href="#Creating-a-CG-Topology" title="Link to this heading">¶</a></h3>
 <p>To demonstrate the full flexibility of OpenMM we will use the Python API to define the topology. Note that you could create a PDB file and read that in instead.</p>
 <p>First we do the usual imports for OpenMM.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mm</span>
@@ -70,16 +71,16 @@
 </div>
 <p>We can create a new element to represent our CG bead. We set the atomic index to a large number, however the actual value is unimportant in this simulation and is just used for book-keeping purposes. We set the mass to approximate the molar mass of an amino-acid. The mass we define is important as it needs to be consistent with the chosen integration timestep.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">cgElement</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;CG-element&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;CG&#39;</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cgElement</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;CG-element&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;CG&#39;</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>We then create an empty <code class="docutils literal notranslate"><span class="pre">Topology</span></code> object.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make an empty topology</span>
@@ -88,8 +89,8 @@
 </div>
 </div>
 <p>Now we can create our simulation topology using python scripting. We will define <code class="docutils literal notranslate"><span class="pre">M</span> <span class="pre">=</span> <span class="pre">100</span></code> polymer chains which each have <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">10</span></code> beads. As we loop over the atoms in each chain we also record the list of bonds.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Number of polymer chains</span>
@@ -124,12 +125,20 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Topology; 100 chains, 1000 residues, 1000 atoms, 900 bonds&gt;
+</pre></div></div>
+</div>
 </section>
-<section id="Define-the-initial-positions">
-<h2>Define the initial positions<a class="headerlink" href="#Define-the-initial-positions" title="Link to this heading">¶</a></h2>
-<p>As we have created the topology from scratch we will also need to define the initial positions from scratch. We will arrange our 100 polymer chains in a 10x10 grid in the X,Y plane and each polymer will be in a linear configuration in the Z direction. Furthermore, we set the simulation box to be cubic with length 11nm.</p>
+<section id="Defining-Initial-Positions">
+<h3>Defining Initial Positions<a class="headerlink" href="#Defining-Initial-Positions" title="Link to this heading">¶</a></h3>
+<p>As we have created the topology from scratch we will also need to define the initial positions from scratch. We will arrange our 100 polymer chains in a 10-by-10 grid in the <em>xy</em>-plane and each polymer will be in a linear configuration in the <em>z</em> direction. Furthermore, we set the simulation box to be cubic with length <span class="math notranslate nohighlight">\(11\ \mathrm{nm}\)</span>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">positions</span> <span class="o">=</span> <span class="p">[]</span>
@@ -151,7 +160,7 @@
 </div>
 <p>We can check the initial topology by saving it to a PDB file.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># output the initial configuration</span>
@@ -162,20 +171,21 @@
 </div>
 <p>The initial configuration looks like this: <img alt="initial configuration" src="../../_images/initial_config.png" /></p>
 </section>
-<section id="Defining-the-force-field">
-<h2>Defining the force field<a class="headerlink" href="#Defining-the-force-field" title="Link to this heading">¶</a></h2>
-<p>We will cover two methods for defining the forcefield:</p>
+</section>
+<section id="Defining-the-Force-Field">
+<h2>Defining the Force Field<a class="headerlink" href="#Defining-the-Force-Field" title="Link to this heading">¶</a></h2>
+<p>We will cover two methods for defining the force field:</p>
 <ol class="arabic simple">
 <li><p>Using the Python API.</p></li>
-<li><p>Creating a forcefield xml file.</p></li>
+<li><p>Creating a force field XML file.</p></li>
 </ol>
-<p>Both methods achieve the same result of defining the forcefield. There are pros and cons of both ways. The key points are that using the Python API is more flexible, while creating a forcefield xml file makes it easier to share your forcefield and helps reproducibility. This is demonstrated in the other OpenMM tutorials — the standard forcefields such as Amber are distributed with OpenMM as xml files, while the custom forces used to do free energy calculations are defined using the Python API.</p>
-</section>
-<section id="Defining-a-force-field-using-the-Python-API">
-<h2>Defining a force-field using the Python API<a class="headerlink" href="#Defining-a-force-field-using-the-Python-API" title="Link to this heading">¶</a></h2>
+<p>Both methods achieve the same result of defining the force field. There are pros and cons of both ways. The key points are that using the Python API is more flexible, while creating a force field XML file makes it easier to share your force field and helps reproducibility. This is demonstrated in the other OpenMM tutorials: the standard force fields such as Amber are distributed with OpenMM as XML files, while the custom forces used to do free energy calculations are defined using the Python
+API.</p>
+<section id="Building-a-System-Using-the-Python-API">
+<h3>Building a System Using the Python API<a class="headerlink" href="#Building-a-System-Using-the-Python-API" title="Link to this heading">¶</a></h3>
 <p>We can create instances of the OpenMM <a class="reference external" href="http://docs.openmm.org/latest/api-python/library.html#forces">Force classes</a>, assign parameters, and add them to the system. First we must create a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html#openmm.openmm.System">System</a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the system and add the particles to it</span>
@@ -186,13 +196,13 @@
 </pre></div>
 </div>
 </div>
-<p>We will then create a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicBondForce.html#openmm.openmm.HarmonicBondForce">HarmonicBondForce</a> and a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html#openmm.openmm.CustomNonbondedForce">CustomNonBondedForce</a>.</p>
-<p>For each bond that is defined in the topology we need to add it to the <code class="docutils literal notranslate"><span class="pre">HarmonicBondForce</span></code>. We set the equilibrium bond lengths and spring constants to be 0.38 nm and 1000 kJ/mol/nm respectively which are consistent with parameters used in amino-acid level CG models [1].</p>
-<p>We define the <code class="docutils literal notranslate"><span class="pre">CustomNonBondedForce</span></code> to be a Lennard-Jones interaction. We set the value of sigma to be 0.5nm to approximate the size of an amino acid and the value of epsilon to 1 kJ/mol to create a potential that is attractive at 300K. Please do not use these parameters for real simulations. You should consult the literature and choose an appropriate CG force-field or systematically create your own parameter set! Finally, we add exclusions between atoms that are directly bonded and set a
-cutoff of 1.5nm.</p>
-<p>Note that because we have defined a Lennard-Jones potential we could have used the standard <code class="docutils literal notranslate"><span class="pre">`NonBondedForce</span></code> &lt;<a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce">http://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce</a>&gt;`__, but to demonstrate the flexibility to use different user defined potentials we have used <code class="docutils literal notranslate"><span class="pre">CustomNonBondedForce</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>We will then create a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.HarmonicBondForce.html#openmm.openmm.HarmonicBondForce">HarmonicBondForce</a> and a <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html#openmm.openmm.CustomNonbondedForce">CustomNonbondedForce</a>.</p>
+<p>For each bond that is defined in the topology we need to add it to the <code class="docutils literal notranslate"><span class="pre">HarmonicBondForce</span></code>. We set the equilibrium bond lengths and spring constants to be <span class="math notranslate nohighlight">\(0.38\ \mathrm{nm}\)</span> and <span class="math notranslate nohighlight">\(1000\ \mathrm{kJ/mol/nm}\)</span> respectively which are consistent with parameters used in amino-acid level CG models <a class="reference internal" href="#References"><span class="std std-ref">[1]</span></a>.</p>
+<p>We define the <code class="docutils literal notranslate"><span class="pre">CustomNonbondedForce</span></code> to be a Lennard-Jones interaction. We set the value of sigma to be <span class="math notranslate nohighlight">\(0.5\ \mathrm{nm}\)</span> to approximate the size of an amino acid and the value of epsilon to <span class="math notranslate nohighlight">\(1\ \mathrm{kJ/mol}\)</span> to create a potential that is attractive at <span class="math notranslate nohighlight">\(300\ \mathrm{K}\)</span>. Please do not use these parameters for real simulations. You should consult the literature and choose an appropriate CG force field or systematically create your own parameter set! Finally, we add
+exclusions between atoms that are directly bonded and set a cutoff of <span class="math notranslate nohighlight">\(1.5\ \mathrm{nm}\)</span>.</p>
+<p>Note that because we have defined a Lennard-Jones potential we could have used the standard <a class="reference external" href="http://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>, but to demonstrate the flexibility to use different user defined potentials we have used <code class="docutils literal notranslate"><span class="pre">CustomNonbondedForce</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">harmonic_bond_force</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">HarmonicBondForce</span><span class="p">()</span>
@@ -225,17 +235,26 @@ cutoff of 1.5nm.</p>
 <span class="c1"># Add the forces to the system</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">harmonic_bond_force</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">custom_nb_force</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
-<p>The system is now ready to simulate. Before we run the simulation we will describe the other method of defining a forcefield by creating a custom forcefield xml file.</p>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>The system is now ready to simulate. Before we run the simulation we will describe the other method of defining a force field by creating a custom force field XML file.</p>
 </section>
-<section id="Creating-a-force-field-xml-file">
-<h2>Creating a force-field xml file<a class="headerlink" href="#Creating-a-force-field-xml-file" title="Link to this heading">¶</a></h2>
-<p>Alternatively, we can create a custom force-field xml file for our system. You should look here first for the full information: <a class="reference external" href="http://docs.openmm.org/latest/userguide/application/05_creating_ffs.html">http://docs.openmm.org/latest/userguide/application/05_creating_ffs.html</a>.</p>
-<p>You will need to create a new file called “cg_ff.xml” using a text editor of your choice. Then paste the following lines into it:</p>
+<section id="Creating-a-Force-Field-XML-File">
+<h3>Creating a Force Field XML File<a class="headerlink" href="#Creating-a-Force-Field-XML-File" title="Link to this heading">¶</a></h3>
+<p>Alternatively, we can create a custom force field XML file for our system. This is documented in detail <a class="reference external" href="https://docs.openmm.org/latest/userguide/application/06_creating_ffs.html">in the user guide</a>.</p>
+<p>You will need to create a new file called <code class="docutils literal notranslate"><span class="pre">cg_ff.xml</span></code> using a text editor of your choice. Then paste the following lines into it:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cm">&lt;!-- cg_ff.xml</span>
-<span class="cm">Coarse-grained forcefield for a bead-spring polymer. --&gt;</span>
+<span class="cm">Coarse-grained force field for a bead-spring polymer. --&gt;</span>
 <span class="nt">&lt;ForceField&gt;</span>
 
 <span class="w">    </span><span class="nt">&lt;AtomTypes&gt;</span>
@@ -274,12 +293,13 @@ cutoff of 1.5nm.</p>
 <span class="nt">&lt;/ForceField&gt;</span>
 </pre></div>
 </div>
-<p>(If you have cloned the cookbook repo then this file will already exist) The comments in the above code explain what the difference sections are for.</p>
-<section id="Create-the-system">
-<h3>Create the system<a class="headerlink" href="#Create-the-system" title="Link to this heading">¶</a></h3>
+<p>(If you have cloned the cookbook repo then this file will already exist.) The comments in the above code explain what the different sections are for.</p>
+</section>
+<section id="Creating-the-System">
+<h3>Creating the System<a class="headerlink" href="#Creating-the-System" title="Link to this heading">¶</a></h3>
 <p>We can now load in our previously created custom <code class="docutils literal notranslate"><span class="pre">ForceField</span></code> and use the <code class="docutils literal notranslate"><span class="pre">createSystem</span></code> method with the <code class="docutils literal notranslate"><span class="pre">topology</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># load in the ForceField we created</span>
@@ -288,9 +308,9 @@ cutoff of 1.5nm.</p>
 </pre></div>
 </div>
 </div>
-<p>We can compare the two systems to check if they are the same. A simple way to do this is to serialize the systems as save them as xml files.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>We can compare the two systems to check if they are the same. A simple way to do this is to serialize the systems as save them as XML files.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;system1.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
@@ -303,14 +323,23 @@ cutoff of 1.5nm.</p>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3830a3831
+&gt;            &lt;Force forceGroup=&#34;0&#34; frequency=&#34;1&#34; name=&#34;CMMotionRemover&#34; type=&#34;CMMotionRemover&#34; version=&#34;1&#34;/&gt;
+</pre></div></div>
+</div>
 <p>We actually find they are slightly different. <code class="docutils literal notranslate"><span class="pre">system2</span></code> created by <code class="docutils literal notranslate"><span class="pre">ForceField.createSystem</span></code> has a <code class="docutils literal notranslate"><span class="pre">CMMotionRemover</span></code> that was added by default when using the <code class="docutils literal notranslate"><span class="pre">createSystem</span></code> method. If we wanted to we could add this to the first system.</p>
 </section>
 </section>
-<section id="Setup-and-run-the-simulation">
-<h2>Setup and run the simulation<a class="headerlink" href="#Setup-and-run-the-simulation" title="Link to this heading">¶</a></h2>
-<p>We will use a <code class="docutils literal notranslate"><span class="pre">LangevinMiddleIntegrator</span></code> with a friction term of 0.01ps^-1 and a timestep of 0.01ps as used in similar coarse-grained polymer models [1]. For your own models these parameters will be important and you will need to choose them carefully!</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<section id="Running-the-Simulation">
+<h2>Running the Simulation<a class="headerlink" href="#Running-the-Simulation" title="Link to this heading">¶</a></h2>
+<p>We will use a <code class="docutils literal notranslate"><span class="pre">LangevinMiddleIntegrator</span></code> with a friction term of <span class="math notranslate nohighlight">\(0.01\ \mathrm{ps^{-1}}\)</span> and a timestep of <span class="math notranslate nohighlight">\(0.01\ \mathrm{ps}\)</span> as used in similar coarse-grained polymer models <a class="reference internal" href="#References"><span class="std std-ref">[1]</span></a>. For your own models these parameters will be important and you will need to choose them carefully! See the tutorial on <a class="reference internal" href="simulation_parameters.html"><span class="doc">choosing simulation parameters</span></a> for more details.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span><span class="p">,</span> <span class="mf">0.01</span><span class="o">/</span><span class="n">unit</span><span class="o">.</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.010</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">picoseconds</span><span class="p">)</span>
@@ -322,7 +351,7 @@ cutoff of 1.5nm.</p>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">DCDReporter</span><span class="p">(</span><span class="s1">&#39;traj.dcd&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">enforcePeriodicBox</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
 <span class="c1"># Report information to the screen as the simulation runs</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
 
@@ -345,6 +374,25 @@ cutoff of 1.5nm.</p>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+#&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;,&#34;Box Volume (nm^3)&#34;,&#34;Speed (ns/day)&#34;
+10000,-2386.9404315948486,272.3156392791507,1331.0,0
+20000,-2181.3837904930115,284.380773103632,829.9882985857552,7.59e+03
+30000,-2318.7430081367493,282.7780421796789,377.31014378573184,7.55e+03
+40000,-2472.6914694309235,294.1179399674378,236.26414785705612,7.49e+03
+50000,-2849.996768951416,325.55545790607647,162.30466840921667,7.4e+03
+60000,-2936.4355487823486,300.32171489029105,155.9269807631171,7.33e+03
+70000,-3249.750735282898,324.04418408543705,152.68025370626958,7.29e+03
+80000,-3259.525100708008,305.9421179946827,150.91532595094947,7.3e+03
+90000,-3273.161273956299,289.05949299849726,148.34101529727369,7.32e+03
+100000,-3339.231357574463,297.14068336450276,150.14674964102986,7.34e+03
+110000,-3430.790554046631,295.43858680347336,153.1792452970646,7.34e+03
+</pre></div></div>
+</div>
 <p>The equilibrated system will be a polymer melt that looks similar to this: <img alt="equilibrated polymer melt" src="../../_images/equilibrated_config.png" /></p>
 </section>
 <section id="References">
@@ -361,10 +409,10 @@ cutoff of 1.5nm.</p>
     <ul>
         <li>
           &larr;
-          <a href="simulation_parameters.html" title="Previous document">Selecting Values for Simulation Parameters</a>
+          <a href="Alchemical_free_energy_calculations.html" title="Previous document">Alchemical Free Energy Calculations</a>
         </li>
         <li>
-          <a href="Alchemical_free_energy_calculations.html" title="Next document">Alchemical free energy calculations</a>
+          <a href="nuclear_quantum_effects.html" title="Next document">Nuclear Quantum Effects With RPMD and adQTB</a>
           &rarr;
         </li>
     </ul>
@@ -410,26 +458,17 @@ cutoff of 1.5nm.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="simulation_parameters.html">Selecting Values for Simulation Parameters</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Coarse-Grained Polymer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Implementing a Coarse-Grained Polymer Force Field</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Example-System">Example System</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Creating-CG-Topology">Creating CG Topology</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Define-the-initial-positions">Define the initial positions</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Defining-the-force-field">Defining the force field</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Defining-a-force-field-using-the-Python-API">Defining a force-field using the Python API</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Creating-a-force-field-xml-file">Creating a force-field xml file</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Setup-and-run-the-simulation">Setup and run the simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Defining-the-Force-Field">Defining the Force Field</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Running-the-Simulation">Running the Simulation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical free energy calculations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Beta_2_adrenergic_receptor_B2AR_membrane_protein_simulation_with_CHARMM.html">Beta-2-adrenergic receptor (B2AR) membrane protein simulation with CHARMM</a></li>
-<li class="toctree-l3"><a class="reference internal" href="HSP90_with_ADPMg2_simulation.html">HSP90 with ADP:Mg2+ simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_a_multisite_water_model_TIP4P-Ew.html">Histone methyltransferase simulation with a multisite water model (TIP4P-Ew)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Histone_methyltransferase_simulation_with_multisite_Zn2_structural_ions.html">Histone methyltransferase simulation with multisite Zn2+ structural ions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Run a REST simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
 </ul>
 </li>
 </ul>
