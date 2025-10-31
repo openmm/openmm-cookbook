@@ -14,6 +14,7 @@ working through these tutorials in order is the best place to start.
     notebooks/tutorials/getting_started
     notebooks/tutorials/loading_and_reporting
     notebooks/tutorials/building_systems
+    notebooks/tutorials/simulation_parameters
 
 Beyond the Basics
 -----------------
@@ -28,5 +29,4 @@ examples of using OpenMM to perform more complex simulation tasks.
     notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/nuclear_quantum_effects
     notebooks/tutorials/Running_a_REST_simulation
-    notebooks/tutorials/simulation_parameters
     notebooks/tutorials/umbrella_sampling
