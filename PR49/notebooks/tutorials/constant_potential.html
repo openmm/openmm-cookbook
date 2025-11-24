@@ -46,23 +46,23 @@
 <h1>Simulating Conductive Electrodes with the Constant Potential Method<a class="headerlink" href="#Simulating-Conductive-Electrodes-with-the-Constant-Potential-Method" title="Link to this heading">¶</a></h1>
 <p>The constant potential molecular dynamics method is an approach for simulating conductive materials with delocalized charges, and maintaining them at prescribed electric potentials. In constant potential simulations, the charges on a prescribed set of particles (those belonging to the conductive material, or the “electrode particles”) are allowed to fluctuate as they interact with other particles in the system. This is useful for studying various kinds of electrochemical systems, <em>e.g.</em>, the
 electrode-electrolyte interface in a parallel plate capacitor. In this tutorial, we will show how to set up a constant potential simulation using OpenMM’s implementation of this method. Specifically, we will use a capacitor system described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>, with an aqueous NaCl electrolyte sandwiched between two Au electrodes:</p>
-<p><img alt="120bef27a94045bc8c183b4ffc65d95f" class="no-scaled-link" src="../../_images/constant_potential_1.png" style="width: 800px;" /></p>
+<p><img alt="cd97e741f97843b2917035a4a9d3d330" class="no-scaled-link" src="../../_images/constant_potential_1.png" style="width: 800px;" /></p>
 <section id="Theory">
 <h2>Theory<a class="headerlink" href="#Theory" title="Link to this heading">¶</a></h2>
 <p>A full exposition of the theory behind constant potential simulations is beyond the scope of this tutorial, but it is useful to be acquainted with the basics before getting started. In ordinary molecular simulations with fixed charges, we wish to sample configurations <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span> of <span class="math notranslate nohighlight">\(N\)</span> particles based on some potential energy function <span class="math notranslate nohighlight">\(U(\mathbf{r}^N)\)</span>. In the constant potential approach, some number <span class="math notranslate nohighlight">\(M\)</span> of particles are allowed to have varying charges, so that we
 have <span class="math notranslate nohighlight">\(U(\mathbf{r}^N,\mathbf{q}^M)\)</span>. The commonly used method implemented by OpenMM for constant potential simulations uses a Born-Oppenheimer-like approach in which <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span> is chosen at every step to minimize <span class="math notranslate nohighlight">\(U\)</span> for the given <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span>. Since electrostatic interactions can be treated with Coulomb’s law, <span class="math notranslate nohighlight">\(U\)</span> is quadratic in the <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span>, and minimizing it is equivalent to solving a linear system.</p>
 <p>Actually computing the coefficients of this system, which are functions of the particle positions, is more complex. For parallel plate capacitor geometries like the one shown above, the system effectively has periodic boundary conditions in the plane of the electrodes, but is non-periodic in the direction normal to their surfaces.</p>
-<p><img alt="77270cf12ba949508adeb28d0c96b555" class="no-scaled-link" src="../../_images/constant_potential_2.png" style="width: 800px;" /></p>
+<p><img alt="235719ebdca64cc48a918ffb144b3b2b" class="no-scaled-link" src="../../_images/constant_potential_2.png" style="width: 800px;" /></p>
 <p>There are a few options for using periodic boundary conditions in all three dimensions so that standard tools for computing the electrostatic interactions, such as the particle mesh Ewald method, can be employed. Leaving empty space between periodic images introduces various complications, since this effectively creates a pair of dissimilar capacitors, one containing an electrolyte material of interest, and another containing vacuum. Another option is a double cell geometry, with each periodic
 image containing the capacitor system of interest and a reflected copy of it. This keeps the net potential difference across the simulation cell, and its net dipole moment, zero:</p>
-<p><img alt="8ce619fdf8d84175974ab5d214278875" class="no-scaled-link" src="../../_images/constant_potential_3.png" style="width: 800px;" /></p>
+<p><img alt="fce879c9f6544109bf3981c8b9aa347d" class="no-scaled-link" src="../../_images/constant_potential_3.png" style="width: 800px;" /></p>
 <p>The implementation in OpenMM supports such geometries, but they are more computationally expensive, requiring double the number of particles in the system of interest. In this tutorial, we show how to use the finite field method described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 2</span></a>, in which only a single copy of the system is needed, and an external electric field is applied to all charges in the system to maintain the desired electric potential difference across the periodic box:</p>
-<p><img alt="ff7945f6e936477dba0a209a2eb2884c" class="no-scaled-link" src="../../_images/constant_potential_4.png" style="width: 800px;" /></p>
+<p><img alt="b243242d40cd45e6969aceb59a975391" class="no-scaled-link" src="../../_images/constant_potential_4.png" style="width: 800px;" /></p>
 <p>There are many more details that this tutorial will not explore, but the reader is referred to <a class="reference internal" href="#References"><span class="std std-ref">Refs. 1-3</span></a> for more information about the theory, as well as to the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">user guide</a> for the details of the specific implementation in OpenMM.</p>
 </section>
 <section id="Setting-Parameters">
 <h2>Setting Parameters<a class="headerlink" href="#Setting-Parameters" title="Link to this heading">¶</a></h2>
-<p>To begin writing a script implementing our capacitor system in OpenMM, we will import OpenMM (as well as NumPy, which is just used to read in the initial coordinates for this example).</p>
+<p>To begin writing a script implementing the capacitor system in OpenMM, we first import the required packages:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -70,87 +70,14 @@ image containing the capacitor system of interest and a reflected copy of it. Th
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">openmm</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">openmm.app</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">openmm.unit</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 </pre></div>
 </div>
 </div>
-<p>We now define various parameters for the simulation. An appropriate geometry, force field, and parameters for a constant potential simulation will depend on the system you are interested in; here, we use <a class="reference external" href="https://gitlab.com/ampere2/scalfi_jcp_153_174704_2020/-/blob/8bdb701c9ab7a9d914d1efce7efd90c08e5432b0/typical_input_files/gold_NaCl1M/runtime.inpt">data provided with</a> the work of <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>. We begin with the periodic box dimensions for the simulation:</p>
+<p>We can now define various parameters for the simulation. An appropriate geometry, force field, and parameters for a constant potential simulation will depend on the system you are interested in; here, we use <a class="reference external" href="https://gitlab.com/ampere2/scalfi_jcp_153_174704_2020/-/blob/8bdb701c9ab7a9d914d1efce7efd90c08e5432b0/typical_input_files/gold_NaCl1M/runtime.inpt">data provided with</a> the work of <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>. Generic interaction-related parameters can be set in force field files that we
+will load later, but we will specify constant potential-related parameters as well as integration settings directly in the script.</p>
+<p>We begin with the potential we want to place across the plates of the capacitor:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_XY</span> <span class="o">=</span> <span class="mf">69.2206679755</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
-<span class="n">L_Z</span> <span class="o">=</span> <span class="mf">204.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
-<span class="n">VECTORS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="p">(</span><span class="n">L_XY</span><span class="p">,</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">,</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">,</span> <span class="n">L_XY</span><span class="p">,</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">,</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">,</span> <span class="n">L_Z</span><span class="p">),</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>The electrolyte between the plates contains 2160 water molecules and 39 NaCl ion pairs. Each electrode contains 1620 gold atoms:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_WATER</span> <span class="o">=</span> <span class="mi">2160</span>
-<span class="n">N_NACL</span> <span class="o">=</span> <span class="mi">39</span>
-<span class="n">N_AU</span> <span class="o">=</span> <span class="mi">1620</span>
-</pre></div>
-</div>
-</div>
-<p>We now define some standard parameters for each of the atom types:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Atom masses:</span>
-<span class="n">M_H</span> <span class="o">=</span> <span class="mf">1.008</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
-<span class="n">M_O</span> <span class="o">=</span> <span class="mf">15.9994</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
-<span class="n">M_NA</span> <span class="o">=</span> <span class="mf">22.9898</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
-<span class="n">M_CL</span> <span class="o">=</span> <span class="mf">35.453</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">dalton</span>
-
-<span class="c1"># Lennard-Jones energy scales:</span>
-<span class="n">EPS_O</span> <span class="o">=</span> <span class="mf">0.6502</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
-<span class="n">EPS_NA</span> <span class="o">=</span> <span class="mf">0.4184</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
-<span class="n">EPS_CL</span> <span class="o">=</span> <span class="mf">0.4184</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
-<span class="n">EPS_AU</span> <span class="o">=</span> <span class="mf">22.13336</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kilojoule_per_mole</span>
-
-<span class="c1"># Lennard-Jones length scales:</span>
-<span class="n">SIG_O</span> <span class="o">=</span> <span class="mf">3.166</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">angstrom</span>
-<span class="n">SIG_NA</span> <span class="o">=</span> <span class="mf">2.584</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">angstrom</span>
-<span class="n">SIG_CL</span> <span class="o">=</span> <span class="mf">4.401</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">angstrom</span>
-<span class="n">SIG_AU</span> <span class="o">=</span> <span class="mf">2.951</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">angstrom</span>
-
-<span class="c1"># H atom charge for water:</span>
-<span class="n">Q_H</span> <span class="o">=</span> <span class="mf">0.4238</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span>
-</pre></div>
-</div>
-</div>
-<p>This simulation uses the rigid 3-site SPC/E water model; the distances between its atoms are as follows:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_OH</span> <span class="o">=</span> <span class="mf">1.88972</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
-<span class="n">L_HH</span> <span class="o">=</span> <span class="mf">3.08587</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
-</pre></div>
-</div>
-</div>
-<p>Next, we define the cutoff distance for Lennard-Jones and short-range electrostatic interactions:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">R_CUT</span> <span class="o">=</span> <span class="mf">22.68</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
-</pre></div>
-</div>
-</div>
-<p>We can now define the potential we want to place across the plates of the capacitor:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VOLT</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">volt</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span>
@@ -164,7 +91,7 @@ Scratch introductory tutorial</span></a>.</p>
 potential energy with respect to the charges. The resulting functional form of the electrostatic interactions is detailed in the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">theory section of the user guide</a>.</p>
 <p>For the matter of choosing an appropriate value of <span class="math notranslate nohighlight">\(\eta\)</span> for a given system, the reader is referred to <a class="reference internal" href="#References"><span class="std std-ref">Ref. 4</span></a>. Here, we simply use the value chosen in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ETA</span> <span class="o">=</span> <span class="mf">0.955234657</span> <span class="o">/</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
@@ -173,7 +100,7 @@ potential energy with respect to the charges. The resulting functional form of t
 </div>
 <p>OpenMM’s constant potential implementation supports the Thomas-Fermi model, a simple semiclassical approximation to account for screening in imperfect conductors (for details, refer again to <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>). This model requires a Thomas-Fermi length controlling the strength of the screening, and a volume per atom corresponding to the reciprocal of the atomic number density in the electrode material (sometimes referred to as a “Voronoi volume” in the literature).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_TF</span> <span class="o">=</span> <span class="mf">9.44863</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span>
@@ -181,172 +108,184 @@ potential energy with respect to the charges. The resulting functional form of t
 </pre></div>
 </div>
 </div>
-<p>Finally, we set some standard parameters for integrating the system. For more details on choosing appropriate integration parameters, see the <a class="reference internal" href="simulation_parameters.html"><span class="doc">Selecting Values for Simulation Parameters</span></a> tutorial.</p>
+<p>Finally, we specify a cutoff distance for the nonbonded interactions and set some standard parameters for integrating the system. Note that for the constant potential method, the cutoff distance should be large enough to avoid truncation artifacts in the interactions of the Gaussian charge distributions on the electrode atoms (see the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">theory section</a> of the user guide). For typical values of the
+cutoff distance <span class="math notranslate nohighlight">\(\ge10\ \mathrm{Å}\)</span> and Gaussian parameter <span class="math notranslate nohighlight">\(\eta\approx 2/\mathrm{Å}\)</span>, this should not be an issue. For more details on choosing appropriate integration parameters, see the <a class="reference internal" href="simulation_parameters.html"><span class="doc">Selecting Values for Simulation Parameters</span></a> tutorial.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TEMP</span> <span class="o">=</span> <span class="mf">298.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">R_CUT</span> <span class="o">=</span> <span class="mf">22.68</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span> <span class="c1"># 12 Å</span>
+<span class="n">TEMP</span> <span class="o">=</span> <span class="mf">298.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span>
 <span class="n">FRICTION</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">100.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">femtosecond</span><span class="p">)</span>
 <span class="n">STEP</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">femtosecond</span>
 </pre></div>
 </div>
 </div>
 </section>
-<section id="Building-the-System">
-<h2>Building the System<a class="headerlink" href="#Building-the-System" title="Link to this heading">¶</a></h2>
-<p>With all of the parameters defined, we can start building the OpenMM <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> object. For the Lennard-Jones interactions, we will use OpenMM’s <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>, and for the electrostatic interactions and electrode charges, we will use the
-<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>.</p>
+<section id="Creating-the-System">
+<h2>Creating the System<a class="headerlink" href="#Creating-the-System" title="Link to this heading">¶</a></h2>
+<p>With all of the parameters defined, we can start building the OpenMM <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> object. The constant potential method in OpenMM is implemented in the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> class. To use it, we must add it to a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> like any other
+force, add particles with charges that would ordinarily be set in a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>, and specify various constant potential-specific options that will be discussed below.</p>
+<p>To make it easier to set up the simulation for this tutorial, we have converted the <a class="reference external" href="https://gitlab.com/ampere2/scalfi_jcp_153_174704_2020/-/blob/8bdb701c9ab7a9d914d1efce7efd90c08e5432b0/typical_input_files/gold_NaCl1M/data.inpt">data provided</a> with <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a> into a PDB file included with the tutorial. We can load it to obtain a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html">Topology</a> for the capacitor system, as well as initial
+coordinates for the simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s2">&quot;constant_potential.pdb&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The PDB file is structured so as to arrange the atoms into four different chains. Since there are no <em>physical</em> chains in this system, this arrangement only serves to group atoms together in a convenient way. The first chain contains the water molecules, the second contains the ions, and the third and fourth contain the atoms in the negative and positive electrodes, respectively:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>REMARK   1 CREATED WITH OPENMM 8.4, 2025-11-21
+CRYST1   36.630   36.630  107.952  90.00  90.00  90.00 P 1           1
+HETATM    1  O   HOH A   1      11.142   0.802  28.170  1.00  0.00           O
+HETATM    2  H1  HOH A   1      11.545  -0.100  28.325  1.00  0.00           H
+HETATM    3  H2  HOH A   1      11.052   1.281  29.044  1.00  0.00           H
+...
+HETATM 6478  O   HOH A2160      17.737  27.459  36.530  1.00  0.00           O
+HETATM 6479  H1  HOH A2160      18.729  27.349  36.463  1.00  0.00           H
+HETATM 6480  H2  HOH A2160      17.524  28.388  36.833  1.00  0.00           H
+TER    6481      HOH A2160
+HETATM 6482 NA    NA B   1       7.994  30.504  24.998  1.00  0.00          Na
+HETATM 6483 CL    CL B   2      21.001  26.555  32.728  1.00  0.00          Cl
+...
+HETATM 6558 NA    NA B  77       0.677  11.774  51.823  1.00  0.00          Na
+HETATM 6559 CL    CL B  78      34.536   2.353  48.278  1.00  0.00          Cl
+TER    6560       CL B  78
+HETATM 6561 AU    AU C   1       0.000   0.000   3.911  1.00  0.00          Au
+...
+HETATM 8180 AU    AU C1620      34.595  34.595  20.191  1.00  0.00          Au
+TER    8181       AU C1620
+HETATM 8182 AU    AU D   1       0.000   0.000  72.895  1.00  0.00          Au
+...
+HETATM 9801 AU    AU D1620      34.595  34.595  89.175  1.00  0.00          Au
+TER    9802       AU D1620
+END
+</pre></div>
+</div>
+<p>Although it will be useful in this tutorial, such a grouping is not required to use the constant potential method in OpenMM. If you are designing your own simulation setup, you may find it convenient to structure your topology differently; what makes the most sense will vary from problem to problem.</p>
+<p>To create a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>, then, we need a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.forcefield.ForceField.html">ForceField</a> to assign interaction parameters. <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a> uses SPC/E water, so we will use a force field file for SPC/E, <code class="docutils literal notranslate"><span class="pre">amber19/spce.xml</span></code>, that is distributed with OpenMM and also contains parameters for NaCl. (These are different from the parameters chosen in <a class="reference internal" href="#References"><span class="std std-ref">Ref.
+1</span></a>, so its results will not be exactly reproduced here, but the parameters are suitable for illustrative purposes.) This leaves the Au atoms, which we can write a simple force field file to provide the Lennard-Jones parameters from <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a> for.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">cat</span> constant_potential_example_gold.xml
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;ForceField&gt;
+    &lt;AtomTypes&gt;
+        &lt;Type name=&#34;Au&#34; class=&#34;Au&#34; element=&#34;Au&#34; mass=&#34;0&#34;/&gt;
+    &lt;/AtomTypes&gt;
+    &lt;Residues&gt;
+        &lt;Residue name=&#34;AU&#34;&gt;
+            &lt;Atom name=&#34;AU&#34; type=&#34;Au&#34; /&gt;
+        &lt;/Residue&gt;
+    &lt;/Residues&gt;
+    &lt;NonbondedForce coulomb14scale=&#34;0.8333333333333334&#34; lj14scale=&#34;0.5&#34;&gt;
+        &lt;Atom type=&#34;Au&#34; charge=&#34;0&#34; sigma=&#34;0.2951&#34; epsilon=&#34;22.13336&#34; /&gt;
+    &lt;/NonbondedForce&gt;
+&lt;/ForceField&gt;
+</pre></div></div>
+</div>
+<p>We will not discuss OpenMM’s force field file format here; for a detailed description, see the <a class="reference external" href="https://docs.openmm.org/latest/userguide/application/06_creating_ffs.html">user guide</a>, and for a more complex but introductory example of building such a file, see the <a class="reference internal" href="coarse_grained_polymer.html"><span class="doc">Implementing a Coarse-Grained Polymer Force Field</span></a> tutorial. Here, we only need to define one atom type that will be applied to all of the Au atoms, define a residue template matching a single Au
+atom (since each Au atom in the PDB file is in its own residue), and define Lennard-Jones parameters for Au. (The <code class="docutils literal notranslate"><span class="pre">coulomb14scale</span></code> and <code class="docutils literal notranslate"><span class="pre">lj14scale</span></code> parameters are set to match those in <code class="docutils literal notranslate"><span class="pre">amber19/spce.xml</span></code> but are irrelevant to our system as it contains only isolated atoms and rigid molecules.) Note that:</p>
+<ul class="simple">
+<li><p>We have set the masses of all electrode atoms to zero, which fixes them in place. This is consistent with the simulation in the study of <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>, but it is not a requirement for the use of the constant potential method in OpenMM. Some important notes for using non-rigid electrodes are provided at the end of this tutorial.</p></li>
+<li><p>Here, we have set the charge on each Au atom to zero, but this value will be ignored once we set it in a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> that we will create later; the true charges will be calculated by solving the constant potential equations at every simulation timestep and so will fluctuate over the course of the simulation.</p></li>
+</ul>
+<p>We can now create a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.forcefield.ForceField.html">ForceField</a> and a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> straightforwardly:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">force_field</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s2">&quot;amber19/spce.xml&quot;</span><span class="p">,</span> <span class="s2">&quot;constant_potential_example_gold.xml&quot;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">force_field</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">,</span> <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="n">R_CUT</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Even though our <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> should contain some charged particles on account of the water and ions within, such that we might ordinarily want to use <code class="docutils literal notranslate"><span class="pre">PME</span></code> for the <code class="docutils literal notranslate"><span class="pre">nonbondedMethod</span></code>, here we use <code class="docutils literal notranslate"><span class="pre">CutoffPeriodic</span></code> for reasons that will be explained in the next section.</p>
+</section>
+<section id="Setting-up-the-ConstantPotentialForce">
+<h2>Setting up the ConstantPotentialForce<a class="headerlink" href="#Setting-up-the-ConstantPotentialForce" title="Link to this heading">¶</a></h2>
+<p>OpenMM’s standard force field-based mechanism will create a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a> with parameters for both electrostatic and Lennard-Jones interactions between the particles in a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>. To run a constant potential simulation, we need all of the electrostatic parameters to be specified in a
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> instead. To do this, we can write a function that will identify the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a> in a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>, add its charges to a newly created
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>, and zero the charges in the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a> (so that the electrostatic interactions between particles with fixed charges will not be computed twice).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">add_constant_potential</span><span class="p">(</span><span class="n">system</span><span class="p">):</span>
+    <span class="c1"># Extract exactly one NonbondedForce from the System.</span>
+    <span class="n">lj</span><span class="p">,</span> <span class="o">=</span> <span class="p">(</span><span class="n">force</span> <span class="k">for</span> <span class="n">force</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">getForces</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">force</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="p">))</span>
+
+    <span class="c1"># Create a new ConstantPotentialForce and add it to the System.</span>
+    <span class="n">conp</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">ConstantPotentialForce</span><span class="p">()</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">conp</span><span class="p">)</span>
+
+    <span class="c1"># Process each particle in the NonbondedForce.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lj</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()):</span>
+        <span class="n">q</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">eps</span> <span class="o">=</span> <span class="n">lj</span><span class="o">.</span><span class="n">getParticleParameters</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">lj</span><span class="o">.</span><span class="n">setParticleParameters</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="c1"># Process each exception in the NonbondedForce.</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lj</span><span class="o">.</span><span class="n">getNumExceptions</span><span class="p">()):</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">qq</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">eps</span> <span class="o">=</span> <span class="n">lj</span><span class="o">.</span><span class="n">getExceptionParameters</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">lj</span><span class="o">.</span><span class="n">setExceptionParameters</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">conp</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">qq</span><span class="p">)</span>
+
+    <span class="c1"># Copy the nonbonded cutoff distance to the ConstantPotentialForce.</span>
+    <span class="n">conp</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">lj</span><span class="o">.</span><span class="n">getCutoffDistance</span><span class="p">())</span>
+
+    <span class="c1"># We will need to do some additional setup on the ConstantPotentialForce, so return it.</span>
+    <span class="k">return</span> <span class="n">conp</span>
+</pre></div>
+</div>
+</div>
+<p>As shown in this relatively straightforward function, adding a particle to a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> is as simple as calling <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addParticle">ConstantPotentialForce.addParticle()</a> and providing the particle charge. Since it does not compute Lennard-Jones or other kinds
+of interactions, this is the only parameter accepted. Exceptions for particles bonded to each other can be added with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addException">ConstantPotentialForce.addException()</a>.</p>
+<p>We can thus convert our system into a constant potential-enabled version, and get a reference to the newly added force:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conp</span> <span class="o">=</span> <span class="n">add_constant_potential</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We also must specify which particles belong to conductive electrodes and should thus have fluctuating rather than fixed charges. We can do this with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addElectrode">ConstantPotentialForce.addElectrode()</a>, which accepts a list of particle indices. Since the third and fourth chains in the topology contain the Au atoms in each electrode, respectively, we can extract
+the appropriate indices. In addition, <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addElectrode">addElectrode()</a> takes the potential at which to hold the electrode, a Gaussian width parameter that is the reciprocal of the commonly used <span class="math notranslate nohighlight">\(\eta\)</span> value, and a Thomas-Fermi parameter with units of reciprocal width that should be set to the square of the Thomas-Fermi length divided by the atomic volume. (To
+simulate a perfect conductor and eschew the Thomas-Fermi model entirely, set this parameter to zero.) In this example, for the potential difference <span class="math notranslate nohighlight">\(\Delta\psi\)</span> we want to apply, we set the potential of one electrode to <span class="math notranslate nohighlight">\(-\Delta\psi/2\)</span> and that of the other to <span class="math notranslate nohighlight">\(\Delta\psi/2\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">System</span><span class="p">()</span>
-<span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="p">()</span>
-<span class="n">conp</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">ConstantPotentialForce</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">chains</span><span class="p">())</span>
+<span class="n">conp</span><span class="o">.</span><span class="n">addElectrode</span><span class="p">([</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">()],</span> <span class="o">-</span><span class="n">POTENTIAL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">ETA</span><span class="p">,</span> <span class="n">L_TF</span> <span class="o">*</span> <span class="n">L_TF</span> <span class="o">/</span> <span class="n">V_TF</span><span class="p">)</span>
+<span class="n">conp</span><span class="o">.</span><span class="n">addElectrode</span><span class="p">([</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">()],</span> <span class="n">POTENTIAL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">ETA</span><span class="p">,</span> <span class="n">L_TF</span> <span class="o">*</span> <span class="n">L_TF</span> <span class="o">/</span> <span class="n">V_TF</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
-<p>We will also show how to build a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html">Topology</a> corresponding to the system to simulate. Though not strictly necessary, it will allow us to use a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html">Simulation</a> to integrate the system and report results.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">topology</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Topology</span><span class="p">()</span>
-<span class="n">chain_water</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
-<span class="n">chain_nacl</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
-<span class="n">chain_electrode</span> <span class="o">=</span> <span class="p">[</span><span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">(),</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()]</span>
-</pre></div>
-</div>
-</div>
-<p>We will create <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Chain.html#openmm.app.topology.Chain">Chain</a> objects to group water molecules, ions in the electrolyte, and electrode atoms together. In what follows, we will focus on the details that are important for the constant potential method; a more general introduction to building <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a> and
-<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html">Topology</a> objects is available in the <a class="reference internal" href="building_systems.html"><span class="doc">Building Systems from Scratch introductory tutorial</span></a>.</p>
-<p>First, we add each water molecule to the system by:</p>
-<ol class="arabic simple">
-<li><p>Adding the atoms to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a></p></li>
-<li><p>Adding the rigid constraints between the atoms</p></li>
-<li><p>Adding a residue and atoms to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.topology.Topology.html">Topology</a></p></li>
-<li><p>Adding particles to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a> to specify the Lennard-Jones interactions between them</p></li>
-<li><p>Adding exceptions to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a></p></li>
-<li><p>Adding particles to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> to specify the electrostatic interactions between them</p></li>
-<li><p>Adding exceptions to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a></p></li>
-</ol>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_water</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_WATER</span><span class="p">):</span>
-    <span class="n">i_o</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">M_O</span><span class="p">)</span>
-    <span class="n">i_h1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">M_H</span><span class="p">)</span>
-    <span class="n">i_h2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">M_H</span><span class="p">)</span>
-
-    <span class="n">system</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h1</span><span class="p">,</span> <span class="n">L_OH</span><span class="p">)</span>
-    <span class="n">system</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="n">L_OH</span><span class="p">)</span>
-    <span class="n">system</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">i_h1</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="n">L_HH</span><span class="p">)</span>
-
-    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;WAT&quot;</span><span class="p">,</span> <span class="n">chain_water</span><span class="p">)</span>
-    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">oxygen</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;H1&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">hydrogen</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;H2&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">hydrogen</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-
-    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SIG_O</span><span class="p">,</span> <span class="n">EPS_O</span><span class="p">)</span>
-    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-
-    <span class="n">lj</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">lj</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">lj</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_h1</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-
-    <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">Q_H</span><span class="p">)</span>
-    <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">Q_H</span><span class="p">)</span>
-    <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">Q_H</span><span class="p">)</span>
-
-    <span class="n">conp</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">conp</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_o</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">conp</span><span class="o">.</span><span class="n">addException</span><span class="p">(</span><span class="n">i_h1</span><span class="p">,</span> <span class="n">i_h2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Adding particles to a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> is as simple as calling <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addParticle">ConstantPotentialForce.addParticle()</a> and providing the particle charge. Since it does not compute Lennard-Jones or other kinds of interactions, this is the only parameter accepted.
-Exceptions for particles bonded to each other can be added with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addException">ConstantPotentialForce.addException()</a>.</p>
-<p>There are two important points to note about this setup. First, though the charges on the water molecules are fixed, it is still necessary to set them in <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> and not in <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>. When using
+<p>This method of using the <code class="docutils literal notranslate"><span class="pre">add_constant_potential()</span></code> function given here, then specifying the appropriate electrodes, should be adaptable to your own constant potential simulations. A few important notes are in order:</p>
+<ul class="simple">
+<li><p>Each atom may belong to at most one electrode. Note, however, that all “electrodes” added to a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> are permitted to exchange charge freely with each other, and the concept of an “electrode” in the OpenMM implementation only serves to group electrode particles with similar parameters together.</p></li>
+<li><p>Though only some atoms in this example belong to an electrode, it is still always necessary to add <em>every</em> particle to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>, and zero <em>each</em> charge in the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>. When using
 <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> in a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>, <em>all</em> Coulombic interactions must be accounted for by a single <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>. Setting charges in more than one
 <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>, or any other force like a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a> or <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.AmoebaMultipoleForce.html">AmoebaMultipoleForce</a>, will yield incorrect simulation results, since
-<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> needs to account for the charges on every particle to properly solve for the charge distributions in the electrodes.</p>
-<p>Second, note that since the Lennard-Jones epsilon values are set to zero for the H atoms, as prescribed by the SPC/E water model, it might seem like the exceptions added with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html#openmm.openmm.NonbondedForce.addException">NonbondedForce.addException()</a> are superfluous. However, it is necessary to add these exceptions since most of OpenMM’s platforms require the set of particles with exceptions to be the same
-across different forces that compute pairwise interactions.</p>
-<p>Next, we add the ions in the electrolyte. This proceeds in the same way as the water molecules, except that there is no need to add constraints or exceptions since the ions are monatomic:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_nacl</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_NACL</span><span class="p">):</span>
-    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">M_NA</span><span class="p">)</span>
-    <span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">M_CL</span><span class="p">)</span>
-
-    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span> <span class="n">chain_nacl</span><span class="p">)</span>
-    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">sodium</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;CL&quot;</span><span class="p">,</span> <span class="n">chain_nacl</span><span class="p">)</span>
-    <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;CL&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">chlorine</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-
-    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SIG_NA</span><span class="p">,</span> <span class="n">EPS_NA</span><span class="p">)</span>
-    <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SIG_CL</span><span class="p">,</span> <span class="n">EPS_CL</span><span class="p">)</span>
-
-    <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span><span class="p">)</span>
-    <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Then, we add the electrodes. For each electrode, we add its atoms first, and save the indices of the atoms in the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.System.html">System</a>. To actually mark a group of atoms as belonging to a conductive electrode, and thus having variable charges, we can call
-<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.addElectrode">ConstantPotentialForce.addElectrode()</a>. Besides the indices of the electrode atoms, this method takes the potential at which to hold the electrode, a Gaussian width parameter that is the reciprocal of the commonly used <span class="math notranslate nohighlight">\(\eta\)</span> value, and a Thomas-Fermi parameter with units of reciprocal width that should be set to the square of the Thomas-Fermi
-length divided by the atomic volume. (To simulate a perfect conductor and eschew the Thomas-Fermi model entirely, set this parameter to zero.) In this example, for the potential difference <span class="math notranslate nohighlight">\(\Delta\psi\)</span> we want to apply, we set the potential of one electrode to <span class="math notranslate nohighlight">\(-\Delta\psi/2\)</span> and that of the other to <span class="math notranslate nohighlight">\(\Delta\psi/2\)</span>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i_electrode</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">i_au</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_AU</span><span class="p">):</span>
-        <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
-
-        <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="s2">&quot;AU&quot;</span><span class="p">,</span> <span class="n">chain_electrode</span><span class="p">[</span><span class="n">i_electrode</span><span class="p">])</span>
-        <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="s2">&quot;AU&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">gold</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span>
-
-        <span class="n">lj</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SIG_AU</span><span class="p">,</span> <span class="n">EPS_AU</span><span class="p">)</span>
-
-        <span class="n">conp</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-
-    <span class="n">conp</span><span class="o">.</span><span class="n">addElectrode</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="n">POTENTIAL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">POTENTIAL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">][</span><span class="n">i_electrode</span><span class="p">],</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">ETA</span><span class="p">,</span> <span class="n">L_TF</span> <span class="o">*</span> <span class="n">L_TF</span> <span class="o">/</span> <span class="n">V_TF</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>A few notes are in order about this specification of the electrode atoms:</p>
-<ul class="simple">
-<li><p>We have set the masses of all electrode atoms to zero, which fixes them in place. This is consistent with the simulation in the study of <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>, but it is not a requirement for the use of the constant potential method in OpenMM. Some important notes for using non-rigid electrodes are provided at the end of this tutorial.</p></li>
-<li><p>Here, we have set the charge on each electrode atom to zero when adding it to the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a>, but this is not necessary: the charges specified on all atoms added to electrodes will be ignored, and instead determined by solving the constant potential equations.</p></li>
-<li><p>Each atom may belong to at most one electrode. Note, however, that all “electrodes” added to a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> are permitted to exchange charge freely with each other, and the concept of an “electrode” in the OpenMM implementation only serves to group electrode particles with similar parameters together.</p></li>
+<a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> needs to account for the charges on every particle to properly solve for the charge distributions in the electrodes.</p></li>
+<li><p>Since no non-zero charges remain in the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>, we have used <code class="docutils literal notranslate"><span class="pre">CutoffPeriodic</span></code> rather than <code class="docutils literal notranslate"><span class="pre">PME</span></code> for the nonbonded interaction calculation method when creating the system. The <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> always uses particle mesh Ewald to compute interactions, so there is no option to control the
+method it uses for computing interactions.</p></li>
 </ul>
-<p>We set standard options for computing the Lennard-Jones interactions with periodic boundary conditions. We use <code class="docutils literal notranslate"><span class="pre">CutoffPeriodic</span></code> rather than <code class="docutils literal notranslate"><span class="pre">PME</span></code> since there are no electrostatic interactions computed by the <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.NonbondedForce.html">NonbondedForce</a>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">setNonbondedMethod</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">NonbondedForce</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">)</span>
-<span class="n">lj</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">R_CUT</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>The <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html">ConstantPotentialForce</a> always uses particle mesh Ewald to compute interactions, so there is no option to control the method for computing interactions.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conp</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">R_CUT</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>The cutoff distance should be large enough to avoid truncation artifacts in the interactions of the Gaussian charge distributions on the electrode atoms (see the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">theory section</a> of the user guide). For typical values of the cutoff distance <span class="math notranslate nohighlight">\(\ge10\ \mathrm{Å}\)</span> and Gaussian parameter <span class="math notranslate nohighlight">\(\eta\approx 2/\mathrm{Å}\)</span>, this should not be an issue.</p>
+<section id="Constant-Potential-Specific-Options">
+<h3>Constant Potential-Specific Options<a class="headerlink" href="#Constant-Potential-Specific-Options" title="Link to this heading">¶</a></h3>
 <p>OpenMM’s implementation of constant potential offers two methods for solving for the electrode charges. The default conjugate gradient (CG) solver is applicable to all simulation configurations, but is an iterative method, requiring multiple evaluations of the derivatives of the energy with respect to the electrode per timestep. Thus, OpenMM also offers a matrix solver that precomputes the inverse of the coefficient matrix for the linear equations to be solved; this only requires a single
 evaluation of the derivatives per timestep. However:</p>
 <ul class="simple">
@@ -356,7 +295,7 @@ evaluation of the derivatives per timestep. However:</p>
 <p>If you want to perform a simulation with non-rigid electrodes, you must use the default CG solver. Otherwise, the matrix solver may be faster for smaller systems, whereas the CG solver is typically faster above a certain system size threshold. This crossover point is dependent on the details of your system and the hardware that OpenMM is running on, so you should evaluate both solvers and choose the one with the best performance, or choose the CG solver if the matrix solver requires too much
 memory. Here, we use the matrix solver, but again, this may not be the best choice for every system even if it is applicable here:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conp</span><span class="o">.</span><span class="n">setConstantPotentialMethod</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">ConstantPotentialForce</span><span class="o">.</span><span class="n">Matrix</span><span class="p">)</span>
@@ -365,7 +304,7 @@ memory. Here, we use the matrix solver, but again, this may not be the best choi
 </div>
 <p>Constant potential simulations are typically performed with a constraint of constant total charge. Both solvers in OpenMM’s implementation can enforce such a constraint:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conp</span><span class="o">.</span><span class="n">setUseChargeConstraint</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
@@ -375,40 +314,35 @@ memory. Here, we use the matrix solver, but again, this may not be the best choi
 <p>By default, the total charge of the system, which includes both the variable (electrode) and fixed (electrolyte) charges, will be constrained to zero when the charge constraint is enabled, but this can be controlled with <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.setChargeConstraintTarget">ConstantPotential.setChargeConstraintTarget()</a> if desired.</p>
 <p>Finally, as we have mentioned <a class="reference internal" href="#Theory"><span class="std std-ref">above</span></a>, we want to set up a finite field constant potential simulation. Here, for the set of initial coordinates we will read in, the electrode with the higher potential has a larger displacement along the <span class="math notranslate nohighlight">\(z\)</span>-axis than that with the lower potential, so we set the electric field vector as follows:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conp</span><span class="o">.</span><span class="n">setExternalField</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">POTENTIAL</span> <span class="o">/</span> <span class="n">L_Z</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_Z</span> <span class="o">=</span> <span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">getPeriodicBoxVectors</span><span class="p">()[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">conp</span><span class="o">.</span><span class="n">setExternalField</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">POTENTIAL</span> <span class="o">/</span> <span class="n">L_Z</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <p>If you have performed constant potential simulations <a class="reference external" href="https://docs.lammps.org/fix_electrode.html">in LAMMPS</a>, for instance, it is required to use exactly two electrodes, and space them apart along the <span class="math notranslate nohighlight">\(z\)</span>-axis: then the external electric field will be added automatically. The OpenMM implementation places no such restrictions on the geometry; the electrodes and electric field can be oriented in any way desired.</p>
 <p>Finally, we add the forces to the system, set the periodic box vectors, create a Langevin integrator for temperature control, and create a <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.simulation.Simulation.html">Simulation</a>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">lj</span><span class="p">);</span>
-<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">conp</span><span class="p">);</span>
-
-<span class="n">system</span><span class="o">.</span><span class="n">setDefaultPeriodicBoxVectors</span><span class="p">(</span><span class="o">*</span><span class="n">VECTORS</span><span class="p">)</span>
-<span class="n">topology</span><span class="o">.</span><span class="n">setPeriodicBoxVectors</span><span class="p">(</span><span class="n">VECTORS</span><span class="p">)</span>
-
-<span class="n">integrator</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="n">TEMP</span><span class="p">,</span> <span class="n">FRICTION</span><span class="p">,</span> <span class="n">STEP</span><span class="p">)</span>
-
-<span class="n">simulation</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">integrator</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="n">TEMP</span><span class="p">,</span> <span class="n">FRICTION</span><span class="p">,</span> <span class="n">STEP</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</section>
 </section>
 <section id="Running-the-Simulation">
 <h2>Running the Simulation<a class="headerlink" href="#Running-the-Simulation" title="Link to this heading">¶</a></h2>
 <p>We will now load some initial position coordinates for the simulation. Like the simulation parameters, these are adapted from the <a class="reference external" href="https://gitlab.com/ampere2/scalfi_jcp_153_174704_2020/-/blob/8bdb701c9ab7a9d914d1efce7efd90c08e5432b0/typical_input_files/gold_NaCl1M/data.inpt">data provided</a> with <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;constant_potential_positions.txt&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">bohr</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -418,7 +352,7 @@ memory. Here, we use the matrix solver, but again, this may not be the best choi
 <p>Since we set up the system, we could have saved the indices and potentials we set and used them to retrieve the appropriate charges and calculate the potential. This is not necessary, however: we can use <a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.openmm.ConstantPotentialForce.html#openmm.openmm.ConstantPotentialForce.getElectrodeParameters">ConstantPotentialForce.getElectrodeParameters()</a> to retrieve the indices of all particles in an electrode, the imposed potential, the
 Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we have done in the reporter below.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CapacitanceReporter</span><span class="p">:</span>
@@ -446,10 +380,9 @@ Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="c1"># Get all of the charges, and find the sum of the electrode charges.</span>
-        <span class="c1"># We divide out OpenMM&#39;s units before passing charges to Python&#39;s sum() function.</span>
-        <span class="n">charges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conp</span><span class="o">.</span><span class="n">getCharges</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="p">)</span><span class="o">.</span><span class="n">value_in_unit</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span><span class="p">)</span>
-        <span class="n">charge_i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">charges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_indices</span><span class="p">])</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span>
-        <span class="n">charge_j</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">charges</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_j_indices</span><span class="p">])</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">elementary_charge</span>
+        <span class="n">charges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conp</span><span class="o">.</span><span class="n">getCharges</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="n">charge_i</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">charges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_indices</span><span class="p">])</span>
+        <span class="n">charge_j</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">charges</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_j_indices</span><span class="p">])</span>
 
         <span class="c1"># The charge on each electrode should be equal and opposite, so the difference will be</span>
         <span class="c1"># twice the charge value we are looking for.  Dividing by the potential gives the capacitance,</span>
@@ -466,7 +399,7 @@ Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we 
 </div>
 <p>We can now run some equilibration steps, add the reporter, and take some samples to estimate the capacitance. The full simulation may take a few minutes to run on a GPU, or several times longer if OpenMM is using CPUs.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
@@ -480,7 +413,7 @@ Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we 
 </div>
 <p>The result obtained from OpenMM should be similar to the value of <span class="math notranslate nohighlight">\(0.798\ \mathrm{\mu F/cm^2}\)</span> <a class="reference external" href="https://gitlab.com/ampere2/scalfi_jcp_153_174704_2020/-/blob/8bdb701c9ab7a9d914d1efce7efd90c08e5432b0/DATA_FIGURES/FIGURE3/panel_c">reported</a> by <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a> for the selected Thomas-Fermi length of <span class="math notranslate nohighlight">\(5\ \mathrm{Å}\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reporter</span><span class="o">.</span><span class="n">capacitance</span><span class="p">()</span><span class="o">.</span><span class="n">in_units_of</span><span class="p">(</span><span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">micro</span> <span class="o">*</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">farad</span> <span class="o">/</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">centimeter</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
@@ -488,12 +421,12 @@ Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we 
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.7978055825633273 uF/(cm**2)
+0.7937215602624624 uF/(cm**2)
 </pre></div></div>
 </div>
 </section>
@@ -588,7 +521,8 @@ the update interval for the barostat, dividing the desired potential difference 
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Simulating Conductive Electrodes with the Constant Potential Method</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Theory">Theory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Setting-Parameters">Setting Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Building-the-System">Building the System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-the-System">Creating the System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Setting-up-the-ConstantPotentialForce">Setting up the ConstantPotentialForce</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Running-the-Simulation">Running the Simulation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Notes-and-Troubleshooting">Notes and Troubleshooting</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#References">References</a></li>
