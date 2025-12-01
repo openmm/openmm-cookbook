@@ -29,6 +29,7 @@ examples of using OpenMM to perform more complex simulation tasks.
     notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/nuclear_quantum_effects
     notebooks/tutorials/Running_a_REST_simulation
+    notebooks/tutorials/constant_potential
     notebooks/tutorials/umbrella_sampling
     notebooks/tutorials/machine_learning_potentials
 
