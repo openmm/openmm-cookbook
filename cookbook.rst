@@ -20,13 +20,21 @@ Simulation Protocols
     notebooks/cookbook/Merging Molecules
     notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules
 
+Customizing Interactions
+------------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    notebooks/cookbook/Applying a Constant External Force
+    notebooks/cookbook/Customizing Lennard-Jones Mixing
+
 Restraints, Constraints, and External Forces
 --------------------------------------------
 
 .. toctree::
     :maxdepth: 1
 
-    notebooks/cookbook/Applying a Constant External Force
     notebooks/cookbook/Constraining Atom Positions
     notebooks/cookbook/Restraining Atom Positions
     notebooks/cookbook/Restraining Dihedrals
