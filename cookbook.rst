@@ -26,7 +26,6 @@ Customizing Interactions
 .. toctree::
     :maxdepth: 1
 
-    notebooks/cookbook/Applying a Constant External Force
     notebooks/cookbook/Customizing Lennard-Jones Mixing
     notebooks/cookbook/Using Tabulated Potentials
 
@@ -36,6 +35,7 @@ Restraints, Constraints, and External Forces
 .. toctree::
     :maxdepth: 1
 
+    notebooks/cookbook/Applying a Constant External Force
     notebooks/cookbook/Constraining Atom Positions
     notebooks/cookbook/Restraining Atom Positions
     notebooks/cookbook/Restraining Dihedrals
