@@ -20,6 +20,15 @@ Simulation Protocols
     notebooks/cookbook/Merging Molecules
     notebooks/cookbook/Adding Hydrogens to Nonstandard Molecules
 
+Customizing Interactions
+------------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    notebooks/cookbook/Customizing Lennard-Jones Mixing
+    notebooks/cookbook/Using Tabulated Potentials
+
 Restraints, Constraints, and External Forces
 --------------------------------------------
 
