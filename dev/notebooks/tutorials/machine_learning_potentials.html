@@ -50,14 +50,9 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <p>While the details vary, a good rule of thumb is that MLIPs are about 1000 times slower than classical force fields, but about 1000 times faster than high level quantum chemistry methods. That might change in the future, but they are unlikely to replace force fields any time soon. They are mostly useful for relatively small systems, or small pieces of larger systems. When used in that way, they enable simulations that would be impossibly slow with conventional quantum mechanical methods.</p>
 <section id="Installing-Models">
 <h2>Installing Models<a class="headerlink" href="#Installing-Models" title="Link to this heading">¶</a></h2>
-<p>OpenMM-ML provides a common interface for working with many different models, but it does not provide the models itself. They must be installed separately using whatever method the model developer has chosen. Unfortunately, the ecosystem of MLIPs is still very immature and inconsistent. Some models are installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, some with <code class="docutils literal notranslate"><span class="pre">conda</span></code>, and some must be downloaded directly from the developer’s website. Some require you to install a Python package, and also to download a file containing
-model parameters from a different source. The packages implementing MLIPs tend to depend on many other packages, and often they require specific versions of those packages that make them incompatible with each other.</p>
-<p>Perhaps this situation will improve with time. For now, it is best to create a separate Python environment for ML simulations, or possibly multiple environments for different MLIPs you want to use.</p>
-<p>For this tutorial, we will use the <a class="reference external" href="https://github.com/isayevlab/aimnetcentral">AIMNet2</a> potential. The following commands create an environment that can run simulations with this potential. We also install MDAnalysis, which is not needed to run simulations but is used in this tutorial for analyzing results.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>conda create --name aimnet2 python=3.12
-conda activate aimnet2
-pip install git+https://github.com/isayevlab/aimnetcentral.git
-pip install openmmtorch[cuda12] openmmml mdanalysis
+<p>OpenMM-ML provides a common interface for working with many different models, but it does not provide the models itself. They must be installed separately using whatever method the model developer has chosen. Most models can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, which is therefore the preferred installation method to use.</p>
+<p>The following command installs all packages needed for this tutorial, including two packages that provide models, <a class="reference external" href="https://github.com/orbital-materials/orb-models">orb-models</a> and <a class="reference external" href="https://github.com/torchmd/torchmd-net">TorchMD-Net</a>. We also install MDAnalysis, which is not needed to run simulations but is used in this tutorial for analyzing results.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install openmm[cuda13] openmmml orb-models torchmd-net mdanalysis
 </pre></div>
 </div>
 </section>
@@ -99,12 +94,12 @@ pip install openmmtorch[cuda12] openmmml mdanalysis
 &lt;Topology; 1 chains, 3 residues, 22 atoms, 21 bonds&gt;
 </pre></div></div>
 </div>
-<p>Now create a System for it.</p>
+<p>Now create a System for it. We use the AceFF 2.0 model. This is a relatively fast (as MLIPs go) but inaccurate potential.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">&#39;aimnet2&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">&#39;aceff-2.0&#39;</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -129,19 +124,19 @@ pip install openmmtorch[cuda12] openmmml mdanalysis
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 #&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;,&#34;Speed (ns/day)&#34;
-100,-1302747.83036788,55.835824168728706,0
-200,-1302746.1318177246,94.37135932017648,11.8
-300,-1302732.5579721972,123.49092099269907,11.9
-400,-1302726.5844298073,149.443899780796,11.9
-500,-1302715.6813423317,158.42731341763903,11.9
-600,-1302720.6863631993,163.37858024843084,11.7
-700,-1302712.047612447,160.39312972689297,11.7
-800,-1302719.6467883936,212.2647280843627,11.8
-900,-1302710.7203451698,155.41720407571125,11.8
-1000,-1302714.462791466,188.5679366883866,11.8
+100,-844.458740234375,53.319062375260714,0
+200,-839.6515502929688,82.89689504325784,42.2
+300,-839.5911254882812,83.8807790637833,43
+400,-823.9935302734375,94.66103127523544,42.3
+500,-818.1985473632812,129.62461685886882,41.8
+600,-814.7901000976562,119.25928243622221,42
+700,-817.9552001953125,179.3754547066664,42.2
+800,-822.4508666992188,228.6552988894026,42.3
+900,-809.474365234375,193.80415636153424,42.5
+1000,-817.1160278320312,222.27929697715678,42.3
 </pre></div></div>
 </div>
-<p>Only about 11 ns/day for a molecule with 22 atoms. (That simulation was run on an NVIDIA RTX 4080 GPU.) I warned you that MLIPs were slow! On the other hand, we simulated 1000 steps in only a few seconds. Most quantum chemistry methods with similar accuracy would take that long to perform a single energy evaluation.</p>
+<p>Only about 42 ns/day for a molecule with 22 atoms. (That simulation was run on an NVIDIA RTX 4080 GPU.) I warned you that MLIPs were slow! On the other hand, we simulated 1000 steps in only a few seconds. Most quantum chemistry methods with similar accuracy would take that long to perform a single energy evaluation.</p>
 <p>Let’s try something a bit more interesting: run a longer simulation and compute a Ramachandran plot.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -181,8 +176,8 @@ pip install openmmtorch[cuda12] openmmml mdanalysis
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 12min 35s, sys: 2.39 s, total: 12min 37s
-Wall time: 12min 39s
+CPU times: user 3min 6s, sys: 8.75 s, total: 3min 15s
+Wall time: 3min 16s
 </pre></div></div>
 </div>
 <p>We can use <a class="reference external" href="https://www.mdanalysis.org/">MDAnalysis</a> to do the analysis and generate the plot.</p>
@@ -216,10 +211,10 @@ Wall time: 12min 39s
 <section id="Simulating-Mixed-ML/MM-Systems">
 <h2>Simulating Mixed ML/MM Systems<a class="headerlink" href="#Simulating-Mixed-ML/MM-Systems" title="Link to this heading">¶</a></h2>
 <p>The behavior of alanine dipeptide (and most other organic molecules) is very different in vacuum from in water. We would prefer to simulate it in a box of water, but that requires many times more atoms. Simulating it entirely with an MLIP would be very, very slow.</p>
-<p>Instead we can use a mixed system. We will use AIMNet2 only to compute the internal energy of the alanine dipeptide molecule. The internal energy of the water, and the interaction energy between the water and solute, will be computed with a classical force field.</p>
+<p>Instead we can use a mixed system. We will use AceFF 2.0 only to compute the internal energy of the alanine dipeptide molecule. The internal energy of the water, and the interaction energy between the water and solute, will be computed with a classical force field.</p>
 <p>First we load a PDB file with the solvated alanine dipeptide.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide-water.pdb&#39;</span><span class="p">)</span>
@@ -237,7 +232,7 @@ Wall time: 12min 39s
 </div>
 <p>To create a mixed system, we first create an ordinary System that models everything with a conventional force field.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ff</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber19-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber19/tip3pfb.xml&#39;</span><span class="p">)</span>
@@ -247,7 +242,7 @@ Wall time: 12min 39s
 </div>
 <p>Now we use our MLPotential to create a new System that replaces a subset of interactions with the MLIP. We simply give it the conventional System, and a list of atom indices to model with ML.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">chains</span><span class="p">())</span>
@@ -258,7 +253,7 @@ Wall time: 12min 39s
 </div>
 <p>Let’s simulate the mixed System and see how the speed compares to the other simulation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
@@ -271,14 +266,13 @@ Wall time: 12min 39s
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 12min 35s, sys: 1.51 s, total: 12min 37s
-Wall time: 12min 41s
+CPU times: user 10min 47s, sys: 12.1 s, total: 10min 59s
+Wall time: 10min 58s
 </pre></div></div>
 </div>
-<p>This simulation includes 100 times more atoms than the previous one, but took no longer to run! The classical force field is so much faster than the MLIP, it adds very little to the total time.</p>
 <p>The Ramachandran plot looks quite different from before, showing the importance of water.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide-water.pdb&#39;</span><span class="p">,</span> <span class="s1">&#39;alanine-dipeptide.xtc&#39;</span><span class="p">)</span>
@@ -288,7 +282,7 @@ Wall time: 12min 41s
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -304,10 +298,49 @@ Wall time: 12min 41s
 </div>
 </div>
 </section>
+<section id="Other-Models">
+<h2>Other Models<a class="headerlink" href="#Other-Models" title="Link to this heading">¶</a></h2>
+<p>For these simulations we used a fast (compared to many other MLIPs) but inaccurate (compared to many other MLIPs) model. In some cases, you may prefer a different tradeoff between speed and accuracy. Let’s try simulating alanine dipeptide in vacuum again, but this time using <code class="docutils literal notranslate"><span class="pre">orb-v3-conservative-omol</span></code>. This is a much more accurate but correspondingly slower potential.</p>
+<p>The code is exactly the same as before. The only change is the name of the potential function passed to MLPotential.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide.pdb&#39;</span><span class="p">)</span>
+<span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">&#39;orb-v3-conservative-omol&#39;</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+#&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;,&#34;Speed (ns/day)&#34;
+100,-1301870.472026293,61.02413538058426,0
+200,-1301864.064797156,107.8435303300016,6.13
+300,-1301860.3900627983,144.32587640266559,6.15
+400,-1301860.2958388403,183.82281060477646,6.13
+500,-1301847.9525003564,128.49887543657866,6.12
+600,-1301845.8795732828,156.1019706331902,6.12
+700,-1301831.2748598093,157.93735591078925,6.12
+800,-1301834.290026462,208.32715287948798,6.13
+900,-1301831.2748598093,215.42493142754162,6.14
+1000,-1301830.8979639777,185.22360055881106,6.14
+</pre></div></div>
+</div>
+<p>There is no universal best choice for what model to use. You need to pick one that fits the requirements of your specific application.</p>
+</section>
 <section id="Going-Further">
 <h2>Going Further<a class="headerlink" href="#Going-Further" title="Link to this heading">¶</a></h2>
 <p>OpenMM-ML supports lots of other MLIPs. That includes pretrained foundation models, as well as models you train yourself with popular frameworks such as <a class="reference external" href="https://github.com/ACEsuit/mace">MACE</a> and <a class="reference external" href="https://github.com/mir-group/nequip">NequIP</a>.</p>
-<p>Particular models may have additional options you can specify to control their behavior. For example, AIMNet2 lets you specify the charge and spin multiplicity of the system to simulate. This allows you to use it for simulating charged molecules:</p>
+<p>Particular models may have additional options you can specify to control their behavior. For example, both AceFF and Orb let you specify the charge of the system to simulate. This allows you to use it for simulating charged molecules:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>system = potential.createSystem(pdb.topology, charge=1)
 </pre></div>
 </div>
@@ -378,6 +411,7 @@ Wall time: 12min 41s
 <li class="toctree-l4"><a class="reference internal" href="#Installing-Models">Installing Models</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Running-ML-Simulations">Running ML Simulations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Simulating-Mixed-ML/MM-Systems">Simulating Mixed ML/MM Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Other-Models">Other Models</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Going-Further">Going Further</a></li>
 </ul>
 </li>
