@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Multistate Sampling 2: Expanded Ensemble &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Alchemical Free Energy Calculations" href="Alchemical_free_energy_calculations.html" />
+    <link rel="prev" title="Multistate Sampling 1: Replica Exchange" href="replica_exchange.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="expanded_ensemble.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/expanded_ensemble.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/expanded_ensemble.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Multistate-Sampling-2:-Expanded-Ensemble">
+<h1>Multistate Sampling 2: Expanded Ensemble<a class="headerlink" href="#Multistate-Sampling-2:-Expanded-Ensemble" title="Link to this heading">¶</a></h1>
+<section id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">¶</a></h2>
+<p>In the previous tutorial we ran a simulation with replica exchange, a popular algorithm for multistate sampling. In this one we will look at a different algorithm called <em>expanded ensemble</em> sampling. Recall the basic algorithm for replica exchange:</p>
+<ol class="arabic simple">
+<li><p>Initialize N replicas, each in a different thermodynamic state.</p></li>
+<li><p>Simulate every replica for M steps.</p></li>
+<li><p>Attempt to exchange states between replicas.</p></li>
+</ol>
+<p>If we look at just a single replica, we see a continuous trajectory that periodically changes to a different thermodynamic state. That is essentially what expanded ensembling sampling does. It dispenses with the multiple replicas and uses a single simulation to sample all of the states.</p>
+<ol class="arabic simple">
+<li><p>Initialize a simulation to an initial thermodynamic state.</p></li>
+<li><p>Simulate it for M steps.</p></li>
+<li><p>Attempt to move to a different thermodynamic state.</p></li>
+</ol>
+<p>Why would you prefer one method over the other? It turns out that expanded ensemble sampling has certain theoretical advantages over replica exchange that make it more efficient. The thermodynamic states can be further apart, allowing you to cover the same range with fewer states. This comes at a cost in complexity and robustness, however. In replica exchange, you are always simulating one replica in every state. It is guaranteed that at the end, you will have an identical amount of sampling for
+every state. Expanded ensemble does not have that guarantee. It takes careful work to ensure that all states are properly sampled.</p>
+<p>In practice this is done by choosing a <em>weight</em> for each thermodynamic state. When attempting to move to a different state, the weights influence the transition probabilities. Our goal is to choose weights that lead to spending approximately equal time in every state. Fortunately, OpenMM can do this for you automatically. It does take time for it to work out what the weights should be, so an expanded ensemble simulation usually begins with an initial period dedicated to choosing weights. This
+initial period must be discarded when analyzing results.</p>
+</section>
+<section id="Running-the-Simulation">
+<h2>Running the Simulation<a class="headerlink" href="#Running-the-Simulation" title="Link to this heading">¶</a></h2>
+<p>As in the previous tutorial, we will simulate alanine dipeptide in a box of water. This time we will do a different type of simulation, one where thermodynamic states correspond to different values of a force field parameter. We will do an umbrella sampling simulation, using a bias potential to make one dihedral remain close to a particular value. Different states will correspond to different positions of the bias potential. This lets us explore how the free energy varies as a function of that
+dihedral angle.</p>
+<p>Let’s start by creating the <code class="docutils literal notranslate"><span class="pre">System</span></code>, <code class="docutils literal notranslate"><span class="pre">Integrator</span></code>, and <code class="docutils literal notranslate"><span class="pre">Simulation</span></code>. We use a <code class="docutils literal notranslate"><span class="pre">CustomTorsionForce</span></code> to apply a bias whose position depends on a global parameter.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'alanine-dipeptide-water.pdb'</span><span class="p">)</span>
+<span class="n">ff</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber19-all.xml'</span><span class="p">,</span> <span class="s1">'amber19/tip3pfb.xml'</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">,</span> <span class="n">hydrogenMass</span><span class="o">=</span><span class="mf">1.25</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
+<span class="n">bias</span> <span class="o">=</span> <span class="n">CustomTorsionForce</span><span class="p">(</span><span class="s1">'100*min(dtheta, 2*pi-dtheta)^2; dtheta = abs(theta-theta0); pi = 3.1415926535'</span><span class="p">)</span>
+<span class="n">bias</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'theta0'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">bias</span><span class="o">.</span><span class="n">addTorsion</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">bias</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>As with any simulation, we should equilibrate the system before we start the main simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In this case, our thermodynamic states correspond to different values of the global parameter <code class="docutils literal notranslate"><span class="pre">theta0</span></code>. To specify this for multistate sampling, just use the name of the global parameter as the key.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">states</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">'theta0'</span><span class="p">:</span><span class="n">t</span><span class="p">}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+<p>Performing expanded ensemble sampling is very similar to replica exchange. We create an <code class="docutils literal notranslate"><span class="pre">ExpandedEnsembleSampler</span></code>, passing it the list of states, the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> object, and the interval in time steps at which to attempt state changes.</p>
+<p>We also need to save results for later analysis. Because expanded ensemble involves a single continuous simulation, you can mostly use standard reporters, for example to save a trajectory. In addition, there are certain extra pieces of information specific to the expanded ensemble algorithm that you will often want to save. <code class="docutils literal notranslate"><span class="pre">ExpandedEnsembleSampler</span></code> provides options to write them. In this case we include the <code class="docutils literal notranslate"><span class="pre">logFile</span></code> argument. It saves a CSV file recording what state the simulation is in at
+each iteration, as well as the values of the weights.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sampler</span> <span class="o">=</span> <span class="n">ExpandedEnsembleSampler</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">logFile</span><span class="o">=</span><span class="s1">'log.csv'</span><span class="p">,</span> <span class="n">reportInterval</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XTCReporter</span><span class="p">(</span><span class="s1">'trajectory.xtc'</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">atomSubset</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">22</span><span class="p">))))</span>
+</pre></div>
+</div>
+</div>
+<p>Now we’re ready to run the simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">2000000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Analysis">
+<h2>Analysis<a class="headerlink" href="#Analysis" title="Link to this heading">¶</a></h2>
+<p>Let’s load the log and plot the weight factors.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">'log.csv'</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">log</span><span class="p">[:,</span><span class="mi">3</span><span class="p">:])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Weight'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_expanded_ensemble_12_0.png" src="../../_images/notebooks_tutorials_expanded_ensemble_12_0.png" />
+</div>
+</div>
+<p>We see it took about 800,000 steps (800 reports) for the weights to converge. We therefore should discard everything before that point when doing analysis. It does not reflect a well defined distribution.</p>
+<p>Now let’s plot how the state varied over the simulation. If the states were sufficiently close together, there should be frequent transitions to and from all states.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">log</span><span class="p">[</span><span class="mi">800</span><span class="p">:,</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'State'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_expanded_ensemble_14_0.png" src="../../_images/notebooks_tutorials_expanded_ensemble_14_0.png" />
+</div>
+</div>
+<p>There are lots of transitions, indicating we have sufficient states. Now let’s look at the distribution of states. In replica exchange, we are guaranteed to produce an identical amount of sampling for every state. In expanded ensemble sampling, it depends on how good a job it has done of selecting weights.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">log</span><span class="p">[</span><span class="mi">800</span><span class="p">:,</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_expanded_ensemble_16_0.png" src="../../_images/notebooks_tutorials_expanded_ensemble_16_0.png" />
+</div>
+</div>
+<p>The distribution is fairly uniform, indicating it has done a good job of selecting weights. It is not perfectly flat, but all states have a significant level of sampling.</p>
+<p>Let’s compute the dihedral angle for every frame in the trajectory and plot a histogram of them for each state. If our biasing potential worked correctly, each state should have a different distribution of angles centered on a different point.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">MDAnalysis</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mda</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">MDAnalysis.analysis.dihedrals</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dihedral</span>
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">'alanine-dipeptide.pdb'</span><span class="p">,</span> <span class="s1">'trajectory.xtc'</span><span class="p">)</span>
+<span class="n">atoms</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">AtomGroup</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">],</span> <span class="n">u</span><span class="p">)</span>
+<span class="n">dihedral</span> <span class="o">=</span> <span class="n">Dihedral</span><span class="p">([</span><span class="n">atoms</span><span class="p">])</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">wrapped</span> <span class="o">=</span> <span class="n">dihedral</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">angles</span> <span class="o">+</span> <span class="mi">360</span><span class="o">*</span><span class="p">(</span><span class="n">dihedral</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">angles</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">90</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)):</span>
+    <span class="n">angles</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">log</span><span class="p">[</span><span class="mi">800</span><span class="p">:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">wrapped</span><span class="p">[</span><span class="mi">800</span><span class="p">:,</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">state</span><span class="p">]</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Angle (degrees)'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Count'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_expanded_ensemble_18_0.png" src="../../_images/notebooks_tutorials_expanded_ensemble_18_0.png" />
+</div>
+</div>
+<p>In an expanded ensemble simulation, the probability of finding the simulation in state <span class="math notranslate nohighlight">\(i\)</span> is proportional to <span class="math notranslate nohighlight">\(\mathrm{exp}(w_i-F_i/k_B T_i)\)</span> where <span class="math notranslate nohighlight">\(w_i\)</span> is its weight factor, <span class="math notranslate nohighlight">\(F_i\)</span> is its free energy, and <span class="math notranslate nohighlight">\(T_i\)</span> is its temperature. This means that, if <code class="docutils literal notranslate"><span class="pre">ExpandedEnsembleSampler</span></code> has done a perfect job of picking weights to give every state an equal probability, the free energy of each state is given by <span class="math notranslate nohighlight">\(k_B T_i w_i\)</span>. Of course, it will not have done a perfect
+job and accurately computing free energy differences requires a more complicated analysis. Nonetheless, it is still useful as a way of quickly estimating free energies.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fe</span> <span class="o">=</span> <span class="p">[</span><span class="n">MOLAR_GAS_CONSTANT_R</span><span class="o">*</span><span class="n">integrator</span><span class="o">.</span><span class="n">getTemperature</span><span class="p">()</span><span class="o">*</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">sampler</span><span class="o">.</span><span class="n">weights</span><span class="p">]</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">value_in_unit</span><span class="p">(</span><span class="n">kilojoules_per_mole</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">fe</span><span class="p">])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'State'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Estimated Free Energy (kJ/mol)'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_expanded_ensemble_20_0.png" src="../../_images/notebooks_tutorials_expanded_ensemble_20_0.png" />
+</div>
+</div>
+</section>
+<section id="Next-Steps">
+<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Link to this heading">¶</a></h2>
+<p>Our focus in this tutorial has been on how to use <code class="docutils literal notranslate"><span class="pre">ExpandedEnsembleSampler</span></code>, not on how to analyze an umbrella sampling simulation. If you want to learn more about that, there is another tutorial that goes into much more detail about it.</p>
+</section>
+<section id="Links">
+<h2>Links<a class="headerlink" href="#Links" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Tutorials</p>
+<ul>
+<li><p><a class="reference external" href="https://openmm.github.io/openmm-cookbook/latest/notebooks/tutorials/umbrella_sampling.html">Umbrella Sampling</a></p></li>
+</ul>
+</li>
+<li><p>API Documentation</p>
+<ul>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.expandedensemblesampler.ExpandedEnsembleSampler.html">ExpandedEnsembleSampler</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="replica_exchange.html" title="Previous document">Multistate Sampling 1: Replica Exchange</a>
+        </li>
+        <li>
+          <a href="Alchemical_free_energy_calculations.html" title="Next document">Alchemical Free Energy Calculations</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Multistate Sampling 2: Expanded Ensemble</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Running-the-Simulation">Running the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Analysis">Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Next-Steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Links">Links</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="constant_potential.html">Simulating Conductive Electrodes with the Constant Potential Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="machine_learning_potentials.html">Machine Learning Potentials</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/tutorials/expanded_ensemble.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -79,8 +79,8 @@ field parameters, there are no further preparation steps required before OpenMM 
 
 <span class="c1"># Input Files</span>
 
-<span class="n">inpcrd</span> <span class="o">=</span> <span class="n">AmberInpcrdFile</span><span class="p">(</span><span class="s1">&#39;input.inpcrd&#39;</span><span class="p">)</span>
-<span class="n">prmtop</span> <span class="o">=</span> <span class="n">AmberPrmtopFile</span><span class="p">(</span><span class="s1">&#39;input.prmtop&#39;</span><span class="p">,</span> <span class="n">periodicBoxVectors</span><span class="o">=</span><span class="n">inpcrd</span><span class="o">.</span><span class="n">boxVectors</span><span class="p">)</span>
+<span class="n">inpcrd</span> <span class="o">=</span> <span class="n">AmberInpcrdFile</span><span class="p">(</span><span class="s1">'input.inpcrd'</span><span class="p">)</span>
+<span class="n">prmtop</span> <span class="o">=</span> <span class="n">AmberPrmtopFile</span><span class="p">(</span><span class="s1">'input.prmtop'</span><span class="p">,</span> <span class="n">periodicBoxVectors</span><span class="o">=</span><span class="n">inpcrd</span><span class="o">.</span><span class="n">boxVectors</span><span class="p">)</span>
 
 <span class="c1"># System Configuration</span>
 
@@ -104,14 +104,14 @@ field parameters, there are no further preparation steps required before OpenMM 
 
 <span class="n">steps</span> <span class="o">=</span> <span class="mi">100000</span>
 <span class="n">equilibrationSteps</span> <span class="o">=</span> <span class="mi">10000</span>
-<span class="n">dcdReporter</span> <span class="o">=</span> <span class="n">DCDReporter</span><span class="p">(</span><span class="s1">&#39;trajectory.dcd&#39;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
-<span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">&#39;log.txt&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
-    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="n">checkpointReporter</span> <span class="o">=</span> <span class="n">CheckpointReporter</span><span class="p">(</span><span class="s1">&#39;checkpoint.chk&#39;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<span class="n">dcdReporter</span> <span class="o">=</span> <span class="n">DCDReporter</span><span class="p">(</span><span class="s1">'trajectory.dcd'</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">'log.txt'</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">'</span><span class="se">\t</span><span class="s1">'</span><span class="p">)</span>
+<span class="n">checkpointReporter</span> <span class="o">=</span> <span class="n">CheckpointReporter</span><span class="p">(</span><span class="s1">'checkpoint.chk'</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
 
 <span class="c1"># Prepare the Simulation</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Building system...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Building system...'</span><span class="p">)</span>
 <span class="n">topology</span> <span class="o">=</span> <span class="n">prmtop</span><span class="o">.</span><span class="n">topology</span>
 <span class="n">positions</span> <span class="o">=</span> <span class="n">inpcrd</span><span class="o">.</span><span class="n">positions</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">prmtop</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">nonbondedMethod</span><span class="p">,</span> <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="n">nonbondedCutoff</span><span class="p">,</span>
@@ -124,15 +124,15 @@ field parameters, there are no further preparation steps required before OpenMM 
 
 <span class="c1"># Minimize and Equilibrate</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Performing energy minimization...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Performing energy minimization...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Equilibrating...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Equilibrating...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">equilibrationSteps</span><span class="p">)</span>
 
 <span class="c1"># Simulate</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Simulating...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Simulating...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dcdReporter</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataReporter</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">checkpointReporter</span><span class="p">)</span>
@@ -161,8 +161,8 @@ field parameters, there are no further preparation steps required before OpenMM 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inpcrd</span> <span class="o">=</span> <span class="n">AmberInpcrdFile</span><span class="p">(</span><span class="s1">&#39;input.inpcrd&#39;</span><span class="p">)</span>
-<span class="n">prmtop</span> <span class="o">=</span> <span class="n">AmberPrmtopFile</span><span class="p">(</span><span class="s1">&#39;input.prmtop&#39;</span><span class="p">,</span> <span class="n">periodicBoxVectors</span><span class="o">=</span><span class="n">inpcrd</span><span class="o">.</span><span class="n">boxVectors</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inpcrd</span> <span class="o">=</span> <span class="n">AmberInpcrdFile</span><span class="p">(</span><span class="s1">'input.inpcrd'</span><span class="p">)</span>
+<span class="n">prmtop</span> <span class="o">=</span> <span class="n">AmberPrmtopFile</span><span class="p">(</span><span class="s1">'input.prmtop'</span><span class="p">,</span> <span class="n">periodicBoxVectors</span><span class="o">=</span><span class="n">inpcrd</span><span class="o">.</span><span class="n">boxVectors</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -206,7 +206,7 @@ OpenMM System object that we will create later from the AmberPrmtopFile, so we n
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dcdReporter</span> <span class="o">=</span> <span class="n">DCDReporter</span><span class="p">(</span><span class="s1">&#39;trajectory.dcd&#39;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dcdReporter</span> <span class="o">=</span> <span class="n">DCDReporter</span><span class="p">(</span><span class="s1">'trajectory.dcd'</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -215,8 +215,8 @@ OpenMM System object that we will create later from the AmberPrmtopFile, so we n
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">&#39;log.txt&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
-    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">'log.txt'</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">'</span><span class="se">\t</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -225,7 +225,7 @@ OpenMM System object that we will create later from the AmberPrmtopFile, so we n
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">checkpointReporter</span> <span class="o">=</span> <span class="n">CheckpointReporter</span><span class="p">(</span><span class="s1">&#39;checkpoint.chk&#39;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">checkpointReporter</span> <span class="o">=</span> <span class="n">CheckpointReporter</span><span class="p">(</span><span class="s1">'checkpoint.chk'</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -475,7 +475,7 @@ long simulation to study the diffusion of a molecule in solution, and want to av
 <span class="k">class</span><span class="w"> </span><span class="nc">COMReporter</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">reportInterval</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
         <span class="c1"># OpenMM does not manage the output file(s); reporters have full control over this.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reportInterval</span> <span class="o">=</span> <span class="n">reportInterval</span>
 
         <span class="c1"># Save the indices given and look up the atom masses with System.getParticleMass().</span>
@@ -488,13 +488,13 @@ long simulation to study the diffusion of a molecule in solution, and want to av
     <span class="k">def</span><span class="w"> </span><span class="nf">describeNextReport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulation</span><span class="p">):</span>
         <span class="c1"># Calculate the number of steps to the next report, if reports should happen at multiples of reportInterval steps.</span>
         <span class="n">steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reportInterval</span> <span class="o">-</span> <span class="n">simulation</span><span class="o">.</span><span class="n">currentStep</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reportInterval</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;positions&#39;</span><span class="p">],</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">'positions'</span><span class="p">],</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">compute_com_nm</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_masses</span><span class="p">)</span>
 
         <span class="c1"># Do any kind of reporting.  We flush the file to make sure that a new line is written immediately.</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">12.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -548,7 +548,7 @@ guide</a>. OpenMM will process this information and automatically call the repor
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">COMReporter</span><span class="p">(</span><span class="s2">&quot;com.txt&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">indices</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">COMReporter</span><span class="p">(</span><span class="s2">"com.txt"</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">indices</span><span class="p">))</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -560,16 +560,16 @@ guide</a>. OpenMM will process this information and automatically call the repor
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="n">com_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;com.txt&quot;</span><span class="p">)</span>
+<span class="n">com_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">"com.txt"</span><span class="p">)</span>
 
-<span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">)</span>
+<span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"constrained"</span><span class="p">)</span>
 
-<span class="n">axes</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">"3d"</span><span class="p">)</span>
 <span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">com_pos</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="n">axes</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x$ (nm)&quot;</span><span class="p">)</span>
-<span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$y$ (nm)&quot;</span><span class="p">)</span>
-<span class="n">axes</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s2">&quot;$z$ (nm)&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">"equal"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"$x$ (nm)"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"$y$ (nm)"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s2">"$z$ (nm)"</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -593,9 +593,9 @@ guide</a>. OpenMM will process this information and automatically call the repor
 <li><p>Use OpenMM’s builtin reporter classes to output simulation results, and write your own custom reporters</p></li>
 </ul>
 <p>You may want to load input files from a molecular dynamics program other than Amber. For <a class="reference external" href="https://academiccharmm.org/">CHARMM</a>, you will need a PSF file with structure information, a CRD file with coordinates, and then force field files in CHARMM’s RTF (residue topology), PRM (parameters), and/or STR (stream file) formats. These files can be loaded into OpenMM like</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">psf</span> <span class="o">=</span> <span class="n">CharmmPsfFile</span><span class="p">(</span><span class="s1">&#39;input.psf&#39;</span><span class="p">)</span>
-<span class="n">crd</span> <span class="o">=</span> <span class="n">CharmmCrdFile</span><span class="p">(</span><span class="s1">&#39;input.crd&#39;</span><span class="p">)</span>
-<span class="n">params</span> <span class="o">=</span> <span class="n">CharmmParameterSet</span><span class="p">(</span><span class="s1">&#39;input.prm&#39;</span><span class="p">,</span> <span class="s1">&#39;input.rtf&#39;</span><span class="p">,</span> <span class="s1">&#39;input.str&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># Include as many files as needed</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">psf</span> <span class="o">=</span> <span class="n">CharmmPsfFile</span><span class="p">(</span><span class="s1">'input.psf'</span><span class="p">)</span>
+<span class="n">crd</span> <span class="o">=</span> <span class="n">CharmmCrdFile</span><span class="p">(</span><span class="s1">'input.crd'</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="n">CharmmParameterSet</span><span class="p">(</span><span class="s1">'input.prm'</span><span class="p">,</span> <span class="s1">'input.rtf'</span><span class="p">,</span> <span class="s1">'input.str'</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># Include as many files as needed</span>
 </pre></div>
 </div>
 <p>A Topology, positions, and a System can then be created like</p>
@@ -605,8 +605,8 @@ guide</a>. OpenMM will process this information and automatically call the repor
 </pre></div>
 </div>
 <p>For <a class="reference external" href="https://www.gromacs.org/">GROMACS</a>, you will need a GRO file with coordinates, a TOP file with topology information, and a path to a directory with include files. These can be loaded as</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gro</span> <span class="o">=</span> <span class="n">GromacsGroFile</span><span class="p">(</span><span class="s1">&#39;input.gro&#39;</span><span class="p">)</span>
-<span class="n">top</span> <span class="o">=</span> <span class="n">GromacsTopFile</span><span class="p">(</span><span class="s1">&#39;input.top&#39;</span><span class="p">,</span> <span class="n">includeDir</span><span class="o">=</span><span class="s1">&#39;/path/to/gromacs/share/gromacs/top&#39;</span><span class="p">,</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gro</span> <span class="o">=</span> <span class="n">GromacsGroFile</span><span class="p">(</span><span class="s1">'input.gro'</span><span class="p">)</span>
+<span class="n">top</span> <span class="o">=</span> <span class="n">GromacsTopFile</span><span class="p">(</span><span class="s1">'input.top'</span><span class="p">,</span> <span class="n">includeDir</span><span class="o">=</span><span class="s1">'/path/to/gromacs/share/gromacs/top'</span><span class="p">,</span>
     <span class="n">periodicBoxVectors</span><span class="o">=</span><span class="n">gro</span><span class="o">.</span><span class="n">getPeriodicBoxVectors</span><span class="p">())</span>
 </pre></div>
 </div>

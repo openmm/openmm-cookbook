@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Implementing a Coarse-Grained Polymer Force Field" href="coarse_grained_polymer.html" />
-    <link rel="prev" title="Selecting Values for Simulation Parameters" href="simulation_parameters.html" />
+    <link rel="prev" title="Multistate Sampling 2: Expanded Ensemble" href="expanded_ensemble.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -105,9 +105,9 @@ the rest of the system during the simulation. The Lennard-Jones parameters sigma
 
 <span class="c1"># Define the energy function for the CustomNonbondedForce</span>
 <span class="c1"># when lambda is 1.0 it is a normal LJ potential, when lambda is 0.0 the interaction vanishes</span>
-<span class="n">energy_function</span> <span class="o">=</span> <span class="s1">&#39;lambda*4*epsilon*x*(x-1.0); x = (sigma/reff_sterics)^6;&#39;</span>
-<span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">&#39;reff_sterics = sigma*(0.5*(1.0-lambda) + (r/sigma)^6)^(1/6);&#39;</span>
-<span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">&#39;sigma = 0.5*(sigma1+sigma2); epsilon = sqrt(epsilon1*epsilon2);&#39;</span>
+<span class="n">energy_function</span> <span class="o">=</span> <span class="s1">'lambda*4*epsilon*x*(x-1.0); x = (sigma/reff_sterics)^6;'</span>
+<span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">'reff_sterics = sigma*(0.5*(1.0-lambda) + (r/sigma)^6)^(1/6);'</span>
+<span class="n">energy_function</span> <span class="o">+=</span> <span class="s1">'sigma = 0.5*(sigma1+sigma2); epsilon = sqrt(epsilon1*epsilon2);'</span>
 <span class="n">custom_force</span> <span class="o">=</span> <span class="n">CustomNonbondedForce</span><span class="p">(</span><span class="n">energy_function</span><span class="p">)</span>
 
 <span class="c1"># Set the custom force to use a cutoff</span>
@@ -116,11 +116,11 @@ the rest of the system during the simulation. The Lennard-Jones parameters sigma
 <span class="n">custom_force</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">nbforce</span><span class="o">.</span><span class="n">getCutoffDistance</span><span class="p">())</span>
 
 <span class="c1"># Add lambda as a parameter we can change during the simulation</span>
-<span class="n">custom_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">custom_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'lambda'</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
 <span class="c1"># set the values of sigma and epsilon by copying them from the existing NonBondedForce</span>
-<span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
-<span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;epsilon&#39;</span><span class="p">)</span>
+<span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'sigma'</span><span class="p">)</span>
+<span class="n">custom_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'epsilon'</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">getNumParticles</span><span class="p">()):</span>
     <span class="p">[</span><span class="n">charge</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">]</span> <span class="o">=</span> <span class="n">nbforce</span><span class="o">.</span><span class="n">getParticleParameters</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
     <span class="n">custom_force</span><span class="o">.</span><span class="n">addParticle</span><span class="p">([</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">])</span>
@@ -151,7 +151,7 @@ energies at the new alchemical state.</p>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
 
 <span class="c1"># Minimize energy</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Minimizing energy...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Minimizing energy...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
 
 <span class="c1"># Collect data</span>
@@ -169,14 +169,14 @@ energies at the new alchemical state.</p>
 <span class="n">kT</span> <span class="o">=</span> <span class="n">AVOGADRO_CONSTANT_NA</span> <span class="o">*</span> <span class="n">BOLTZMANN_CONSTANT_kB</span> <span class="o">*</span> <span class="n">integrator</span><span class="o">.</span><span class="n">getTemperature</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niterations</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;state </span><span class="si">%5d</span><span class="s1"> iteration </span><span class="si">%5d</span><span class="s1"> / </span><span class="si">%5d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">niterations</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">'state </span><span class="si">%5d</span><span class="s1"> iteration </span><span class="si">%5d</span><span class="s1"> / </span><span class="si">%5d</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">niterations</span><span class="p">))</span>
         <span class="c1"># Set alchemical state</span>
-        <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">'lambda'</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
         <span class="c1"># Run some dynamics</span>
         <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)</span>
         <span class="c1"># Compute energies at all alchemical states</span>
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstates</span><span class="p">):</span>
-            <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
+            <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">'lambda'</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
             <span class="n">u_kln</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">iteration</span><span class="p">]</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getPotentialEnergy</span><span class="p">()</span> <span class="o">/</span> <span class="n">kT</span>
 </pre></div>
 </div>
@@ -207,8 +207,8 @@ energies at the new alchemical state.</p>
 <span class="c1"># See this issue: https://github.com/choderalab/pymbar/issues/419</span>
 <span class="n">results</span> <span class="o">=</span> <span class="n">mbar</span><span class="o">.</span><span class="n">compute_free_energy_differences</span><span class="p">(</span><span class="n">compute_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Free energy change to insert a particle = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;Delta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Statistical uncertainty = &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;dDelta_f&#39;</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Free energy change to insert a particle = "</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">'Delta_f'</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Statistical uncertainty = "</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">'dDelta_f'</span><span class="p">][</span><span class="n">nstates</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -224,7 +224,7 @@ energies at the new alchemical state.</p>
     <ul>
         <li>
           &larr;
-          <a href="simulation_parameters.html" title="Previous document">Selecting Values for Simulation Parameters</a>
+          <a href="expanded_ensemble.html" title="Previous document">Multistate Sampling 2: Expanded Ensemble</a>
         </li>
         <li>
           <a href="coarse_grained_polymer.html" title="Next document">Implementing a Coarse-Grained Polymer Force Field</a>
@@ -273,6 +273,8 @@ energies at the new alchemical state.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Alchemical Free Energy Calculations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Basic-concept">Basic concept</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Defining-alchemically-modified-potentials">Defining alchemically-modified potentials</a></li>

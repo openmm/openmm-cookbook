@@ -72,7 +72,7 @@ tables of parameter values. To demonstrate this, we first create a <a class="ref
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomNonbondedForce</span><span class="p">(</span><span class="s2">&quot;4*epsilon(type1, type2)*((sigma(type1, type2)/r)^12 - (sigma(type1, type2)/r)^6)&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomNonbondedForce</span><span class="p">(</span><span class="s2">"4*epsilon(type1, type2)*((sigma(type1, type2)/r)^12 - (sigma(type1, type2)/r)^6)"</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">lj</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -82,7 +82,7 @@ tables of parameter values. To demonstrate this, we first create a <a class="ref
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">"type"</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -102,16 +102,16 @@ tables of parameter values. To demonstrate this, we first create a <a class="ref
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">addTabulatedFunction</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Discrete2DFunction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span><span class="o">.</span><span class="n">addTabulatedFunction</span><span class="p">(</span><span class="s2">"sigma"</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Discrete2DFunction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
     <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">],</span>
     <span class="p">[</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">],</span>
     <span class="p">[</span><span class="mf">1.4</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">]</span>
-<span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)))</span>
-<span class="n">lj</span><span class="o">.</span><span class="n">addTabulatedFunction</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Discrete2DFunction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+<span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)))</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">addTabulatedFunction</span><span class="p">(</span><span class="s2">"epsilon"</span><span class="p">,</span> <span class="n">openmm</span><span class="o">.</span><span class="n">Discrete2DFunction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
     <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span>
     <span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span>
     <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]</span>
-<span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)));</span>
+<span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)));</span>
 </pre></div>
 </div>
 </div>
@@ -130,14 +130,14 @@ interactions, you should use NonbondedForce for the electrostatics, setting all 
 <h2>Custom Expressions<a class="headerlink" href="#Custom-Expressions" title="Link to this heading">¶</a></h2>
 <p>You can populate the <code class="docutils literal notranslate"><span class="pre">sigma</span></code> and <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> tables with arbitrary values, or even use some other mixing rule to calculate them. If, instead of using tabulated values for all particle type pairs, you want to have OpenMM compute values according to some mixing rule from <code class="docutils literal notranslate"><span class="pre">sigma</span></code> and <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> values set for each <em>particle</em>, you can include your rule in the CustomNonbondedForce energy expression, and add per-particle parameters for these values instead of particle types, <em>e.g.</em>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lj</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomNonbondedForce</span><span class="p">(</span>
-    <span class="s2">&quot;4*epsilon*((sigma/r)^12 - (sigma/r)^6);&quot;</span>
+    <span class="s2">"4*epsilon*((sigma/r)^12 - (sigma/r)^6);"</span>
 
     <span class="c1"># Expressions can depend on sigma1, sigma2, epsilon1, and epsilon2</span>
     <span class="c1"># and must be symmetric with respect to exchange of 1 and 2</span>
-    <span class="s2">&quot;sigma = ...; epsilon = ...&quot;</span>
+    <span class="s2">"sigma = ...; epsilon = ..."</span>
 <span class="p">)</span>
-<span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">)</span>
-<span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">)</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">"sigma"</span><span class="p">)</span>
+<span class="n">lj</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s2">"epsilon"</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="o">...</span><span class="p">:</span>
     <span class="c1"># Specify sigma and epsilon for each particle</span>
@@ -155,9 +155,9 @@ interest. For instance, this could look like:</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj_exceptions</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomBondForce</span><span class="p">(</span><span class="s2">&quot;4*epsilon*((sigma/r)^12 - (sigma/r)^6)&quot;</span><span class="p">)</span>
-<span class="n">lj_exceptions</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">)</span>
-<span class="n">lj_exceptions</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lj_exceptions</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomBondForce</span><span class="p">(</span><span class="s2">"4*epsilon*((sigma/r)^12 - (sigma/r)^6)"</span><span class="p">)</span>
+<span class="n">lj_exceptions</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">"sigma"</span><span class="p">)</span>
+<span class="n">lj_exceptions</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">"epsilon"</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">lj_exceptions</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">add_exception</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>

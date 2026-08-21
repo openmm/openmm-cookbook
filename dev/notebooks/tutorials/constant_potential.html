@@ -46,18 +46,18 @@
 <h1>Simulating Conductive Electrodes with the Constant Potential Method<a class="headerlink" href="#Simulating-Conductive-Electrodes-with-the-Constant-Potential-Method" title="Link to this heading">¶</a></h1>
 <p>The constant potential molecular dynamics method is an approach for simulating conductive materials with delocalized charges, and maintaining them at prescribed electric potentials. In constant potential simulations, the charges on a prescribed set of particles (those belonging to the conductive material, or the “electrode particles”) are allowed to fluctuate as they interact with other particles in the system. This is useful for studying various kinds of electrochemical systems, <em>e.g.</em>, the
 electrode-electrolyte interface in a parallel plate capacitor. In this tutorial, we will show how to set up a constant potential simulation using OpenMM’s implementation of this method. Specifically, we will use a capacitor system described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 1</span></a>, with an aqueous NaCl electrolyte sandwiched between two Au electrodes:</p>
-<p><img alt="a0135176985042e2930aef8253d7d2c3" class="no-scaled-link" src="../../_images/constant_potential_1.png" width="800" /></p>
+<p><img alt="14e1c953990d4cc0bef7fb1fb2a0aa37" class="no-scaled-link" src="../../_images/constant_potential_1.png" width="800" /></p>
 <section id="Theory">
 <h2>Theory<a class="headerlink" href="#Theory" title="Link to this heading">¶</a></h2>
 <p>A full exposition of the theory behind constant potential simulations is beyond the scope of this tutorial, but it is useful to be acquainted with the basics before getting started. In ordinary molecular simulations with fixed charges, we wish to sample configurations <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span> of <span class="math notranslate nohighlight">\(N\)</span> particles based on some potential energy function <span class="math notranslate nohighlight">\(U(\mathbf{r}^N)\)</span>. In the constant potential approach, some number <span class="math notranslate nohighlight">\(M\)</span> of particles are allowed to have varying charges, so that we
 have <span class="math notranslate nohighlight">\(U(\mathbf{r}^N,\mathbf{q}^M)\)</span>. The commonly used method implemented by OpenMM for constant potential simulations uses a Born-Oppenheimer-like approach in which <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span> is chosen at every step to minimize <span class="math notranslate nohighlight">\(U\)</span> for the given <span class="math notranslate nohighlight">\(\mathbf{r}^N\)</span>. Since electrostatic interactions can be treated with Coulomb’s law, <span class="math notranslate nohighlight">\(U\)</span> is quadratic in the <span class="math notranslate nohighlight">\(\mathbf{q}^M\)</span>, and minimizing it is equivalent to solving a linear system.</p>
 <p>Actually computing the coefficients of this system, which are functions of the particle positions, is more complex. For parallel plate capacitor geometries like the one shown above, the system effectively has periodic boundary conditions in the plane of the electrodes, but is non-periodic in the direction normal to their surfaces.</p>
-<p><img alt="223a774b532e47af8a2213f3c2c0b872" class="no-scaled-link" src="../../_images/constant_potential_2.png" width="800" /></p>
+<p><img alt="f2f8a0d269ca4e7d927a2d185ccb84ce" class="no-scaled-link" src="../../_images/constant_potential_2.png" width="800" /></p>
 <p>There are a few options for using periodic boundary conditions in all three dimensions so that standard tools for computing the electrostatic interactions, such as the particle mesh Ewald method, can be employed. Leaving empty space between periodic images introduces various complications, since this effectively creates a pair of dissimilar capacitors, one containing an electrolyte material of interest, and another containing vacuum. Another option is a double cell geometry, with each periodic
 image containing the capacitor system of interest and a reflected copy of it. This keeps the net potential difference across the simulation cell, and its net dipole moment, zero:</p>
-<p><img alt="e6321a35ab90497699db6fc9dd77eba5" class="no-scaled-link" src="../../_images/constant_potential_3.png" width="800" /></p>
+<p><img alt="e704216fd58149f5978722e9f9c1d0fd" class="no-scaled-link" src="../../_images/constant_potential_3.png" width="800" /></p>
 <p>The implementation in OpenMM supports such geometries, but they are more computationally expensive, requiring double the number of particles in the system of interest. In this tutorial, we show how to use the finite field method described in <a class="reference internal" href="#References"><span class="std std-ref">Ref. 2</span></a>, in which only a single copy of the system is needed, and an external electric field is applied to all charges in the system to maintain the desired electric potential difference across the periodic box:</p>
-<p><img alt="4316b94c01734a77bfcba764ad1790aa" class="no-scaled-link" src="../../_images/constant_potential_4.png" width="800" /></p>
+<p><img alt="df7f6ac3d7114155ad96af9d3506d3e0" class="no-scaled-link" src="../../_images/constant_potential_4.png" width="800" /></p>
 <p>There are many more details that this tutorial will not explore, but the reader is referred to <a class="reference internal" href="#References"><span class="std std-ref">Refs. 1-3</span></a> for more information about the theory, as well as to the <a class="reference external" href="https://docs.openmm.org/latest/userguide/theory/02_standard_forces.html#constantpotentialforce">user guide</a> for the details of the specific implementation in OpenMM.</p>
 </section>
 <section id="Setting-Parameters">
@@ -132,7 +132,7 @@ coordinates for the simulation.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s2">&quot;constant_potential.pdb&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s2">"constant_potential.pdb"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -206,7 +206,7 @@ atom (since each Au atom in the PDB file is in its own residue), and define Lenn
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">force_field</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s2">&quot;amber19/spce.xml&quot;</span><span class="p">,</span> <span class="s2">&quot;constant_potential_example_gold.xml&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">force_field</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s2">"amber19/spce.xml"</span><span class="p">,</span> <span class="s2">"constant_potential_example_gold.xml"</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">force_field</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">openmm</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">,</span> <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="n">R_CUT</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -366,7 +366,7 @@ Gaussian width parameter, and the Thomas-Fermi scale parameter. This is what we 
         <span class="bp">self</span><span class="o">.</span><span class="n">_j_indices</span><span class="p">,</span> <span class="n">j_potential</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">conp</span><span class="o">.</span><span class="n">getElectrodeParameters</span><span class="p">(</span><span class="n">j_electrode</span><span class="p">)</span>
 
         <span class="c1"># Calculate the potential difference between the electrodes.  Dividing by</span>
-        <span class="c1"># AVOGADRO_CONSTANT_NA removes a factor of 1/mol present in OpenMM&#39;s units.</span>
+        <span class="c1"># AVOGADRO_CONSTANT_NA removes a factor of 1/mol present in OpenMM's units.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_potential</span> <span class="o">=</span> <span class="p">(</span><span class="n">j_potential</span> <span class="o">-</span> <span class="n">i_potential</span><span class="p">)</span> <span class="o">/</span> <span class="n">openmm</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">AVOGADRO_CONSTANT_NA</span>
 
         <span class="c1"># We will store a sum of capacitance values (per area) and number of samples, for computing an average.</span>
@@ -514,6 +514,8 @@ the update interval for the barostat, dividing the desired potential difference 
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>

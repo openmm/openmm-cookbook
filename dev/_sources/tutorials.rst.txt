@@ -25,6 +25,8 @@ examples of using OpenMM to perform more complex simulation tasks.
 .. toctree::
     :maxdepth: 1
 
+    notebooks/tutorials/replica_exchange
+    notebooks/tutorials/expanded_ensemble
     notebooks/tutorials/Alchemical_free_energy_calculations
     notebooks/tutorials/coarse_grained_polymer
     notebooks/tutorials/nuclear_quantum_effects

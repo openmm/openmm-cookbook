@@ -81,7 +81,7 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide.pdb&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'alanine-dipeptide.pdb'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -99,7 +99,7 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">&#39;aceff-2.0&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">'aceff-2.0'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -156,7 +156,7 @@ tradeoff is that a specialized model for one specific molecule can be much small
 
     <span class="c1"># Generate data</span>
 
-    <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XTCReporter</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide.xtc&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XTCReporter</span><span class="p">(</span><span class="s1">'alanine-dipeptide.xtc'</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
     <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -185,8 +185,8 @@ Wall time: 3min 16s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide.pdb&#39;</span><span class="p">,</span> <span class="s1">&#39;alanine-dipeptide.xtc&#39;</span><span class="p">)</span>
-<span class="n">ramachandran</span> <span class="o">=</span> <span class="n">Ramachandran</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s2">&quot;protein&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">'alanine-dipeptide.pdb'</span><span class="p">,</span> <span class="s1">'alanine-dipeptide.xtc'</span><span class="p">)</span>
+<span class="n">ramachandran</span> <span class="o">=</span> <span class="n">Ramachandran</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s2">"protein"</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">ramachandran</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -217,7 +217,7 @@ Wall time: 3min 16s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide-water.pdb&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'alanine-dipeptide-water.pdb'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -235,7 +235,7 @@ Wall time: 3min 16s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ff</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber19-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber19/tip3pfb.xml&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ff</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber19-all.xml'</span><span class="p">,</span> <span class="s1">'amber19/tip3pfb.xml'</span><span class="p">)</span>
 <span class="n">mm_system</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -275,8 +275,8 @@ Wall time: 10min 58s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide-water.pdb&#39;</span><span class="p">,</span> <span class="s1">&#39;alanine-dipeptide.xtc&#39;</span><span class="p">)</span>
-<span class="n">ramachandran</span> <span class="o">=</span> <span class="n">Ramachandran</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s2">&quot;protein&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">'alanine-dipeptide-water.pdb'</span><span class="p">,</span> <span class="s1">'alanine-dipeptide.xtc'</span><span class="p">)</span>
+<span class="n">ramachandran</span> <span class="o">=</span> <span class="n">Ramachandran</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s2">"protein"</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">ramachandran</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -306,8 +306,8 @@ Wall time: 10min 58s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;alanine-dipeptide.pdb&#39;</span><span class="p">)</span>
-<span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">&#39;orb-v3-conservative-omol&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'alanine-dipeptide.pdb'</span><span class="p">)</span>
+<span class="n">potential</span> <span class="o">=</span> <span class="n">MLPotential</span><span class="p">(</span><span class="s1">'orb-v3-conservative-omol'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
 <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
@@ -401,6 +401,8 @@ Wall time: 10min 58s
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>

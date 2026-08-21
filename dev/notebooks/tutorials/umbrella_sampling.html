@@ -120,16 +120,16 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 <span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">stdout</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;deca-ala.pdb&#39;</span><span class="p">)</span>
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">'deca-ala.pdb'</span><span class="p">)</span>
 
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber14-all.xml'</span><span class="p">)</span>
 
 <span class="c1"># We have a single molecule in vacuum so we use no cutoff.</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">NoCutoff</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">HBonds</span><span class="p">,</span> <span class="n">hydrogenMass</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">amu</span><span class="p">)</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">unit</span><span class="o">.</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">picoseconds</span><span class="p">)</span>
 <span class="n">simulation</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">DCDReporter</span><span class="p">(</span><span class="s1">&#39;smd_traj.dcd&#39;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">DCDReporter</span><span class="p">(</span><span class="s1">'smd_traj.dcd'</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
 <span class="c1"># equilibrate</span>
@@ -139,7 +139,7 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 <span class="c1"># define the CV as the distance between the CAs of the two end residues</span>
 <span class="n">index1</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">index2</span> <span class="o">=</span> <span class="mi">98</span>
-<span class="n">cv</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">CustomBondForce</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">cv</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">CustomBondForce</span><span class="p">(</span><span class="s1">'r'</span><span class="p">)</span>
 <span class="n">cv</span><span class="o">.</span><span class="n">addBond</span><span class="p">(</span><span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
 
 <span class="c1"># now setup SMD</span>
@@ -165,10 +165,10 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 <span class="c1"># define a harmonic restraint on the CV</span>
 <span class="c1"># the location of the restrain will be moved as we run the simulation</span>
 <span class="c1"># this is constant velocity steered MD</span>
-<span class="n">pullingForce</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">CustomCVForce</span><span class="p">(</span><span class="s1">&#39;0.5 * fc_pull * (cv-r0)^2&#39;</span><span class="p">)</span>
-<span class="n">pullingForce</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;fc_pull&#39;</span><span class="p">,</span> <span class="n">fc_pull</span><span class="p">)</span>
-<span class="n">pullingForce</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;r0&#39;</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
-<span class="n">pullingForce</span><span class="o">.</span><span class="n">addCollectiveVariable</span><span class="p">(</span><span class="s2">&quot;cv&quot;</span><span class="p">,</span> <span class="n">cv</span><span class="p">)</span>
+<span class="n">pullingForce</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">CustomCVForce</span><span class="p">(</span><span class="s1">'0.5 * fc_pull * (cv-r0)^2'</span><span class="p">)</span>
+<span class="n">pullingForce</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'fc_pull'</span><span class="p">,</span> <span class="n">fc_pull</span><span class="p">)</span>
+<span class="n">pullingForce</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'r0'</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
+<span class="n">pullingForce</span><span class="o">.</span><span class="n">addCollectiveVariable</span><span class="p">(</span><span class="s2">"cv"</span><span class="p">,</span> <span class="n">cv</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">pullingForce</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">reinitialize</span><span class="p">(</span><span class="n">preserveState</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -184,11 +184,11 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
     <span class="n">current_cv_value</span> <span class="o">=</span> <span class="n">pullingForce</span><span class="o">.</span><span class="n">getCollectiveVariableValues</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="n">increment_steps</span><span class="p">)</span><span class="o">%</span><span class="k">5000</span> == 0:
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;r0 = &quot;</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="s2">&quot;r = &quot;</span><span class="p">,</span> <span class="n">current_cv_value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"r0 = "</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="s2">"r = "</span><span class="p">,</span> <span class="n">current_cv_value</span><span class="p">)</span>
 
     <span class="c1"># increment the location of the CV based on the pulling velocity</span>
     <span class="n">r0</span> <span class="o">+=</span> <span class="n">v_pulling</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">increment_steps</span>
-    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;r0&#39;</span><span class="p">,</span><span class="n">r0</span><span class="p">)</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">'r0'</span><span class="p">,</span><span class="n">r0</span><span class="p">)</span>
 
     <span class="c1"># check if we should save this config as a window starting structure</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">window_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span> <span class="ow">and</span> <span class="n">current_cv_value</span> <span class="o">&gt;=</span> <span class="n">windows</span><span class="p">[</span><span class="n">window_index</span><span class="p">]):</span>
@@ -197,7 +197,7 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 
 <span class="c1"># save the window structures</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coords</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">window_coords</span><span class="p">):</span>
-    <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.pdb&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">'window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.pdb'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span>
     <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="o">.</span><span class="n">writeFile</span><span class="p">(</span><span class="n">simulation</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span><span class="n">coords</span><span class="p">,</span> <span class="n">outfile</span><span class="p">)</span>
     <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
@@ -215,17 +215,17 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_window</span><span class="p">(</span><span class="n">window_index</span><span class="p">):</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;running window&#39;</span><span class="p">,</span> <span class="n">window_index</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'running window'</span><span class="p">,</span> <span class="n">window_index</span><span class="p">)</span>
 
     <span class="c1"># load in the starting configuration for this window</span>
-    <span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;window_</span><span class="si">{</span><span class="n">window_index</span><span class="si">}</span><span class="s1">.pdb&#39;</span><span class="p">)</span>
+    <span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="sa">f</span><span class="s1">'window_</span><span class="si">{</span><span class="n">window_index</span><span class="si">}</span><span class="s1">.pdb'</span><span class="p">)</span>
 
     <span class="c1"># we can reuse the existing Simulation</span>
     <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
 
     <span class="c1"># set the fixed location of the harmonic restraint for this window</span>
     <span class="n">r0</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[</span><span class="n">window_index</span><span class="p">]</span>
-    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">&#39;r0&#39;</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="s1">'r0'</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
 
     <span class="c1"># run short equilibration with new positions and r0</span>
     <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">kelvin</span><span class="p">)</span>
@@ -249,9 +249,9 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
         <span class="n">cv_values</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">current_cv_value</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
 
     <span class="c1"># save the CV timeseries to a file so we can postprocess</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cv_values_window_</span><span class="si">{</span><span class="n">window_index</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cv_values</span><span class="p">))</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cv_values_window_</span><span class="si">{</span><span class="n">window_index</span><span class="si">}</span><span class="s1">.txt'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cv_values</span><span class="p">))</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed window&#39;</span><span class="p">,</span> <span class="n">window_index</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Completed window'</span><span class="p">,</span> <span class="n">window_index</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -281,15 +281,15 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 <span class="c1"># plot the histograms</span>
 <span class="n">metafilelines</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)):</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cv_values_window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cv_values_window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.txt'</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">metafileline</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;cv_values_window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.txt </span><span class="si">{</span><span class="n">windows</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> 1000</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="n">metafileline</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'cv_values_window_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.txt </span><span class="si">{</span><span class="n">windows</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> 1000</span><span class="se">\n</span><span class="s1">'</span>
     <span class="n">metafilelines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metafileline</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;r (nm)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"r (nm)"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"count"</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;metafile.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"metafile.txt"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">f</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">metafilelines</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -322,10 +322,10 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the PMF</span>
-<span class="n">pmf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;pmf.txt&quot;</span><span class="p">)</span>
+<span class="n">pmf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">"pmf.txt"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pmf</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">pmf</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;r (nm)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;PMF (kJ/mol)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"r (nm)"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"PMF (kJ/mol)"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -436,6 +436,8 @@ we will compute the PMF along <span class="math notranslate nohighlight">\(r\)</
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>

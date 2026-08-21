@@ -59,8 +59,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
-<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;ala_ala_ala.pdb&#39;</span><span class="p">)</span>
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'ala_ala_ala.pdb'</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber14-all.xml'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -70,11 +70,11 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">external</span> <span class="o">=</span> <span class="n">CustomExternalForce</span><span class="p">(</span><span class="s1">&#39;-fx*x-fy*y-fz*z&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">external</span> <span class="o">=</span> <span class="n">CustomExternalForce</span><span class="p">(</span><span class="s1">'-fx*x-fy*y-fz*z'</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">external</span><span class="p">)</span>
-<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fx&#39;</span><span class="p">)</span>
-<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fy&#39;</span><span class="p">)</span>
-<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;fz&#39;</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'fx'</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'fy'</span><span class="p">)</span>
+<span class="n">external</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'fz'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

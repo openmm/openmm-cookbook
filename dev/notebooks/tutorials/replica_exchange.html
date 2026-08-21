@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Multistate Sampling 1: Replica Exchange &#8212; OpenMM Cookbook &amp; Tutorials dev documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a0d4cc31" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/notebooks.css?v=9b8a9a20" />
+    <script src="../../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Multistate Sampling 2: Expanded Ensemble" href="expanded_ensemble.html" />
+    <link rel="prev" title="Selecting Values for Simulation Parameters" href="simulation_parameters.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="nbsphinx-prolog">
+    <a href="replica_exchange.ipynb">Download Notebook</a>
+    <a href="https://github.com/openmm/openmm-cookbook/blob/main/notebooks/tutorials/replica_exchange.ipynb">View in GitHub</a>
+    <a href="https://colab.research.google.com/github/openmm/openmm-cookbook/blob/gh-pages/dev/colab/notebooks/tutorials/replica_exchange.ipynb">Open in Google Colab</a>
+</div><span class="target" id="index-0"></span><section id="Multistate-Sampling-1:-Replica-Exchange">
+<h1>Multistate Sampling 1: Replica Exchange<a class="headerlink" href="#Multistate-Sampling-1:-Replica-Exchange" title="Link to this heading">¶</a></h1>
+<section id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">¶</a></h2>
+<p>Multistate sampling refers to running simulations that sample a variety of <em>thermodynamic states</em>. A thermodynamic state is defined by the values of macroscopic properties such as temperature, pressure, and force field parameters. OpenMM has a flexible mechanism for describing thermodynamic states and a selection of algorithms for efficiently sampling them.</p>
+<p>Multistate sampling can be used for a variety of purposes. Most of them fall into two categories.</p>
+<ol class="arabic simple">
+<li><p><strong>To efficiently sample multiple states.</strong> For example, in an alchemical free energy calculation you need to compute properties of a system for different lambda values that transition between two different chemical systems. Or for an umbrella sampling simulation, you need to compute properties with the biasing potential at different positions. You could, of course, just run an independent simulation of each state, but multistate sampling algorithms are often much more efficient and produce
+converged results much more quickly.</p></li>
+<li><p><strong>To accelerate sampling.</strong> For example, you might want to study a system at physiological temperature, but it involves conformational transitions that only happen rarely at that temperature. You therefore simulate both the temperature you care about and also higher temperatures at which the transition happens more easily. The temperatures are coupled to each other in ways that allow efficient sampling of transitions while still producing results that correspond to the lower temperature.</p></li>
+</ol>
+<p>In this tutorial we will use <em>replica exchange</em>, a popular multistate sampling algorithm. It simulates several replicas of a system, each in a different thermodynamic state. It periodically exchanges the states between replicas, allowing a single trajectory to pass through multiple states over time. For example, a replica might start at low temperature, move to a higher temperature where transitions can happen more quickly, then return to the low temperature again. Exchanges are done in a way
+that still produces a correct Boltzmann distribution for each state.</p>
+</section>
+<section id="Running-the-Simulation">
+<h2>Running the Simulation<a class="headerlink" href="#Running-the-Simulation" title="Link to this heading">¶</a></h2>
+<p>Let’s start by creating the <code class="docutils literal notranslate"><span class="pre">System</span></code>, <code class="docutils literal notranslate"><span class="pre">Integrator</span></code>, and <code class="docutils literal notranslate"><span class="pre">Simulation</span></code>. In this example, we will simulate alanine dipeptide in a box of water.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openmm</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.app</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'alanine-dipeptide-water.pdb'</span><span class="p">)</span>
+<span class="n">ff</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber19-all.xml'</span><span class="p">,</span> <span class="s1">'amber19/tip3pfb.xml'</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">,</span> <span class="n">hydrogenMass</span><span class="o">=</span><span class="mf">1.25</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
+<span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">)</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The constructor for <code class="docutils literal notranslate"><span class="pre">LangevinIntegrator</span></code> requires us to specify a temperature, but the value doesn’t matter. It will get changed by the replica exchange algorithm as soon as we start running a simulation.</p>
+<p>Next we will define the set of thermodynamic states to simulate. For this simulation, we will simulate a variety of temperatures between 300K and 450K. This produces accurate sampling of the low temperatures while also permitting faster transitions between conformations.</p>
+<p>Thermodynamic states are specified by <code class="docutils literal notranslate"><span class="pre">dict</span></code> objects. The keys are the names of properties and the values are the corresponding values. In this case the only property is <code class="docutils literal notranslate"><span class="pre">'temperature'</span></code>. In the next tutorial we will see an example of states that define force field parameters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">states</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">'temperature'</span><span class="p">:</span><span class="n">t</span><span class="o">*</span><span class="n">kelvin</span><span class="p">}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">300.0</span><span class="p">,</span> <span class="mf">450.0</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+<p>Note that we use <code class="docutils literal notranslate"><span class="pre">geomspace()</span></code> to space the temperatures geometrically. Having a constant ratio between temperatures tends to lead to the most efficient sampling. For other types of properties, a different sort of spacing may be more appropriate.</p>
+<p>To perform replica exchange, we create a <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeSampler</span></code>. The constructor requires three arguments: the list of states, the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> object, and the interval (in time steps) at which to attempt exchanges. We specify 100 for the last one. That means it will simulate each replica for 100 steps, attempt to exchange states between them, then continue on to the next iteration.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sampler</span> <span class="o">=</span> <span class="n">ReplicaExchangeSampler</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Before collecting data from any simulation, you should always begin by equilibrating it. In this case, we need to equilibrate each replica separately.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)):</span>
+    <span class="n">sampler</span><span class="o">.</span><span class="n">simulateReplica</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>When running a simulation, we usually need to save results for later analysis. Because replica exchange is so different from standard simulations, the usual reporters are not appropriate. Instead there is a special <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeReporter</span></code> class just for recording information from replica exchange simulations. We add it to the <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeSampler</span></code> instead of the <code class="docutils literal notranslate"><span class="pre">Simulation</span></code>. We give it a path to a directory, and it creates multiple files inside that directory with the information we
+request. That always includes a file called <code class="docutils literal notranslate"><span class="pre">log.csv</span></code> recording what state each replica was in at each iteration. We also can request a variety of other information. In this case we specify <code class="docutils literal notranslate"><span class="pre">trajectoryPerState=True</span></code>, which means to save a trajectory file for each thermodynamic state.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sampler</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ReplicaExchangeReporter</span><span class="p">(</span><span class="s1">'repex'</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">trajectoryPerState</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">atomSubset</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">22</span><span class="p">))))</span>
+</pre></div>
+</div>
+</div>
+<p>The second argument is the frequency at which to record information. Unlike standard reporters, this is measured in iterations, not time steps. Since we specified 100 steps for each iteration, output will be written every 100 time steps.</p>
+<p>Now we are ready to run the simulation. Simply call <code class="docutils literal notranslate"><span class="pre">simulate()</span></code> on the <code class="docutils literal notranslate"><span class="pre">ReplicaExchangeSampler</span></code>. The argument is again measured in iterations, not steps.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sampler</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Analysis">
+<h2>Analysis<a class="headerlink" href="#Analysis" title="Link to this heading">¶</a></h2>
+<p>With any replica exchange simulation, the first thing you should do is make sure the replicas are getting exchanged correctly. If the replicas are too far apart, they may get stuck in a single state, unable to transition to a different one. In less extreme cases they may divide into groups with frequent transitions between the states in each group, but very little mixing between the groups.</p>
+<p>The log file records which state each replica was in at each time. Let’s load it and plot the state assignments for the replicas.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'repex'</span><span class="p">,</span> <span class="s1">'log.csv'</span><span class="p">),</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">log</span><span class="p">[:,</span><span class="mi">2</span><span class="p">:])</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Iteration'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'State'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_replica_exchange_14_0.png" src="../../_images/notebooks_tutorials_replica_exchange_14_0.png" />
+</div>
+</div>
+<p>There is good mixing between all states, so they are close enough together to allow frequent exchanges. If there were not, we would need to increase the number of states.</p>
+<p>Let’s load the trajectory file for state 0 (temperature 300K) and create a Ramachandran plot for it.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">MDAnalysis</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mda</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">MDAnalysis.analysis.dihedrals</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ramachandran</span>
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">mda</span><span class="o">.</span><span class="n">Universe</span><span class="p">(</span><span class="s1">'alanine-dipeptide.pdb'</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'repex'</span><span class="p">,</span> <span class="s1">'state_0.xtc'</span><span class="p">))</span>
+<span class="n">ramachandran</span> <span class="o">=</span> <span class="n">Ramachandran</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="s1">'protein'</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">ramachandran</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_tutorials_replica_exchange_16_0.png" src="../../_images/notebooks_tutorials_replica_exchange_16_0.png" />
+</div>
+</div>
+<p>We have a well converged distribution of dihedral angles at our target temperature.</p>
+<p>Replica exchange clearly worked, but you might still wonder if it was really worth doing. We had to simulate 20 replicas, 19 of which were at temperatures we didn’t really care about. If we had just run a single simulation at 300K for 20 times as long, could we have gotten as good a result?</p>
+<p>The answer depends on the details of a particular simulation, but often replica exchange still ends up as a huge benefit despite the need to simulate extra replicas. The reason is that transition rates depend exponentially on <span class="math notranslate nohighlight">\(E/k_BT\)</span>, where <span class="math notranslate nohighlight">\(E\)</span> is the barrier height. Even a small increase in temperature can sometimes lead to a large increase in the number of transitions observed. If instead we ran a single simulation at a fixed temperature, the number of transitions would only grow
+linearly with the length of the simulation. In the right cases, the exponential improvement from adding higher temperature replicas is far greater than the linear improvement from a longer simulation.</p>
+</section>
+<section id="Next-Steps">
+<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Link to this heading">¶</a></h2>
+<p>Replica exchange is not the only multistate sampling method in OpenMM. The next tutorial discusses expanded ensemble sampling, a related method that can often be more efficient, but requires a little more care to use correctly.</p>
+</section>
+<section id="Links">
+<h2>Links<a class="headerlink" href="#Links" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>API Documentation</p>
+<ul>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.replicaexchangesampler.ReplicaExchangeSampler.html">ReplicaExchangeSampler</a></p></li>
+<li><p><a class="reference external" href="https://docs.openmm.org/latest/api-python/generated/openmm.app.replicaexchangereporter.ReplicaExchangeReporter.html">ReplicaExchangeReporter</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simulation_parameters.html" title="Previous document">Selecting Values for Simulation Parameters</a>
+        </li>
+        <li>
+          <a href="expanded_ensemble.html" title="Next document">Multistate Sampling 2: Expanded Ensemble</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.svg" alt="Logo" />
+    
+    <h1 class="logo logo-name">OpenMM Cookbook & Tutorials</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><div class="navigation-scrollbox">
+    <div class="nav-toctree">
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook.html">The OpenMM Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Multistate Sampling 1: Replica Exchange</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Running-the-Simulation">Running the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Analysis">Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Next-Steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Links">Links</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Running_a_REST_simulation.html">Replica Exchange Solute Tempering (REST)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="constant_potential.html">Simulating Conductive Electrodes with the Constant Potential Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="umbrella_sampling.html">Umbrella Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="machine_learning_potentials.html">Machine Learning Potentials</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    <ul class="extra-nav-links">
+        
+        <li class="toctree-l1">
+            <a href="https://openmm.org">
+                OpenMM.org
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/userguide/">
+                User's Manual
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/developerguide/">
+                Developer Guide
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-c++/">
+                C++ API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://docs.openmm.org/latest/api-python/">
+                Python API reference
+            </a>
+        </li>
+        
+        <li class="toctree-l1">
+            <a href="https://github.com/openmm/openmm">
+                GitHub
+            </a>
+        </li>
+        
+    </ul>
+    
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, The OpenMM Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/notebooks/tutorials/replica_exchange.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

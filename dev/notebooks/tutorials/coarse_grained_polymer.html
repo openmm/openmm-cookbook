@@ -74,7 +74,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cgElement</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;CG-element&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;CG&#39;</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cgElement</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'CG-element'</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">'CG'</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -106,15 +106,15 @@
     <span class="n">chain</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addChain</span><span class="p">()</span>
 
     <span class="c1"># Create the first residue in the chain</span>
-    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;CG-residue&quot;</span><span class="p">,</span> <span class="n">chain</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
+    <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"CG-residue"</span><span class="p">,</span> <span class="n">chain</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
 
     <span class="c1"># In this example each residue is one bead so we add a single atom</span>
-    <span class="n">atom1</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;CG-bead&quot;</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="n">cgElement</span><span class="p">,</span> <span class="n">residue</span><span class="o">=</span><span class="n">residue</span><span class="p">)</span>
+    <span class="n">atom1</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"CG-bead"</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="n">cgElement</span><span class="p">,</span> <span class="n">residue</span><span class="o">=</span><span class="n">residue</span><span class="p">)</span>
 
     <span class="c1"># Now add the rest of residues in the chain</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-        <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;CG-residue&quot;</span><span class="p">,</span><span class="n">chain</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
-        <span class="n">atom2</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;CG-bead&quot;</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="n">cgElement</span><span class="p">,</span> <span class="n">residue</span><span class="o">=</span><span class="n">residue</span><span class="p">)</span>
+        <span class="n">residue</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addResidue</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"CG-residue"</span><span class="p">,</span><span class="n">chain</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
+        <span class="n">atom2</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">addAtom</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"CG-bead"</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="n">cgElement</span><span class="p">,</span> <span class="n">residue</span><span class="o">=</span><span class="n">residue</span><span class="p">)</span>
 
         <span class="c1"># add the bonds in as we go</span>
         <span class="n">topology</span><span class="o">.</span><span class="n">addBond</span><span class="p">(</span><span class="n">atom1</span><span class="p">,</span> <span class="n">atom2</span><span class="p">)</span>
@@ -164,7 +164,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># output the initial configuration</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;initial_config.pdb&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'initial_config.pdb'</span><span class="p">,</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="o">.</span><span class="n">writeFile</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -212,14 +212,14 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
     <span class="n">harmonic_bond_force</span><span class="o">.</span><span class="n">addBond</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">bond</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mf">0.38</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 
 <span class="c1"># Define a Lennard-Jones potential</span>
-<span class="n">expression</span> <span class="o">=</span> <span class="s1">&#39;4*epsilon*((sigma/r)^12-(sigma/r)^6);&#39;</span>\
-            <span class="o">+</span> <span class="s1">&#39; sigma=0.5*(sigma1+sigma2);&#39;</span>\
-            <span class="o">+</span> <span class="s1">&#39; epsilon=sqrt(epsilon1*epsilon2)&#39;</span>
+<span class="n">expression</span> <span class="o">=</span> <span class="s1">'4*epsilon*((sigma/r)^12-(sigma/r)^6);'</span>\
+            <span class="o">+</span> <span class="s1">' sigma=0.5*(sigma1+sigma2);'</span>\
+            <span class="o">+</span> <span class="s1">' epsilon=sqrt(epsilon1*epsilon2)'</span>
 
 <span class="n">custom_nb_force</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">CustomNonbondedForce</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
 
-<span class="n">custom_nb_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
-<span class="n">custom_nb_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">&#39;epsilon&#39;</span><span class="p">)</span>
+<span class="n">custom_nb_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'sigma'</span><span class="p">)</span>
+<span class="n">custom_nb_force</span><span class="o">.</span><span class="n">addPerParticleParameter</span><span class="p">(</span><span class="s1">'epsilon'</span><span class="p">)</span>
 
 <span class="c1"># Add the parameters for each particle</span>
 <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">atoms</span><span class="p">():</span>
@@ -258,37 +258,37 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 <span class="nt">&lt;ForceField&gt;</span>
 
 <span class="w">    </span><span class="nt">&lt;AtomTypes&gt;</span>
-<span class="w">        </span><span class="nt">&lt;Type</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">class=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">element=</span><span class="s">&quot;CG&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;120.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Type</span><span class="w"> </span><span class="na">name=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">class=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">element=</span><span class="s">"CG"</span><span class="w"> </span><span class="na">mass=</span><span class="s">"120.0"</span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/AtomTypes&gt;</span>
 
 <span class="w">    </span><span class="nt">&lt;Residues&gt;</span>
 <span class="w">        </span><span class="cm">&lt;!-- Each bead is a single residue.</span>
 <span class="cm">        Need a template for the different Residue types.</span>
 <span class="cm">        First type is the end. This only has one bond. --&gt;</span>
-<span class="w">        </span><span class="nt">&lt;Residue</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CG-residue-end&quot;</span><span class="nt">&gt;</span>
-<span class="w">            </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;CG-bead&quot;</span><span class="nt">/&gt;</span>
-<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">&quot;CG-bead&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Residue</span><span class="w"> </span><span class="na">name=</span><span class="s">"CG-residue-end"</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">name=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">type=</span><span class="s">"CG-bead"</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">"CG-bead"</span><span class="nt">/&gt;</span>
 <span class="w">        </span><span class="nt">&lt;/Residue&gt;</span>
 
 <span class="w">        </span><span class="cm">&lt;!-- Second type is in the middle of the chain. This has two bonds. --&gt;</span>
-<span class="w">        </span><span class="nt">&lt;Residue</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CG-residue-middle&quot;</span><span class="nt">&gt;</span>
-<span class="w">            </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;CG-bead&quot;</span><span class="nt">/&gt;</span>
-<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">&quot;CG-bead&quot;</span><span class="nt">/&gt;</span>
-<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">&quot;CG-bead&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Residue</span><span class="w"> </span><span class="na">name=</span><span class="s">"CG-residue-middle"</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">name=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">type=</span><span class="s">"CG-bead"</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">"CG-bead"</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;ExternalBond</span><span class="w"> </span><span class="na">atomName=</span><span class="s">"CG-bead"</span><span class="nt">/&gt;</span>
 <span class="w">        </span><span class="nt">&lt;/Residue&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/Residues&gt;</span>
 
 <span class="w">    </span><span class="cm">&lt;!-- Define a harmonic bond between the CA-beads --&gt;</span>
 <span class="w">    </span><span class="nt">&lt;HarmonicBondForce&gt;</span>
-<span class="w">        </span><span class="nt">&lt;Bond</span><span class="w"> </span><span class="na">class1=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">class2=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">length=</span><span class="s">&quot;0.38&quot;</span><span class="w"> </span><span class="na">k=</span><span class="s">&quot;1000.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Bond</span><span class="w"> </span><span class="na">class1=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">class2=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">length=</span><span class="s">"0.38"</span><span class="w"> </span><span class="na">k=</span><span class="s">"1000.0"</span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/HarmonicBondForce&gt;</span>
 
 <span class="w">    </span><span class="cm">&lt;!-- Use a custom non-bonded force for maximum flexibility.</span>
 <span class="cm">    The bondCutoff=1 tells it to only exclude interactions between directly bonded atoms. --&gt;</span>
-<span class="w">    </span><span class="nt">&lt;CustomNonbondedForce</span><span class="w"> </span><span class="na">energy=</span><span class="s">&quot;4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)&quot;</span><span class="w"> </span><span class="na">bondCutoff=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
-<span class="w">        </span><span class="nt">&lt;PerParticleParameter</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;sigma&quot;</span><span class="nt">/&gt;</span>
-<span class="w">        </span><span class="nt">&lt;PerParticleParameter</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;epsilon&quot;</span><span class="nt">/&gt;</span>
-<span class="w">        </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;CG-bead&quot;</span><span class="w"> </span><span class="na">sigma=</span><span class="s">&quot;0.5&quot;</span><span class="w"> </span><span class="na">epsilon=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;CustomNonbondedForce</span><span class="w"> </span><span class="na">energy=</span><span class="s">"4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)"</span><span class="w"> </span><span class="na">bondCutoff=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;PerParticleParameter</span><span class="w"> </span><span class="na">name=</span><span class="s">"sigma"</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;PerParticleParameter</span><span class="w"> </span><span class="na">name=</span><span class="s">"epsilon"</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Atom</span><span class="w"> </span><span class="na">type=</span><span class="s">"CG-bead"</span><span class="w"> </span><span class="na">sigma=</span><span class="s">"0.5"</span><span class="w"> </span><span class="na">epsilon=</span><span class="s">"1.0"</span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/CustomNonbondedForce&gt;</span>
 <span class="nt">&lt;/ForceField&gt;</span>
 </pre></div>
@@ -303,7 +303,7 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># load in the ForceField we created</span>
-<span class="n">ff</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;./cg_ff.xml&#39;</span><span class="p">)</span>
+<span class="n">ff</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">'./cg_ff.xml'</span><span class="p">)</span>
 <span class="n">system2</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">,</span> <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">nanometers</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -313,10 +313,10 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;system1.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'system1.xml'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
     <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">mm</span><span class="o">.</span><span class="n">XmlSerializer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;system2.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'system2.xml'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
     <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">mm</span><span class="o">.</span><span class="n">XmlSerializer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">system2</span><span class="p">))</span>
 
 <span class="o">!</span>diff<span class="w"> </span>system1.xml<span class="w"> </span>system2.xml
@@ -347,8 +347,8 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setPositions</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
 
 <span class="c1"># setup simulation reporters</span>
-<span class="c1"># Write the trajectory to a file called &#39;traj.dcd&#39;</span>
-<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">DCDReporter</span><span class="p">(</span><span class="s1">&#39;traj.dcd&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">enforcePeriodicBox</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="c1"># Write the trajectory to a file called 'traj.dcd'</span>
+<span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">DCDReporter</span><span class="p">(</span><span class="s1">'traj.dcd'</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">enforcePeriodicBox</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
 <span class="c1"># Report information to the screen as the simulation runs</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">StateDataReporter</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -367,7 +367,7 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 
 
 <span class="c1"># output the equilibrated configuration</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;equilibrated_config.pdb&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'equilibrated_config.pdb'</span><span class="p">,</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">getState</span><span class="p">(</span><span class="n">getPositions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enforcePeriodicBox</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">topology</span><span class="o">.</span><span class="n">setPeriodicBoxVectors</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">getPeriodicBoxVectors</span><span class="p">())</span>
     <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="o">.</span><span class="n">writeFile</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">getPositions</span><span class="p">(),</span> <span class="n">f</span><span class="p">)</span>
@@ -458,6 +458,8 @@ exclusions between atoms that are directly bonded and set a cutoff of <span clas
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Implementing a Coarse-Grained Polymer Force Field</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Example-System">Example System</a></li>

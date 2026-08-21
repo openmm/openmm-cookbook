@@ -49,7 +49,7 @@
 <section id="Example:-Parahydrogen">
 <h2>Example: Parahydrogen<a class="headerlink" href="#Example:-Parahydrogen" title="Link to this heading">¶</a></h2>
 <p>Molecular hydrogen (<span class="math notranslate nohighlight">\(H_2\)</span>) can exist in two nuclear spin states. In orthohydrogen the nuclear spins are parallel to each other, and in parahydrogen they are antiparallel. Parahydrogen is the more common state at low temperature, while orthohydrogen is the more common state at high temperature.</p>
-<p><img alt="218b719ac53045c1a94ba1e418aa6c2b" src="https://upload.wikimedia.org/wikipedia/commons/4/41/Spinisomers_of_molecular_hydrogen.png" /></p>
+<p><img alt="fdc61eb5d24043baae4d0d2b78ee9806" src="https://upload.wikimedia.org/wikipedia/commons/4/41/Spinisomers_of_molecular_hydrogen.png" /></p>
 <p>For this tutorial, we will simulate a box of parahydrogen molecules at 25 Kelvin. First let’s import the libraries we will be using.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -74,9 +74,9 @@
 <span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="p">()</span>
 <span class="n">system</span><span class="o">.</span><span class="n">setDefaultPeriodicBoxVectors</span><span class="p">(</span><span class="n">Vec3</span><span class="p">(</span><span class="n">box_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">box_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">box_size</span><span class="p">))</span>
 <span class="n">force</span> <span class="o">=</span> <span class="n">CustomNonbondedForce</span><span class="p">(</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;2625.49963*(exp(1.713-1.5671*p-0.00993*p*p) -</span>
+<span class="w">    </span><span class="sd">"""2625.49963*(exp(1.713-1.5671*p-0.00993*p*p) -</span>
 <span class="sd">                   (12.14/p^6+215.2/p^8-143.1/p^9+4813.9/p^10)*(step(rc-p)*exp(-(rc/p-1)^2)+1-step(rc-p)));</span>
-<span class="sd">                   p=r/0.05291772108; rc=8.32&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">                   p=r/0.05291772108; rc=8.32"""</span><span class="p">)</span>
 <span class="n">force</span><span class="o">.</span><span class="n">setNonbondedMethod</span><span class="p">(</span><span class="n">CustomNonbondedForce</span><span class="o">.</span><span class="n">CutoffPeriodic</span><span class="p">)</span>
 <span class="n">force</span><span class="o">.</span><span class="n">setCutoffDistance</span><span class="p">(</span><span class="n">box_size</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
@@ -258,7 +258,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
     <span class="n">integrator</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">20000</span><span class="p">)</span>
-    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">integrator</span><span class="o">.</span><span class="n">getAdaptedFriction</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">integrator</span><span class="o">.</span><span class="n">getAdaptedFriction</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">])</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -286,9 +286,9 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">classical_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Classical&quot;</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rpmd_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;RPMD&quot;</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">qtb_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;adQTB&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">classical_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Classical"</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rpmd_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"RPMD"</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">qtb_rdf</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"adQTB"</span><span class="p">)</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -367,6 +367,8 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Nuclear Quantum Effects With RPMD and adQTB</a><ul>

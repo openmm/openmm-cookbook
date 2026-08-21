@@ -84,19 +84,19 @@ inside more complex Python packages and programs.</p>
 </pre></div>
 </div>
 <p>in a shell, which should open its graphical user interface in a web browser. If this does not occur automatically, you can open a browser of your choice and navigate to the link printed in your terminal by OpenMM Setup. (It is recommended to run OpenMM Setup locally if possible; you may encounter problems trying to launch it on a remote machine <em>via</em> an SSH connection, for instance.)</p>
-<p><img alt="1745bd4348fc4c288b6f353eda298bd9" class="no-scaled-link" src="../../_images/getting_started_1.png" width="800" /></p>
+<p><img alt="a3cfd19d8f7840b0b1f086ade8ea1455" class="no-scaled-link" src="../../_images/getting_started_1.png" width="800" /></p>
 <p>In this example, we will use a structure of hen egg white lysozyme from the Protein Data Bank with <a class="reference external" href="https://www.rcsb.org/structure/1AKI">PDB ID 1AKI</a>. The structure can be downloaded in PDBx/mmCIF format as <a class="reference external" href="https://files.rcsb.org/download/1AKI.cif">1AKI.cif</a> from the linked PDB entry. If you are following along with this tutorial yourself, you should save this file, start OpenMM Setup, select the default option to load a PDB or PDBx/mmCIF file, then choose the file you just downloaded.</p>
-<p><img alt="f206bf01c81a4c32863f8fc426d595d8" class="no-scaled-link" src="../../_images/getting_started_2.png" width="800" /></p>
+<p><img alt="f931ad7ae7334bbf95a267dec0174af9" class="no-scaled-link" src="../../_images/getting_started_2.png" width="800" /></p>
 <p>To actually perform any kind of simulation from a molecular structure, we need to specify a <em>force field</em> that defines parameters for bonded and non-bonded interactions between its atoms, thereby allowing OpenMM to compute energies and forces from atomic positions. OpenMM provides several commonly used force fields for biomolecular simulations; these are <a class="reference external" href="https://docs.openmm.org/latest/userguide/application/02_running_sims.html#force-fields">described in the user guide</a>. Choosing an
 appropriate force field for your research problem is outside of the scope of this tutorial, but you should be aware of the behavior of the force field you choose and any limitations it has that might be applicable to your system. The default force field that we will use here, which OpenMM refers to as <a class="reference external" href="https://docs.openmm.org/latest/userguide/application/02_running_sims.html#amber19">“Amber19”</a>, includes Amber <a class="reference external" href="https://ambermd.org/AmberModels_proteins.php">ff19SB</a> force field parameters
 for proteins, among others. For this tutorial, we will use the default TIP3P-FB model for water; the water models distributed with the force fields built into OpenMM also contain compatible parameters for ions.</p>
 <p>Protein structures downloaded directly from the Protein Data Bank are often not immediately suitable for running simulations. They may be missing hydrogen atoms, and they may contain additional atoms, <em>e.g.</em>, oxygens at positions where water molecules are found in the crystal structures. OpenMM Setup comes with a builtin interface to the <a class="reference external" href="https://github.com/openmm/pdbfixer">PDBFixer</a> tool that can help clean up and prepare files for simulation. Selecting the option to do this (the “Yes. Let’s
 clean it up now.” option depicted above) leads to a visualization window where we can inspect the structure and choose actions to take:</p>
-<p><img alt="68a7cd393cf34e269b6a34df80efd0df" class="no-scaled-link" src="../../_images/getting_started_3.png" width="800" /></p>
+<p><img alt="94626338248444c7959da0f9bd9840e9" class="no-scaled-link" src="../../_images/getting_started_3.png" width="800" /></p>
 <p>A PDB or PDBx/mmCIF file contains a hierarchical representation of a molecular structure, with atoms grouped into residues and residues grouped into chains. Chains can correspond to single polymeric molecules consisting of a sequence of residues, but more generally, a chain may just group related residues together. For the file we are using in this tutorial, the protein is present in chain A and all of the crystallographic water molecules are in chain B, so we can exclude the latter to remove
 the water molecules. Alternatively, you can use the “delete heterogens” dropdown to remove water as well as other non-standard species from the structure.</p>
 <p>After removing the water present in the crystal structure, we can instruct OpenMM Setup to add hydrogen atoms to the remaining protein, and add water back (along with <span class="math notranslate nohighlight">\(\ce{Na+}\)</span> and <span class="math notranslate nohighlight">\(\ce{Cl-}\)</span> ions) in the form of a solvent box surrounding it. Here we have kept the default options except for increasing the ionic strength to 0.1 M:</p>
-<p><img alt="60fc25adbe96445dae3c3128678ab2e5" class="no-scaled-link" src="../../_images/getting_started_4.png" width="800" /></p>
+<p><img alt="56c682ee2cbe411cb09a50fc491e0806" class="no-scaled-link" src="../../_images/getting_started_4.png" width="800" /></p>
 <p>At last, OpenMM Setup will generate a Python script along with a PDBx/mmCIF file containing our preprocessed and solvated protein structure. You can use OpenMM Setup to run OpenMM and monitor the simulation output directly from your web browser. You can also save the generated Python script to a file and run it with a command like, for example,</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run_openmm_simulation.py
 </pre></div>
@@ -117,8 +117,8 @@ the water molecules. Alternatively, you can use the “delete heterogens” drop
 
 <span class="c1"># Input Files</span>
 
-<span class="n">pdbx</span> <span class="o">=</span> <span class="n">PDBxFile</span><span class="p">(</span><span class="s1">&#39;1AKI-processed.cif&#39;</span><span class="p">)</span>
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber19-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber19/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">pdbx</span> <span class="o">=</span> <span class="n">PDBxFile</span><span class="p">(</span><span class="s1">'1AKI-processed.cif'</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber19-all.xml'</span><span class="p">,</span> <span class="s1">'amber19/tip3pfb.xml'</span><span class="p">)</span>
 
 <span class="c1"># System Configuration</span>
 
@@ -142,12 +142,12 @@ the water molecules. Alternatively, you can use the “delete heterogens” drop
 
 <span class="n">steps</span> <span class="o">=</span> <span class="mi">20000</span>
 <span class="n">equilibrationSteps</span> <span class="o">=</span> <span class="mi">1000</span>
-<span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">&#39;log.txt&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
-    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">'log.txt'</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">'</span><span class="se">\t</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="c1"># Prepare the Simulation</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Building system...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Building system...'</span><span class="p">)</span>
 <span class="n">topology</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">topology</span>
 <span class="n">positions</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">positions</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">nonbondedMethod</span><span class="p">,</span> <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="n">nonbondedCutoff</span><span class="p">,</span>
@@ -160,15 +160,15 @@ the water molecules. Alternatively, you can use the “delete heterogens” drop
 
 <span class="c1"># Minimize and Equilibrate</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Performing energy minimization...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Performing energy minimization...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">minimizeEnergy</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Equilibrating...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Equilibrating...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">setVelocitiesToTemperature</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">equilibrationSteps</span><span class="p">)</span>
 
 <span class="c1"># Simulate</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Simulating...&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Simulating...'</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataReporter</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">currentStep</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
@@ -204,7 +204,7 @@ the water molecules. Alternatively, you can use the “delete heterogens” drop
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdbx</span> <span class="o">=</span> <span class="n">PDBxFile</span><span class="p">(</span><span class="s1">&#39;1AKI-processed.cif&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdbx</span> <span class="o">=</span> <span class="n">PDBxFile</span><span class="p">(</span><span class="s1">'1AKI-processed.cif'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -214,7 +214,7 @@ the water molecules. Alternatively, you can use the “delete heterogens” drop
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber19-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber19/tip3pfb.xml&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber19-all.xml'</span><span class="p">,</span> <span class="s1">'amber19/tip3pfb.xml'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -260,8 +260,8 @@ the units API can help prevent unit conversion mistakes. More information can be
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">&#39;log.txt&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
-    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataReporter</span> <span class="o">=</span> <span class="n">StateDataReporter</span><span class="p">(</span><span class="s1">'log.txt'</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">totalSteps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">potentialEnergy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">'</span><span class="se">\t</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -416,25 +416,25 @@ OpenMM makes this easy to do:</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="n">step</span><span class="p">,</span> <span class="n">pe</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;log.txt&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">step</span><span class="p">,</span> <span class="n">pe</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">"log.txt"</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
 <span class="n">time</span> <span class="o">=</span> <span class="n">step</span> <span class="o">*</span> <span class="n">dt</span><span class="o">.</span><span class="n">value_in_unit</span><span class="p">(</span><span class="n">picosecond</span><span class="p">)</span>
 
-<span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">)</span>
+<span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"constrained"</span><span class="p">)</span>
 
 <span class="n">axes_pe</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">axes_pe</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
-<span class="n">axes_pe</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (ps)&quot;</span><span class="p">)</span>
-<span class="n">axes_pe</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Potential energy (kJ/mol)&quot;</span><span class="p">)</span>
+<span class="n">axes_pe</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Time (ps)"</span><span class="p">)</span>
+<span class="n">axes_pe</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Potential energy (kJ/mol)"</span><span class="p">)</span>
 
 <span class="n">axes_temp</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">axes_temp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">temp</span><span class="p">)</span>
-<span class="n">axes_temp</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (ps)&quot;</span><span class="p">)</span>
-<span class="n">axes_temp</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Temperature (K)&quot;</span><span class="p">)</span>
+<span class="n">axes_temp</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Time (ps)"</span><span class="p">)</span>
+<span class="n">axes_temp</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Temperature (K)"</span><span class="p">)</span>
 
 <span class="n">axes_rho</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="n">axes_rho</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
-<span class="n">axes_rho</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (ps)&quot;</span><span class="p">)</span>
-<span class="n">axes_rho</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Density (g/mL)&quot;</span><span class="p">)</span>
+<span class="n">axes_rho</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Time (ps)"</span><span class="p">)</span>
+<span class="n">axes_rho</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Density (g/mL)"</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>

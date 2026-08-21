@@ -87,8 +87,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pdb</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">PDBFile</span><span class="p">(</span><span class="s1">'villin.pdb'</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber14-all.xml'</span><span class="p">,</span> <span class="s1">'amber14/tip3pfb.xml'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span>
                                  <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">PME</span><span class="p">,</span>
                                  <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">unit</span><span class="o">.</span><span class="n">nanometer</span><span class="p">,</span>
@@ -187,8 +187,8 @@
     <span class="n">rest_system</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">particle_mass</span><span class="p">)</span>
 
 <span class="c1"># Copy barostat</span>
-<span class="k">if</span> <span class="s2">&quot;MonteCarloBarostat&quot;</span> <span class="ow">in</span> <span class="n">system_forces</span><span class="p">:</span>
-    <span class="n">barostat</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">system_forces</span><span class="p">[</span><span class="s2">&quot;MonteCarloBarostat&quot;</span><span class="p">])</span>
+<span class="k">if</span> <span class="s2">"MonteCarloBarostat"</span> <span class="ow">in</span> <span class="n">system_forces</span><span class="p">:</span>
+    <span class="n">barostat</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">system_forces</span><span class="p">[</span><span class="s2">"MonteCarloBarostat"</span><span class="p">])</span>
     <span class="n">rest_system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">barostat</span><span class="p">)</span>
 
 <span class="c1"># Copy box vectors</span>
@@ -215,26 +215,26 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
-<span class="n">bond_expression</span> <span class="o">=</span> <span class="s2">&quot;rest_scale * (K / 2) * (r - length)^2;&quot;</span>
-<span class="n">bond_expression</span> <span class="o">+=</span> <span class="s2">&quot;rest_scale = is_rest * lambda_rest_bonds * lambda_rest_bonds &quot;</span> \
-                   <span class="s2">&quot;+ is_inter * lambda_rest_bonds &quot;</span> \
-                   <span class="s2">&quot;+ is_nonrest;&quot;</span>
+<span class="n">bond_expression</span> <span class="o">=</span> <span class="s2">"rest_scale * (K / 2) * (r - length)^2;"</span>
+<span class="n">bond_expression</span> <span class="o">+=</span> <span class="s2">"rest_scale = is_rest * lambda_rest_bonds * lambda_rest_bonds "</span> \
+                   <span class="s2">"+ is_inter * lambda_rest_bonds "</span> \
+                   <span class="s2">"+ is_nonrest;"</span>
 
 <span class="c1"># Create custom force</span>
 <span class="n">rest_bond_force</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomBondForce</span><span class="p">(</span><span class="n">bond_expression</span><span class="p">)</span>
 <span class="n">rest_system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">rest_bond_force</span><span class="p">)</span>
 
 <span class="c1"># Add global parameters</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">&quot;lambda_rest_bonds&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">"lambda_rest_bonds"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
 <span class="c1"># Add per-bond parameters for rest scaling</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">&quot;is_rest&quot;</span><span class="p">)</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">&quot;is_inter&quot;</span><span class="p">)</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">&quot;is_nonrest&quot;</span><span class="p">)</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">"is_rest"</span><span class="p">)</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">"is_inter"</span><span class="p">)</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s2">"is_nonrest"</span><span class="p">)</span>
 
 <span class="c1"># Add per-bond parameters for defining bond energy</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s1">&#39;length&#39;</span><span class="p">)</span>  <span class="c1"># equilibrium bond length</span>
-<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">)</span>  <span class="c1"># force constant</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s1">'length'</span><span class="p">)</span>  <span class="c1"># equilibrium bond length</span>
+<span class="n">rest_bond_force</span><span class="o">.</span><span class="n">addPerBondParameter</span><span class="p">(</span><span class="s1">'K'</span><span class="p">)</span>  <span class="c1"># force constant</span>
 </pre></div>
 </div>
 </div>
@@ -253,7 +253,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_rest_identifier</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">rest_atoms</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    For a given atom or set of atoms, get the rest_id which is a list of binary ints that defines which</span>
 <span class="sd">    (mutually exclusive) set the atom(s) belong to.</span>
 
@@ -272,7 +272,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    rest_id : list</span>
 <span class="sd">        list of binaries indicating which set the atom(s) belong to</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">rest_id</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="c1"># Set the default rest_id to non-REST</span>
@@ -290,7 +290,7 @@
         <span class="k">return</span> <span class="n">rest_id</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;atoms is of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span><span class="si">}</span><span class="s2">, but only `int` and `set` are allowable&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"atoms is of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span><span class="si">}</span><span class="s2">, but only `int` and `set` are allowable"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -301,7 +301,7 @@ non-REST.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get vanilla system bond force</span>
-<span class="n">bond_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">&#39;HarmonicBondForce&#39;</span><span class="p">]</span>
+<span class="n">bond_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">'HarmonicBondForce'</span><span class="p">]</span>
 
 <span class="c1"># Set periodicity</span>
 <span class="k">if</span> <span class="n">bond_force</span><span class="o">.</span><span class="n">usesPeriodicBoundaryConditions</span><span class="p">():</span>
@@ -326,29 +326,29 @@ non-REST.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
-<span class="n">angle_expression</span> <span class="o">=</span> <span class="s2">&quot;rest_scale * (K / 2) * (theta - theta0)^2;&quot;</span>
-<span class="n">angle_expression</span> <span class="o">+=</span> <span class="s2">&quot;rest_scale = is_rest * lambda_rest_angles * lambda_rest_angles &quot;</span> \
-                    <span class="s2">&quot;+ is_inter * lambda_rest_angles &quot;</span> \
-                    <span class="s2">&quot;+ is_nonrest;&quot;</span>
+<span class="n">angle_expression</span> <span class="o">=</span> <span class="s2">"rest_scale * (K / 2) * (theta - theta0)^2;"</span>
+<span class="n">angle_expression</span> <span class="o">+=</span> <span class="s2">"rest_scale = is_rest * lambda_rest_angles * lambda_rest_angles "</span> \
+                    <span class="s2">"+ is_inter * lambda_rest_angles "</span> \
+                    <span class="s2">"+ is_nonrest;"</span>
 
 <span class="c1"># Create custom force</span>
 <span class="n">rest_angle_force</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomAngleForce</span><span class="p">(</span><span class="n">angle_expression</span><span class="p">)</span>
 <span class="n">rest_system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">rest_angle_force</span><span class="p">)</span>
 
 <span class="c1"># Add global parameters</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">&quot;lambda_rest_angles&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">"lambda_rest_angles"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
 <span class="c1"># Add per-angle parameters for rest scaling</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">&quot;is_rest&quot;</span><span class="p">)</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">&quot;is_inter&quot;</span><span class="p">)</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">&quot;is_nonrest&quot;</span><span class="p">)</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">"is_rest"</span><span class="p">)</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">"is_inter"</span><span class="p">)</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s2">"is_nonrest"</span><span class="p">)</span>
 
 <span class="c1"># Add per-angle parameters for defining angle energy</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s1">&#39;theta0&#39;</span><span class="p">)</span>  <span class="c1"># equilibrium angle</span>
-<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">)</span>  <span class="c1"># force constant</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s1">'theta0'</span><span class="p">)</span>  <span class="c1"># equilibrium angle</span>
+<span class="n">rest_angle_force</span><span class="o">.</span><span class="n">addPerAngleParameter</span><span class="p">(</span><span class="s1">'K'</span><span class="p">)</span>  <span class="c1"># force constant</span>
 
 <span class="c1"># Get vanilla system angle force</span>
-<span class="n">angle_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">&#39;HarmonicAngleForce&#39;</span><span class="p">]</span>
+<span class="n">angle_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">'HarmonicAngleForce'</span><span class="p">]</span>
 
 <span class="c1"># Set periodicity</span>
 <span class="k">if</span> <span class="n">angle_force</span><span class="o">.</span><span class="n">usesPeriodicBoundaryConditions</span><span class="p">():</span>
@@ -373,31 +373,31 @@ non-REST.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the custom expression</span>
-<span class="n">torsion_expression</span> <span class="o">=</span> <span class="s2">&quot;rest_scale * U;&quot;</span>
-<span class="n">torsion_expression</span> <span class="o">+=</span> <span class="s2">&quot;rest_scale = is_rest * lambda_rest_torsions * lambda_rest_torsions &quot;</span> \
-                      <span class="s2">&quot;+ is_inter * lambda_rest_torsions &quot;</span> \
-                      <span class="s2">&quot;+ is_nonrest;&quot;</span>
-<span class="n">torsion_expression</span> <span class="o">+=</span> <span class="s2">&quot;U = (K * (1 + cos(periodicity * theta - phase)));&quot;</span>
+<span class="n">torsion_expression</span> <span class="o">=</span> <span class="s2">"rest_scale * U;"</span>
+<span class="n">torsion_expression</span> <span class="o">+=</span> <span class="s2">"rest_scale = is_rest * lambda_rest_torsions * lambda_rest_torsions "</span> \
+                      <span class="s2">"+ is_inter * lambda_rest_torsions "</span> \
+                      <span class="s2">"+ is_nonrest;"</span>
+<span class="n">torsion_expression</span> <span class="o">+=</span> <span class="s2">"U = (K * (1 + cos(periodicity * theta - phase)));"</span>
 
 <span class="c1"># Create custom force</span>
 <span class="n">rest_torsion_force</span> <span class="o">=</span> <span class="n">openmm</span><span class="o">.</span><span class="n">CustomTorsionForce</span><span class="p">(</span><span class="n">torsion_expression</span><span class="p">)</span>
 <span class="n">rest_system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">rest_torsion_force</span><span class="p">)</span>
 
 <span class="c1"># Add global parameters</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">&quot;lambda_rest_torsions&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s2">"lambda_rest_torsions"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
 <span class="c1"># Add per-torsion parameters for rest scaling</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">&quot;is_rest&quot;</span><span class="p">)</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">&quot;is_inter&quot;</span><span class="p">)</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">&quot;is_nonrest&quot;</span><span class="p">)</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">"is_rest"</span><span class="p">)</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">"is_inter"</span><span class="p">)</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s2">"is_nonrest"</span><span class="p">)</span>
 
 <span class="c1"># Add per-torsion parameters for defining torsion energy</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">&#39;periodicity&#39;</span><span class="p">)</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">&#39;phase&#39;</span><span class="p">)</span> <span class="c1"># phase offset</span>
-<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">)</span> <span class="c1"># force constant</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">'periodicity'</span><span class="p">)</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">'phase'</span><span class="p">)</span> <span class="c1"># phase offset</span>
+<span class="n">rest_torsion_force</span><span class="o">.</span><span class="n">addPerTorsionParameter</span><span class="p">(</span><span class="s1">'K'</span><span class="p">)</span> <span class="c1"># force constant</span>
 
 <span class="c1"># Get vanilla system torsion force</span>
-<span class="n">torsion_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">&#39;PeriodicTorsionForce&#39;</span><span class="p">]</span>
+<span class="n">torsion_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">'PeriodicTorsionForce'</span><span class="p">]</span>
 
 <span class="c1"># Set periodicity</span>
 <span class="k">if</span> <span class="n">torsion_force</span><span class="o">.</span><span class="n">usesPeriodicBoundaryConditions</span><span class="p">():</span>
@@ -426,7 +426,7 @@ non-REST.</p>
 <span class="n">rest_system</span><span class="o">.</span><span class="n">addForce</span><span class="p">(</span><span class="n">rest_nonbonded_force</span><span class="p">)</span>
 
 <span class="c1"># Get vanilla system nonbonded force</span>
-<span class="n">nonbonded_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">&#39;NonbondedForce&#39;</span><span class="p">]</span>
+<span class="n">nonbonded_force</span> <span class="o">=</span> <span class="n">system_forces</span><span class="p">[</span><span class="s1">'NonbondedForce'</span><span class="p">]</span>
 
 <span class="c1"># Set the nonbonded method and related parameters</span>
 <span class="n">nonbonded_method</span> <span class="o">=</span> <span class="n">nonbonded_force</span><span class="o">.</span><span class="n">getNonbondedMethod</span><span class="p">()</span>
@@ -454,8 +454,8 @@ non-REST.</p>
 <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">setUseDispersionCorrection</span><span class="p">(</span><span class="n">dispersion_bool</span><span class="p">)</span>
 
 <span class="c1"># Add global parameters</span>
-<span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_electrostatics&#39;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-<span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_sterics&#39;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+<span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_electrostatics'</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+<span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addGlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_sterics'</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -486,8 +486,8 @@ the Appendix).</p>
 
     <span class="k">else</span><span class="p">:</span> <span class="c1"># rest</span>
         <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addParticle</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
-        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addParticleParameterOffset</span><span class="p">(</span><span class="s1">&#39;lambda_rest_electrostatics&#39;</span><span class="p">,</span> <span class="n">particle_idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">*</span><span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addParticleParameterOffset</span><span class="p">(</span><span class="s1">&#39;lambda_rest_sterics&#39;</span><span class="p">,</span> <span class="n">particle_idx</span><span class="p">,</span> <span class="n">q</span><span class="o">*</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addParticleParameterOffset</span><span class="p">(</span><span class="s1">'lambda_rest_electrostatics'</span><span class="p">,</span> <span class="n">particle_idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">*</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addParticleParameterOffset</span><span class="p">(</span><span class="s1">'lambda_rest_sterics'</span><span class="p">,</span> <span class="n">particle_idx</span><span class="p">,</span> <span class="n">q</span><span class="o">*</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
 
 <span class="c1"># Handle exceptions</span>
 <span class="k">for</span> <span class="n">exception_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nonbonded_force</span><span class="o">.</span><span class="n">getNumExceptions</span><span class="p">()):</span>
@@ -502,10 +502,10 @@ the Appendix).</p>
         <span class="k">pass</span>
 
     <span class="k">elif</span> <span class="n">rest_id</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span> <span class="c1"># rest</span>
-        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addExceptionParameterOffset</span><span class="p">(</span><span class="s1">&#39;lambda_rest_sterics&#39;</span><span class="p">,</span> <span class="n">exc_idx</span><span class="p">,</span> <span class="n">chargeProd</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addExceptionParameterOffset</span><span class="p">(</span><span class="s1">'lambda_rest_sterics'</span><span class="p">,</span> <span class="n">exc_idx</span><span class="p">,</span> <span class="n">chargeProd</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">rest_id</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span> <span class="c1"># inter</span>
-        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addExceptionParameterOffset</span><span class="p">(</span><span class="s1">&#39;lambda_rest_electrostatics&#39;</span><span class="p">,</span> <span class="n">exc_idx</span><span class="p">,</span> <span class="n">chargeProd</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="n">rest_nonbonded_force</span><span class="o">.</span><span class="n">addExceptionParameterOffset</span><span class="p">(</span><span class="s1">'lambda_rest_electrostatics'</span><span class="p">,</span> <span class="n">exc_idx</span><span class="p">,</span> <span class="n">chargeProd</span><span class="p">,</span> <span class="mf">0.0</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -536,14 +536,14 @@ the Appendix).</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RESTState</span><span class="p">(</span><span class="n">GlobalParameterState</span><span class="p">):</span>
-    <span class="n">lambda_rest_bonds</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_bonds&#39;</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">lambda_rest_angles</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_angles&#39;</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">lambda_rest_torsions</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_torsions&#39;</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">lambda_rest_electrostatics</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_electrostatics&#39;</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">lambda_rest_sterics</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">&#39;lambda_rest_sterics&#39;</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">lambda_rest_bonds</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_bonds'</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">lambda_rest_angles</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_angles'</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">lambda_rest_torsions</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_torsions'</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">lambda_rest_electrostatics</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_electrostatics'</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">lambda_rest_sterics</span> <span class="o">=</span> <span class="n">GlobalParameterState</span><span class="o">.</span><span class="n">GlobalParameter</span><span class="p">(</span><span class="s1">'lambda_rest_sterics'</span><span class="p">,</span> <span class="n">standard_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">set_rest_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set all defined lambda parameters to the given value.</span>
+<span class="w">        </span><span class="sd">"""Set all defined lambda parameters to the given value.</span>
 
 <span class="sd">        The undefined parameters (i.e. those being set to None) remain undefined.</span>
 
@@ -551,12 +551,12 @@ the Appendix).</p>
 <span class="sd">        ----------</span>
 <span class="sd">        new_value : float</span>
 <span class="sd">            The new value for all defined parameters.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">lambda_functions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_rest_bonds&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
-                 <span class="s1">&#39;lambda_rest_angles&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
-                 <span class="s1">&#39;lambda_rest_torsions&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
-                 <span class="s1">&#39;lambda_rest_electrostatics&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-                 <span class="s1">&#39;lambda_rest_sterics&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="sd">        """</span>
+        <span class="n">lambda_functions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'lambda_rest_bonds'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
+                 <span class="s1">'lambda_rest_angles'</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
+                 <span class="s1">'lambda_rest_torsions'</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">),</span>
+                 <span class="s1">'lambda_rest_electrostatics'</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="s1">'lambda_rest_sterics'</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">beta_m</span><span class="p">,</span> <span class="n">beta_0</span> <span class="p">:</span> <span class="n">beta_m</span> <span class="o">/</span> <span class="n">beta_0</span> <span class="o">-</span> <span class="mi">1</span>
                  <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">parameter_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
@@ -631,7 +631,7 @@ run the REST simulation!</p>
 <span class="n">simulation</span> <span class="o">=</span> <span class="n">ReplicaExchangeSampler</span><span class="p">(</span><span class="n">mcmc_moves</span><span class="o">=</span><span class="n">move</span><span class="p">,</span> <span class="n">number_of_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 
 <span class="c1"># Run repex</span>
-<span class="n">reporter_file</span> <span class="o">=</span> <span class="s2">&quot;test.nc&quot;</span>
+<span class="n">reporter_file</span> <span class="o">=</span> <span class="s2">"test.nc"</span>
 <span class="n">reporter</span> <span class="o">=</span> <span class="n">multistate</span><span class="o">.</span><span class="n">MultiStateReporter</span><span class="p">(</span><span class="n">reporter_file</span><span class="p">,</span> <span class="n">checkpoint_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="n">simulation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">thermodynamic_states</span><span class="o">=</span><span class="n">thermodynamic_state_list</span><span class="p">,</span>
                   <span class="n">sampler_states</span><span class="o">=</span><span class="n">sampler_state_list</span><span class="p">,</span>
@@ -849,6 +849,8 @@ run the REST simulation!</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../../tutorials.html">The OpenMM Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../tutorials.html#getting-started">Getting Started</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html#beyond-the-basics">Beyond the Basics</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="replica_exchange.html">Multistate Sampling 1: Replica Exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expanded_ensemble.html">Multistate Sampling 2: Expanded Ensemble</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Alchemical_free_energy_calculations.html">Alchemical Free Energy Calculations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coarse_grained_polymer.html">Implementing a Coarse-Grained Polymer Force Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="nuclear_quantum_effects.html">Nuclear Quantum Effects With RPMD and adQTB</a></li>

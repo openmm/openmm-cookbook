@@ -19,7 +19,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Alchemical Free Energy Calculations" href="Alchemical_free_energy_calculations.html" />
+    <link rel="next" title="Multistate Sampling 1: Replica Exchange" href="replica_exchange.html" />
     <link rel="prev" title="Building Systems from Scratch" href="building_systems.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -86,7 +86,7 @@ unacceptable.</p>
 <p>When running a simulation on a GPU with the CUDA, OpenCL, or HIP platform, an important setting is the numerical precision. Many GPUs are very slow at double precision math. We therefore want to use single precision whenever possible.</p>
 <p>The GPU platforms have a <code class="docutils literal notranslate"><span class="pre">'Precision'</span></code> property for selecting between three modes. The default in OpenMM Setup is <code class="docutils literal notranslate"><span class="pre">'single'</span></code>, which does all calculations in single precision. It is the fastest choice, and the accuracy is usually good enough for constant temperature simulations.</p>
 <p>For constant energy simulations it is better to use <code class="docutils literal notranslate"><span class="pre">'mixed'</span></code> mode, which computes forces in single precision but performs integration in double precision. This significantly reduces energy drift without slowing down the simulation too much. You can specify the precision mode with the <code class="docutils literal notranslate"><span class="pre">platformProperties</span></code> argument when creating a Simulation:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;Precision&#39;</span><span class="p">:</span><span class="s1">&#39;mixed&#39;</span><span class="p">})</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="p">{</span><span class="s1">'Precision'</span><span class="p">:</span><span class="s1">'mixed'</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>There also is a <code class="docutils literal notranslate"><span class="pre">'double'</span></code> mode, which performs all calculations in double precision. This is only needed in unusual situations, and can be very slow on some GPUs.</p>
@@ -103,8 +103,8 @@ unacceptable.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
 
-<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;deca-ala.pdb&#39;</span><span class="p">)</span>
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">)</span>
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'deca-ala.pdb'</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber14-all.xml'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">,</span> <span class="n">hydrogenMass</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">amu</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -156,11 +156,11 @@ accurate to first order. In fact, it is best not to think of the â€œvelocitiesâ€
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
     <span class="n">integrator</span> <span class="o">=</span> <span class="n">VerletIntegrator</span><span class="p">(</span><span class="n">dt</span><span class="o">*</span><span class="n">femtosecond</span><span class="p">)</span>
     <span class="n">integrator</span><span class="o">.</span><span class="n">setConstraintTolerance</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
-    <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">Platform</span><span class="o">.</span><span class="n">getPlatform</span><span class="p">(</span><span class="s1">&#39;Reference&#39;</span><span class="p">))</span>
+    <span class="n">simulation</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="n">Platform</span><span class="o">.</span><span class="n">getPlatform</span><span class="p">(</span><span class="s1">'Reference'</span><span class="p">))</span>
     <span class="n">energy</span> <span class="o">=</span> <span class="n">measureDrift</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span>
-    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s1"> fs&#39;</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time (ps)&#39;</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;energy (kJ/mol)&#39;</span><span class="p">)</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s1"> fs'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'time (ps)'</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'energy (kJ/mol)'</span><span class="p">)</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -226,7 +226,7 @@ switching function is not needed.</p>
           <a href="building_systems.html" title="Previous document">Building Systems from Scratch</a>
         </li>
         <li>
-          <a href="Alchemical_free_energy_calculations.html" title="Next document">Alchemical Free Energy Calculations</a>
+          <a href="replica_exchange.html" title="Next document">Multistate Sampling 1: Replica Exchange</a>
           &rarr;
         </li>
     </ul>

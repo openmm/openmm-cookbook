@@ -56,8 +56,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">openmm.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">stdout</span>
 
-<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">&#39;villin.pdb&#39;</span><span class="p">)</span>
-<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">&#39;amber14-all.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;amber14/tip3pfb.xml&#39;</span><span class="p">)</span>
+<span class="n">pdb</span> <span class="o">=</span> <span class="n">PDBFile</span><span class="p">(</span><span class="s1">'villin.pdb'</span><span class="p">)</span>
+<span class="n">forcefield</span> <span class="o">=</span> <span class="n">ForceField</span><span class="p">(</span><span class="s1">'amber14-all.xml'</span><span class="p">,</span> <span class="s1">'amber14/tip3pfb.xml'</span><span class="p">)</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">forcefield</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">nonbondedMethod</span><span class="o">=</span><span class="n">PME</span><span class="p">,</span>
         <span class="n">nonbondedCutoff</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">nanometer</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="n">HBonds</span><span class="p">)</span>
 <span class="n">integrator</span> <span class="o">=</span> <span class="n">LangevinMiddleIntegrator</span><span class="p">(</span><span class="mi">300</span><span class="o">*</span><span class="n">kelvin</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">picosecond</span><span class="p">,</span> <span class="mf">0.004</span><span class="o">*</span><span class="n">picoseconds</span><span class="p">)</span>
@@ -81,7 +81,7 @@
 
     <span class="c1"># you must override the report method and it must have this signature.</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''</span>
 <span class="sd">        the report method is called every iteration of the minimization.</span>
 
 <span class="sd">        Args:</span>
@@ -107,13 +107,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool : Specify if minimization should be stopped.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
 
         <span class="c1"># Within the report method you write the code you want to be executed at</span>
         <span class="c1"># each iteration of the minimization.</span>
         <span class="c1"># In this example we get the current energy, print it to the screen, and save it to an array.</span>
 
-        <span class="n">current_energy</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;system energy&#39;</span><span class="p">]</span>
+        <span class="n">current_energy</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">'system energy'</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># only print to screen every 100 iterations for clarity of webpage display</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">current_energy</span><span class="p">)</span>
@@ -138,8 +138,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">reporter</span><span class="o">.</span><span class="n">energies</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;System energy (kJ/mol)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Minimization iteration&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"System energy (kJ/mol)"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Minimization iteration"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -149,44 +149,47 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
--142752.4880419183
--172469.0196741847
--176449.24817608512
--178157.84302070274
--179032.00019744335
--179488.9649677684
--179793.36623817158
--130436.52104566019
--153941.0522167286
--158959.1763845286
--161349.0947743907
--162716.76670216487
--163843.29051018495
--164426.9034358904
--165005.67975399253
--165530.0585657496
--165989.63170275788
--166332.63770488114
--166641.07672629846
--166854.4706547586
--167010.20745932797
--167164.92706634302
--167279.93967052398
--167421.97139938283
--167518.89614916864
--167612.535840295
--167703.88201671105
--167807.5298071846
--167856.56216353574
--167938.65965529066
--167992.10883801262
--168066.64151379978
--168132.72722605796
--168195.90821959515
--168249.18612961823
--168296.02441658278
--167369.25211895403
--167033.45167355242
+-142752.48896878344
+-172782.6744139451
+-176443.14350381616
+-178134.6352475439
+-179023.80833605232
+-179482.10782785137
+-179795.12345301037
+-179990.40084281383
+-130436.52903183883
+-154122.64108480298
+-159092.29934992545
+-161452.60815254413
+-163008.7558656989
+-163991.0561419209
+-164643.1574887283
+-165195.74410232226
+-165673.71541446084
+-166131.1755268243
+-166436.8880332381
+-166714.06732416022
+-166947.32105913034
+-167174.16077248962
+-167332.62798800739
+-167486.5124491963
+-167600.00434643528
+-167697.12978176086
+-167757.4280101334
+-167823.64994318364
+-167893.09415776364
+-167962.65388000928
+-168025.38738499227
+-168096.01197820113
+-168146.95909249922
+-168192.55569518026
+-168262.46745941293
+-168325.10068882984
+-168363.87475271837
+-168412.56179223384
+-168444.63797770278
+-167527.2196279194
+-167187.0634558735
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
