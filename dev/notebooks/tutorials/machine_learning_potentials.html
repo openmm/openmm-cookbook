@@ -70,9 +70,9 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <span class="kn">import</span><span class="w"> </span><span class="nn">MDAnalysis</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mda</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">MDAnalysis.analysis.dihedrals</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ramachandran</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
-<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -95,7 +95,7 @@ tradeoff is that a specialized model for one specific molecule can be much small
 </pre></div></div>
 </div>
 <p>Now create a System for it. We use the AceFF 2.0 model. This is a relatively fast (as MLIPs go) but inaccurate potential.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
@@ -103,6 +103,14 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <span class="n">system</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">createSystem</span><span class="p">(</span><span class="n">pdb</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+</pre></div></div>
 </div>
 <p>That’s all there is to it! MLPotential plays the same role in ML simulations that ForceField does in conventional simulations. You create an instance of it, specifying the name of the potential to use, then call <code class="docutils literal notranslate"><span class="pre">createSystem()</span></code> to create a System to simulate.</p>
 <p>To prove we really have a working System, let’s run a short simulation.</p>
@@ -124,19 +132,19 @@ tradeoff is that a specialized model for one specific molecule can be much small
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 #&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;,&#34;Speed (ns/day)&#34;
-100,-844.458740234375,53.319062375260714,0
-200,-839.6515502929688,82.89689504325784,42.2
-300,-839.5911254882812,83.8807790637833,43
-400,-823.9935302734375,94.66103127523544,42.3
-500,-818.1985473632812,129.62461685886882,41.8
-600,-814.7901000976562,119.25928243622221,42
-700,-817.9552001953125,179.3754547066664,42.2
-800,-822.4508666992188,228.6552988894026,42.3
-900,-809.474365234375,193.80415636153424,42.5
-1000,-817.1160278320312,222.27929697715678,42.3
+100,-865.1658935546875,74.33756068253591,0
+200,-854.6136474609375,94.52944959573007,42.1
+300,-846.62548828125,128.59963723188727,42.5
+400,-843.0185546875,97.8085629268968,42.9
+500,-837.7247314453125,127.03131877689289,43.1
+600,-843.3038330078125,189.45030880772623,43.4
+700,-848.9312744140625,206.07073244476456,43.5
+800,-835.5855102539062,202.6123802218563,43.6
+900,-835.9058227539062,198.93911902384272,43.7
+1000,-838.9912109375,229.8588619758058,43.7
 </pre></div></div>
 </div>
-<p>Only about 42 ns/day for a molecule with 22 atoms. (That simulation was run on an NVIDIA RTX 4080 GPU.) I warned you that MLIPs were slow! On the other hand, we simulated 1000 steps in only a few seconds. Most quantum chemistry methods with similar accuracy would take that long to perform a single energy evaluation.</p>
+<p>Only about 43 ns/day for a molecule with 22 atoms. (That simulation was run on an NVIDIA RTX 4080 GPU.) I warned you that MLIPs were slow! On the other hand, we simulated 1000 steps in only a few seconds. Most quantum chemistry methods with similar accuracy would take that long to perform a single energy evaluation.</p>
 <p>Let’s try something a bit more interesting: run a longer simulation and compute a Ramachandran plot.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -157,7 +165,7 @@ tradeoff is that a specialized model for one specific molecule can be much small
     <span class="c1"># Generate data</span>
 
     <span class="n">simulation</span><span class="o">.</span><span class="n">reporters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">XTCReporter</span><span class="p">(</span><span class="s1">'alanine-dipeptide.xtc'</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
-    <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+    <span class="n">simulation</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">150000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -176,8 +184,8 @@ tradeoff is that a specialized model for one specific molecule can be much small
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 3min 6s, sys: 8.75 s, total: 3min 15s
-Wall time: 3min 16s
+CPU times: user 4min 44s, sys: 11.3 s, total: 4min 55s
+Wall time: 4min 54s
 </pre></div></div>
 </div>
 <p>We can use <a class="reference external" href="https://www.mdanalysis.org/">MDAnalysis</a> to do the analysis and generate the plot.</p>
@@ -266,11 +274,11 @@ Wall time: 3min 16s
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 10min 47s, sys: 12.1 s, total: 10min 59s
-Wall time: 10min 58s
+CPU times: user 5min 4s, sys: 2.76 s, total: 5min 7s
+Wall time: 5min 13s
 </pre></div></div>
 </div>
-<p>The Ramachandran plot looks quite different from before, showing the importance of water.</p>
+<p>Simulating 100 times more atoms took barely any longer than the vacuum simulation. The time is entirely dominated by the MLIP. The Ramachandran plot looks quite different from before, showing the importance of water.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
@@ -323,16 +331,16 @@ Wall time: 10min 58s
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 #&#34;Step&#34;,&#34;Potential Energy (kJ/mole)&#34;,&#34;Temperature (K)&#34;,&#34;Speed (ns/day)&#34;
-100,-1301870.472026293,61.02413538058426,0
-200,-1301864.064797156,107.8435303300016,6.13
-300,-1301860.3900627983,144.32587640266559,6.15
-400,-1301860.2958388403,183.82281060477646,6.13
-500,-1301847.9525003564,128.49887543657866,6.12
-600,-1301845.8795732828,156.1019706331902,6.12
-700,-1301831.2748598093,157.93735591078925,6.12
-800,-1301834.290026462,208.32715287948798,6.13
-900,-1301831.2748598093,215.42493142754162,6.14
-1000,-1301830.8979639777,185.22360055881106,6.14
+100,-1301873.524413249,76.96127082415401,0
+200,-1301865.7560435878,74.86422239929863,6.66
+300,-1301859.6343158039,113.14219813807061,6.66
+400,-1301856.049618695,139.32868561399462,6.65
+500,-1301846.100157641,185.47409222630424,6.65
+600,-1301846.6706887672,195.11486078449286,6.65
+700,-1301839.180689251,249.3425926802828,6.65
+800,-1301836.2558703998,256.13849366696525,6.65
+900,-1301838.9377566075,273.80947335662285,6.64
+1000,-1301837.0360245276,285.47107084344685,6.64
 </pre></div></div>
 </div>
 <p>There is no universal best choice for what model to use. You need to pick one that fits the requirements of your specific application.</p>
